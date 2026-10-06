@@ -1,0 +1,169 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/*
+ * Sistema de diseño EcoMovilidad
+ * ─────────────────────────────
+ * ink    #07111F  superficies oscuras y texto principal
+ * ink-2  #0E1B2E  superficies oscuras elevadas
+ * volt   #39E58C  acción y acento (nunca como texto sobre fondo claro)
+ * paper  #F8FAFC  fondo claro
+ * slate  #64748B  texto secundario
+ * line   #DCE3EC  bordes
+ */
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-archivo);
+  --font-heading: var(--font-archivo);
+
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-volt: var(--volt);
+  --color-volt-strong: var(--volt-strong);
+  --color-paper: var(--paper);
+  --color-slate: var(--slate);
+  --color-line: var(--line);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  --ink: #07111f;
+  --ink-2: #0e1b2e;
+  --ink-3: #16263d;
+  --volt: #39e58c;
+  /* Verde oscuro para texto/foco sobre fondo claro (contraste ≥ 4.5:1). */
+  --volt-strong: #0b7a45;
+  --paper: #f8fafc;
+  --slate: #64748b;
+  --line: #dce3ec;
+  --success: #0b7a45;
+  --warning: #a15c07;
+
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: #ffffff;
+  --card-foreground: var(--ink);
+  --popover: #ffffff;
+  --popover-foreground: var(--ink);
+  --primary: var(--ink);
+  --primary-foreground: var(--paper);
+  --secondary: #eef2f6;
+  --secondary-foreground: var(--ink);
+  --muted: #eef2f6;
+  --muted-foreground: #5b6b80;
+  --accent: #eef2f6;
+  --accent-foreground: var(--ink);
+  --destructive: #c42b1c;
+  --border: var(--line);
+  --input: #cfd8e3;
+  --ring: var(--volt-strong);
+  --radius: 0.625rem;
+}
+
+/* Superficie oscura reutilizable: hero, alquiler, CTA final, footer. */
+.surface-ink {
+  --background: var(--ink);
+  --foreground: var(--paper);
+  --card: var(--ink-2);
+  --card-foreground: var(--paper);
+  --muted: var(--ink-3);
+  --muted-foreground: #9fb0c5;
+  --secondary: var(--ink-3);
+  --secondary-foreground: var(--paper);
+  --accent: var(--ink-3);
+  --accent-foreground: var(--paper);
+  --border: rgb(248 250 252 / 0.12);
+  --input: rgb(248 250 252 / 0.2);
+  --primary: var(--paper);
+  --primary-foreground: var(--ink);
+  --ring: var(--volt);
+  background-color: var(--ink);
+  color: var(--paper);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "ss01";
+    text-rendering: optimizeLegibility;
+  }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: var(--volt);
+    color: var(--ink);
+  }
+}
+
+@layer components {
+  /* Titulares en anchura expandida: la firma tipográfica de la marca. */
+  .font-display {
+    font-stretch: 118%;
+    font-weight: 760;
+    letter-spacing: -0.025em;
+    line-height: 1.02;
+  }
+  .font-display-tight {
+    font-stretch: 112%;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    line-height: 1.1;
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

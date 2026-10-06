@@ -1,0 +1,357 @@
+"use client";
+
+import Link from "next/link";
+import { CircleCheck, Lock, ShoppingBag, UserRound } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { ConsentCheckbox } from "@/components/shared/consent-checkbox";
+import { EmptyState } from "@/components/shared/empty-state";
+import { FormAlert } from "@/components/shared/form-alert";
+import { FormField } from "@/components/shared/form-field";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useSession } from "@/features/auth/use-session";
+import { useCart } from "@/features/cart/cart-provider";
+import { OrderSummary } from "@/features/cart/components/order-summary";
+import { useActionForm } from "@/hooks/use-action-form";
+import { formatCOP } from "@/lib/format";
+import { cn } from "@/lib/utils";
+import type { Branch, FulfillmentMethod, PaymentMethod, TimeSlot } from "@/types";
+import { createOrder } from "../actions";
+import { checkoutSchema, documentTypes, paymentMethods, serviceAreaCities } from "../lib/schema";
+
+interface CheckoutFormProps {
+  branches: Branch[];
+  timeSlots: TimeSlot[];
+  minDate: string;
+  /** Con el backend real, comprar exige una cuenta (el pedido queda asociado al usuario). */
+  requiresAccount: boolean;
+}
+
+function Fieldset({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <fieldset className="min-w-0 rounded-3xl border border-border bg-card p-6 sm:p-8">
+      {/* La legend flotante evita que el navegador la dibuje sobre el borde. */}
+      <legend className="font-display-tight float-left mb-5 w-full text-xl">{title}</legend>
+      <div className="clear-both space-y-5">{children}</div>
+    </fieldset>
+  );
+}
+
+function ChoiceCard({ value, id, title, description }: { value: string; id: string; title: string; description?: string }) {
+  return (
+    <Label
+      htmlFor={id}
+      className="flex cursor-pointer items-start gap-3 rounded-2xl border border-border p-4 font-normal transition-colors has-data-[state=checked]:border-ink has-data-[state=checked]:bg-muted"
+    >
+      <RadioGroupItem value={value} id={id} className="mt-0.5" />
+      <span>
+        <span className="block font-medium">{title}</span>
+        {description && <span className="mt-0.5 block text-sm text-muted-foreground">{description}</span>}
+      </span>
+    </Label>
+  );
+}
+
+export function CheckoutForm({ branches, timeSlots, minDate, requiresAccount }: CheckoutFormProps) {
+  const { cart, isReady, itemCount, subtotal, total, completeOrder } = useCart();
+  const { user } = useSession();
+  const [city, setCity] = useState("");
+  const [method, setMethod] = useState<FulfillmentMethod>("domicilio");
+  const [branchId, setBranchId] = useState("");
+  const [timeSlotId, setTimeSlotId] = useState("");
+  const [payment, setPayment] = useState<PaymentMethod | "">("");
+  const [documentType, setDocumentType] = useState("CC");
+  const form = useActionForm(checkoutSchema, createOrder, {
+    onSuccess(order) {
+      completeOrder();
+      // Con Wompi, el backend devolverá la URL de la pasarela de pago.
+      if (order.paymentRedirectUrl) window.location.assign(order.paymentRedirectUrl);
+    },
+  });
+  const errors = form.fieldErrors;
+  const pickupBranches = branches.filter((branch) => branch.services.includes("recogida"));
+
+  if (form.data) {
+    return (
+      <div role="status" className="mx-auto max-w-xl rounded-3xl border border-border bg-card p-8 text-center">
+        <CircleCheck className="mx-auto size-12 text-volt-strong" aria-hidden="true" />
+        <h2 className="font-display-tight mt-4 text-2xl">Pedido #{form.data.id.slice(0, 8).toUpperCase()} creado</h2>
+        <p className="mt-3 text-muted-foreground">
+          Total {formatCOP(form.data.total)}. Registramos tu pedido con estado pendiente de pago.
+        </p>
+        <Button asChild size="xl" className="mt-6">
+          <Link href="/catalogo">Volver al catálogo</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  if (!isReady) {
+    return (
+      <div className="grid gap-8 lg:grid-cols-[1fr_380px]" aria-busy="true">
+        <span className="sr-only">Cargando checkout…</span>
+        <Skeleton className="h-[520px] rounded-3xl" />
+        <Skeleton className="h-64 rounded-3xl" />
+      </div>
+    );
+  }
+
+  if (requiresAccount && !user) {
+    return (
+      <EmptyState
+        icon={UserRound}
+        title="Inicia sesión para finalizar tu compra"
+        description="Tu pedido queda asociado a tu cuenta. Los productos de tu carrito se conservan al ingresar."
+        action={
+          <div className="flex flex-wrap justify-center gap-3">
+            <Button asChild size="xl" variant="brand">
+              <Link href="/login?next=/checkout">Ingresar</Link>
+            </Button>
+            <Button asChild size="xl" variant="outline">
+              <Link href="/registro?next=/checkout">Crear cuenta</Link>
+            </Button>
+          </div>
+        }
+      />
+    );
+  }
+
+  if (cart.items.length === 0) {
+    return (
+      <EmptyState
+        icon={ShoppingBag}
+        title="No hay productos para pagar"
+        description="Agrega productos al carrito para continuar con el pago."
+        action={
+          <Button asChild size="xl" variant="brand">
+            <Link href="/catalogo">Explorar vehículos</Link>
+          </Button>
+        }
+      />
+    );
+  }
+
+  return (
+    <form
+      noValidate
+      className="grid gap-8 lg:grid-cols-[1fr_380px] lg:items-start"
+      onSubmit={(event) => {
+        event.preventDefault();
+        const data = new FormData(event.currentTarget);
+        const text = (name: string) => String(data.get(name) ?? "");
+        form.submit({
+          items: cart.items.map((item) => ({ productId: item.productId, quantity: item.quantity })),
+          customer: {
+            fullName: text("fullName"),
+            email: text("email"),
+            phone: text("phone"),
+            documentType,
+            documentNumber: text("documentNumber"),
+          },
+          fulfillment: {
+            method,
+            address: method === "domicilio" ? text("address") : undefined,
+            city: method === "domicilio" ? city || undefined : undefined,
+            branchId: method === "recogida" ? branchId || undefined : undefined,
+            date: text("date"),
+            timeSlotId,
+          },
+          paymentMethod: payment || undefined,
+          dataConsent: data.get("dataConsent") === "true",
+        }, event.currentTarget);
+      }}
+    >
+      <div className="min-w-0 space-y-6">
+        {form.formError && <FormAlert variant="error">{form.formError}</FormAlert>}
+
+        <Fieldset title="Tus datos">
+          <div className="grid gap-5 sm:grid-cols-2">
+            <FormField id="co-name" label="Nombre completo" error={errors["customer.fullName"]} className="sm:col-span-2">
+              {(control) => (
+                <Input
+                  {...control}
+                  name="fullName"
+                  autoComplete="name"
+                  maxLength={100}
+                  defaultValue={user ? `${user.firstName} ${user.lastName}` : undefined}
+                />
+              )}
+            </FormField>
+            <FormField id="co-email" label="Correo electrónico" hint="Aquí te enviaremos la factura electrónica." error={errors["customer.email"]}>
+              {(control) => (
+                <Input {...control} name="email" type="email" autoComplete="email" maxLength={150} defaultValue={user?.email} />
+              )}
+            </FormField>
+            <FormField id="co-phone" label="Celular" error={errors["customer.phone"]}>
+              {(control) => (
+                <Input {...control} name="phone" type="tel" autoComplete="tel" maxLength={20} defaultValue={user?.phone} />
+              )}
+            </FormField>
+            <FormField id="co-doctype" label="Tipo de documento" error={errors["customer.documentType"]}>
+              {(control) => (
+                <Select value={documentType} onValueChange={setDocumentType}>
+                  <SelectTrigger {...control} className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {documentTypes.map((type) => (
+                      <SelectItem key={type.value} value={type.value}>
+                        {type.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </FormField>
+            <FormField id="co-docnumber" label="Número de documento" error={errors["customer.documentNumber"]}>
+              {(control) => (
+                <Input {...control} name="documentNumber" inputMode="text" maxLength={20} defaultValue={user?.documentNumber} />
+              )}
+            </FormField>
+          </div>
+        </Fieldset>
+
+        <Fieldset title="Entrega">
+          <RadioGroup
+            value={method}
+            onValueChange={(value) => setMethod(value as FulfillmentMethod)}
+            className="grid gap-3 sm:grid-cols-2"
+            aria-label="Método de entrega"
+          >
+            <ChoiceCard id="co-domicilio" value="domicilio" title="Domicilio" description="Con seguimiento en el mapa." />
+            <ChoiceCard id="co-recogida" value="recogida" title="Recoger en sucursal" description="Sin costo de envío." />
+          </RadioGroup>
+
+          {method === "domicilio" ? (
+            <div className="grid gap-5 sm:grid-cols-[2fr_1fr]">
+              <FormField id="co-address" label="Dirección" error={errors["fulfillment.address"]}>
+                {(control) => (
+                  <Input {...control} name="address" autoComplete="street-address" placeholder="Calle 00 # 00-00, apto" maxLength={160} />
+                )}
+              </FormField>
+              <FormField id="co-city" label="Municipio" error={errors["fulfillment.city"]}>
+                {(control) => (
+                  <Select value={city} onValueChange={setCity}>
+                    <SelectTrigger {...control} className="w-full">
+                      <SelectValue placeholder="Elige" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {serviceAreaCities.map((name) => (
+                        <SelectItem key={name} value={name}>
+                          {name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </FormField>
+            </div>
+          ) : (
+            <FormField id="co-branch" label="Sucursal de recogida" error={errors["fulfillment.branchId"]}>
+              {(control) => (
+                <Select value={branchId} onValueChange={setBranchId}>
+                  <SelectTrigger {...control} className="w-full">
+                    <SelectValue placeholder="Elige una sucursal" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {pickupBranches.map((branch) => (
+                      <SelectItem key={branch.id} value={branch.id}>
+                        {branch.city}, {branch.name} ({branch.address})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </FormField>
+          )}
+
+          <FormField id="co-date" label="Fecha" error={errors["fulfillment.date"]} className="max-w-xs">
+            {(control) => <Input {...control} name="date" type="date" min={minDate} defaultValue={minDate} />}
+          </FormField>
+
+          <div className="space-y-2">
+            <p id="co-slots-label" className="text-sm font-medium">
+              Franja horaria
+            </p>
+            <RadioGroup
+              value={timeSlotId}
+              onValueChange={setTimeSlotId}
+              aria-labelledby="co-slots-label"
+              aria-invalid={Boolean(errors["fulfillment.timeSlotId"])}
+              className="grid gap-2 sm:grid-cols-3"
+            >
+              {timeSlots.map((slot) => (
+                <Label
+                  key={slot.id}
+                  htmlFor={`co-${slot.id}`}
+                  className={cn(
+                    "flex cursor-pointer items-center gap-2.5 rounded-xl border border-border px-3 py-2.5 font-normal has-data-[state=checked]:border-ink has-data-[state=checked]:bg-muted",
+                    !slot.available && "cursor-not-allowed opacity-50",
+                  )}
+                >
+                  <RadioGroupItem id={`co-${slot.id}`} value={slot.id} disabled={!slot.available} />
+                  <span className="tabular text-sm">
+                    {slot.label}
+                    {!slot.available && <span className="block text-xs text-muted-foreground">Sin cupo</span>}
+                  </span>
+                </Label>
+              ))}
+            </RadioGroup>
+            {errors["fulfillment.timeSlotId"] && (
+              <p className="text-xs font-medium text-destructive">{errors["fulfillment.timeSlotId"]}</p>
+            )}
+          </div>
+        </Fieldset>
+
+        <Fieldset title="Pago">
+          <RadioGroup
+            value={payment}
+            onValueChange={(value) => setPayment(value as PaymentMethod)}
+            aria-label="Método de pago"
+            aria-invalid={Boolean(errors.paymentMethod)}
+            className="grid gap-3"
+          >
+            {paymentMethods.map((option) => (
+              <ChoiceCard key={option.value} id={`co-pay-${option.value}`} value={option.value} title={option.label} description={option.description} />
+            ))}
+          </RadioGroup>
+          {errors.paymentMethod && <p className="text-xs font-medium text-destructive">{errors.paymentMethod}</p>}
+          <p className="flex items-start gap-2 text-sm text-muted-foreground">
+            <Lock className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+            Completarás el pago en una pasarela segura. EcoMovilidad no recibe ni almacena los datos de tu tarjeta.
+          </p>
+        </Fieldset>
+
+        <ConsentCheckbox id="co-consent" error={errors.dataConsent} />
+      </div>
+
+      <div className="lg:sticky lg:top-24">
+        <OrderSummary itemCount={itemCount} subtotal={subtotal} total={total}>
+          <ul className="space-y-2 border-t border-border pt-4 text-sm">
+            {cart.items.map((item) => (
+              <li key={item.productId} className="flex justify-between gap-3">
+                <span className="truncate">
+                  {item.quantity} × {item.name}
+                </span>
+                <span className="tabular shrink-0">{formatCOP(item.unitPrice * item.quantity)}</span>
+              </li>
+            ))}
+          </ul>
+          <Button type="submit" size="xl" variant="brand" className="w-full" disabled={form.isPending}>
+            {form.isPending ? "Creando pedido…" : "Confirmar pedido"}
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            Puedes ejercer el derecho de retracto según la Ley 1480 de 2011.{" "}
+            <Link href="/terminos" className="underline underline-offset-4">
+              Términos y condiciones
+            </Link>
+          </p>
+        </OrderSummary>
+      </div>
+    </form>
+  );
+}

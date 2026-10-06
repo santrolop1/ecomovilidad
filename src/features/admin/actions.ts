@@ -1,0 +1,106 @@
+"use server";
+
+import { updateTag } from "next/cache";
+import { z } from "zod";
+import { type ActionResult, runAction } from "@/lib/action-result";
+import { adminApi } from "@/lib/api/admin";
+import { orderStatuses } from "@/lib/api/admin-schemas";
+import { branchFormSchema, categoryFormSchema, productFormSchema, stockSchema } from "./lib/schemas";
+
+/**
+ * Acciones del panel. FastAPI vuelve a validar el rol de administrador y el
+ * token CSRF en cada llamada: estas acciones no conceden permisos por sí solas.
+ * Tras cada cambio se invalida la caché pública afectada (catálogo, sucursales).
+ */
+const idSchema = z.string().uuid("Identificador inválido.");
+
+function refreshStorefront(...tags: string[]) {
+  for (const tag of tags) updateTag(tag);
+}
+
+export async function createProduct(input: unknown): Promise<ActionResult<{ id: string }>> {
+  return runAction(productFormSchema, input, async (data) => {
+    const product = await adminApi.createProduct(data);
+    refreshStorefront("products", "categories");
+    return { id: product.id };
+  });
+}
+
+export async function updateProduct(id: string, input: unknown): Promise<ActionResult<{ id: string }>> {
+  return runAction(productFormSchema, input, async (data) => {
+    const product = await adminApi.updateProduct(idSchema.parse(id), data);
+    refreshStorefront("products", "categories");
+    return { id: product.id };
+  });
+}
+
+export async function setProductActive(id: string, isActive: boolean): Promise<ActionResult<null>> {
+  return runAction(z.boolean(), isActive, async (value) => {
+    await adminApi.updateProduct(idSchema.parse(id), { isActive: value });
+    refreshStorefront("products", "branches");
+    return null;
+  });
+}
+
+export async function setStock(productId: string, branchId: string, total: unknown): Promise<ActionResult<null>> {
+  return runAction(stockSchema, total, async (value) => {
+    await adminApi.setStock(idSchema.parse(productId), idSchema.parse(branchId), value);
+    refreshStorefront("products", "branches");
+    return null;
+  });
+}
+
+export async function createCategory(input: unknown): Promise<ActionResult<null>> {
+  return runAction(categoryFormSchema, input, async (data) => {
+    await adminApi.createCategory(data);
+    refreshStorefront("categories", "products");
+    return null;
+  });
+}
+
+export async function updateCategory(id: string, input: unknown): Promise<ActionResult<null>> {
+  return runAction(categoryFormSchema, input, async (data) => {
+    await adminApi.updateCategory(idSchema.parse(id), data);
+    refreshStorefront("categories", "products");
+    return null;
+  });
+}
+
+export async function createBranch(input: unknown): Promise<ActionResult<{ id: string }>> {
+  return runAction(branchFormSchema, input, async (data) => {
+    const branch = await adminApi.createBranch(data);
+    refreshStorefront("branches", "products");
+    return { id: branch.id };
+  });
+}
+
+export async function updateBranch(id: string, input: unknown): Promise<ActionResult<{ id: string }>> {
+  return runAction(branchFormSchema, input, async (data) => {
+    const branch = await adminApi.updateBranch(idSchema.parse(id), data);
+    refreshStorefront("branches", "products");
+    return { id: branch.id };
+  });
+}
+
+export async function setBranchActive(id: string, isActive: boolean): Promise<ActionResult<null>> {
+  return runAction(z.boolean(), isActive, async (value) => {
+    await adminApi.updateBranch(idSchema.parse(id), { isActive: value });
+    refreshStorefront("branches", "products");
+    return null;
+  });
+}
+
+export async function changeOrderStatus(id: string, status: unknown): Promise<ActionResult<null>> {
+  return runAction(z.enum(orderStatuses), status, async (value) => {
+    await adminApi.updateOrderStatus(idSchema.parse(id), value);
+    refreshStorefront("products", "branches");
+    return null;
+  });
+}
+
+export async function setUserActive(id: string, isActive: boolean): Promise<ActionResult<null>> {
+  return runAction(z.boolean(), isActive, async (value) => {
+    await adminApi.setUserActive(idSchema.parse(id), value);
+    return null;
+  });
+}
