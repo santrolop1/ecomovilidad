@@ -138,7 +138,8 @@ PostgreSQL 16 + PostGIS 3.6
 ```
 
 - El navegador **nunca** llama directamente a FastAPI: todas las llamadas salen del servidor de Next.js.
-- Desarrollo local con **Docker Compose**: base de datos y API. En macOS el runtime es **Colima**.
+- Desarrollo local con **Docker Compose**: base de datos y API. En macOS el runtime es **Colima**. Ambos servicios se publican solo en `127.0.0.1`.
+- **Demo pública temporal:** Cloudflare Tunnel (`trycloudflare.com`) hacia Next.js en el Mac; ver [DEMO_PUBLICA.md](DEMO_PUBLICA.md). No hay despliegue en la nube.
 - Sin Redis, Kafka, Celery, Kubernetes ni servicios de nube en esta fase. Las reservas vencidas y los límites de login se resuelven en PostgreSQL.
 
 ## 7. Frontend
@@ -391,6 +392,7 @@ Cada fila (producto, sucursal) guarda tres cantidades:
   cd backend
   uv run python -m app.cli make-admin correo@dominio.com
   uv run python -m app.cli revoke-admin correo@dominio.com
+  uv run python -m app.cli set-password correo@dominio.com   # lee la clave de stdin y cierra sus sesiones
   ```
 
 ## 15. Panel administrativo
@@ -518,7 +520,7 @@ Las listas paginadas devuelven `{ items, total, page, pageSize }` con 20 element
 | `COOKIE_SECURE` | **`true` en producción** | Cookies solo por HTTPS. |
 | `SESSION_TTL_HOURS` | No (168) | Duración de la sesión. |
 | `ENVIRONMENT` | No (`development`) | Fuera de `development` no se escriben enlaces de recuperación en el log. |
-| `FRONTEND_URL` | En producción | Base de los enlaces de recuperación. |
+| `FRONTEND_URL` | En producción | Base de los enlaces de recuperación. En Docker Compose se toma del entorno (`scripts/demo.sh` pone la URL del túnel). |
 | `PASSWORD_RESET_TTL_MINUTES` | No (30) | Vigencia del enlace de recuperación. |
 | `PRIVACY_POLICY_VERSION` | No (`2026-10-06`) | Versión vigente de la política; debe coincidir con `src/config/legal.ts`. |
 | `TRUSTED_PROXIES` | Recomendada | CIDR (JSON) de los proxies cuyo `X-Forwarded-For` se acepta. En Docker Compose: redes privadas y `127.0.0.1`. |
@@ -562,7 +564,7 @@ docker compose down -v     # borra la base de datos
 ```
 
 **Notas:**
-- PostgreSQL queda en `localhost:5433`, para no chocar con un PostgreSQL local en el 5432.
+- PostgreSQL queda en `127.0.0.1:5433`, para no chocar con un PostgreSQL local en el 5432. PostgreSQL y FastAPI no son accesibles desde la red local.
 - La imagen de base de datos es `postgres:16` oficial con PostGIS instalado desde PGDG, porque `postgis/postgis` no publica imágenes para Apple Silicon.
 - `npm run check` compila en modo mock. Un build con `API_MODE=real` necesita la API encendida, porque genera las fichas de producto desde ella.
 

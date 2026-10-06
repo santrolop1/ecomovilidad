@@ -13,13 +13,22 @@ API_MODE=real API_BASE_URL=http://localhost:8000/api/v1 npm run dev
 # Tienda: http://localhost:3000   Panel: http://localhost:3000/admin
 ```
 
-Administrador de **desarrollo** (solo local, definido en `docker-compose.yml`): `admin@ecomovilidad.dev` / `ELIMINADA`.
+Administrador de **desarrollo** (solo local, definido en `docker-compose.yml`): `admin@ecomovilidad.dev` / `ELIMINADA`. La demo pública reemplaza esta contraseña por la de `.env.demo`.
 
 El enlace de recuperación de contraseña se ve en `docker compose logs api` (no hay proveedor de correo).
 
 Sin Docker, `npm run dev` arranca la tienda con datos de demostración (`API_MODE=mock`; el panel requiere el backend).
 
 Detener: `docker compose down` (conserva datos) o `docker compose down -v` (borra datos).
+
+## Demo pública temporal
+
+```bash
+scripts/demo.sh start      # imprime una URL https://….trycloudflare.com
+scripts/demo.sh stop
+```
+
+Sin AWS ni dominio: Cloudflare Tunnel hacia Next.js en este Mac. El Mac debe seguir encendido y conectado mientras se use la URL. Detalles en [DEMO_PUBLICA.md](DEMO_PUBLICA.md).
 
 ## Pruebas
 
@@ -33,5 +42,6 @@ cd backend && uv run pytest          # requiere: docker compose up -d db
 - [DOCUMENTACION.md](DOCUMENTACION.md): documentación del producto (arquitectura, base de datos, API, autenticación, panel, ejecución y pruebas).
 - [REQUISITOS.md](REQUISITOS.md): requisitos del SRS con estado verificable.
 - [ESTADO.md](ESTADO.md): estado por área (implementado, parcial, mock, pendiente).
+- [DEMO_PUBLICA.md](DEMO_PUBLICA.md): cómo publicar una demo temporal con Cloudflare Tunnel.
 
 Las sucursales, productos y datos de contacto son **datos de demostración**. Las fotos de producto provienen de Wikimedia Commons (créditos en `/creditos`).
