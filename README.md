@@ -15,6 +15,8 @@ API_MODE=real API_BASE_URL=http://localhost:8000/api/v1 npm run dev
 
 Administrador de **desarrollo** (solo local, definido en `docker-compose.yml`): `admin@ecomovilidad.dev` / `ELIMINADA`.
 
+El enlace de recuperación de contraseña se ve en `docker compose logs api` (no hay proveedor de correo).
+
 Sin Docker, `npm run dev` arranca la tienda con datos de demostración (`API_MODE=mock`; el panel requiere el backend).
 
 Detener: `docker compose down` (conserva datos) o `docker compose down -v` (borra datos).

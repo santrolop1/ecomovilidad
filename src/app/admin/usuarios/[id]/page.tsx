@@ -5,7 +5,7 @@ import { setUserActive } from "@/features/admin/actions";
 import { AdminPageHeader } from "@/features/admin/components/admin-page-header";
 import { ConfirmAction } from "@/features/admin/components/confirm-action";
 import { OrdersTable } from "@/features/admin/components/orders-table";
-import { StatusBadge } from "@/features/admin/components/status-badge";
+import { StatusBadge } from "@/components/shared/status-badge";
 import { getSessionUser } from "@/features/auth/actions";
 import { adminApi } from "@/lib/api/admin";
 import { isApiError } from "@/lib/api/errors";

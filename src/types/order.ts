@@ -37,6 +37,7 @@ export interface CreateOrderInput {
   fulfillment: FulfillmentInfo;
   paymentMethod: PaymentMethod;
   dataConsent: true;
+  policyVersion?: string;
 }
 
 export interface Order {
@@ -48,4 +49,33 @@ export interface Order {
   createdAt: string;
   /** URL de pago de la pasarela (Wompi). Pendiente: pagos no integrados. */
   paymentRedirectUrl?: string;
+}
+
+export interface OrderLine {
+  productId: string;
+  slug: string;
+  name: string;
+  imageUrl?: string;
+  quantity: number;
+  unitPrice: number;
+  subtotal: number;
+}
+
+/** Pedido tal como lo ve su dueño en "Mis pedidos". */
+export interface CustomerOrder extends Order {
+  itemCount: number;
+  branchName: string;
+  branchCity: string;
+  branchAddress: string;
+  fulfillmentMethod: FulfillmentMethod;
+  deliveryAddress?: string;
+  deliveryCity?: string;
+  scheduledDate: string;
+  timeSlot: string;
+  paymentMethod: PaymentMethod;
+  contactName: string;
+  contactEmail: string;
+  contactPhone: string;
+  items: OrderLine[];
+  updatedAt: string;
 }

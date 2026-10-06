@@ -15,10 +15,12 @@ import { QuantityStepper } from "./quantity-stepper";
 /** CTA de compra y, cuando aplica, de alquiler. */
 export function PurchasePanel({ product }: { product: Product }) {
   const router = useRouter();
-  const { addItem, cart } = useCart();
+  const { addItem, cart, isRemote } = useCart();
   const [quantity, setQuantity] = useState(1);
   const inCart = cart.items.find((item) => item.productId === product.id)?.quantity ?? 0;
-  const maxSelectable = Math.max(0, Math.min(product.stock.available, MAX_QUANTITY_PER_ITEM) - inCart);
+  // Con sesión, lo que ya apartó este cliente ya no figura como disponible.
+  const free = isRemote ? product.stock.available : product.stock.available - inCart;
+  const maxSelectable = Math.max(0, Math.min(free, MAX_QUANTITY_PER_ITEM - inCart));
   const soldOut = product.stock.status === "out_of_stock";
 
   function add() {

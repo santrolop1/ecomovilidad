@@ -12,6 +12,8 @@ export interface CartItem {
   quantity: number;
   /** Máximo permitido según inventario disponible. */
   maxQuantity: number;
+  /** Fin de la reserva temporal (RF 6.2), hora del servidor. Solo carrito con sesión. */
+  reservedUntil?: string;
 }
 
 export interface Cart {
@@ -19,4 +21,8 @@ export interface Cart {
   id?: string;
   items: CartItem[];
   updatedAt: string;
+  /** Minutos de la reserva temporal (solo carrito con sesión). */
+  reservationMinutes?: number;
+  /** Hora del servidor al responder (para corregir el reloj del contador). */
+  serverTime?: string;
 }

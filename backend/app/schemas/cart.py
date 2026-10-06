@@ -19,12 +19,19 @@ class CartItemOut(ApiModel):
     unit_price: int
     quantity: int
     max_quantity: int
+    # Hasta cuándo están apartadas las unidades (hora del servidor, RF 6.2).
+    reserved_until: datetime | None = None
 
 
 class CartOut(ApiModel):
     id: uuid.UUID
     items: list[CartItemOut]
     updated_at: datetime
+    reservation_minutes: int
+    # Hora del servidor: el cliente corrige la diferencia de reloj del contador.
+    server_time: datetime
+    # Productos retirados en esta solicitud porque su reserva venció.
+    expired_items: list[str] = []
 
 
 class AddCartItemIn(ApiModel):

@@ -17,13 +17,21 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.models import Inventory, Order, OrderItem, User
-from app.models.enums import SERVICE_AREA_CITIES, BranchService, CartStatus, FulfillmentMethod, OrderStatus
+from app.models.enums import (
+    SERVICE_AREA_CITIES,
+    BranchService,
+    CartStatus,
+    ConsentPurpose,
+    FulfillmentMethod,
+    OrderStatus,
+)
 from app.repositories import orders as repo
 from app.repositories.branches import get_active_branch
 from app.repositories.carts import get_active_cart
 from app.repositories.catalog import get_products
 from app.schemas.order import OrderCreateIn, OrderItemOut, OrderOut
 
+from . import consent, reservations
 from .errors import ConflictError, NotFoundError, ServiceError
 
 BOGOTA = ZoneInfo("America/Bogota")
@@ -58,16 +66,28 @@ def to_order_out(order: Order) -> OrderOut:
         subtotal=order.subtotal,
         shipping_cost=order.shipping_cost,
         total=order.total,
+        item_count=sum(i.quantity for i in order.items),
         branch_id=order.branch_id,
+        branch_name=order.branch.name,
+        branch_city=order.branch.city,
+        branch_address=order.branch.address,
         fulfillment_method=order.fulfillment_method,
+        delivery_address=order.delivery_address,
+        delivery_city=order.delivery_city,
         scheduled_date=order.scheduled_date,
         time_slot=order.time_slot,
         payment_method=order.payment_method,
+        contact_name=order.contact_name,
+        contact_email=order.contact_email,
+        contact_phone=order.contact_phone,
         created_at=order.created_at,
+        updated_at=order.updated_at,
         items=[
             OrderItemOut(
                 product_id=i.product_id,
+                slug=i.product.slug,
                 name=i.product.name,
+                image_url=i.product.image_url,
                 quantity=i.quantity,
                 unit_price=i.unit_price,
                 subtotal=i.subtotal,
@@ -88,7 +108,10 @@ def _validate_schedule(data: OrderCreateIn) -> None:
 
 
 def _choose_branch(
-    data: OrderCreateIn, quantities: dict[uuid.UUID, int], stock: dict[uuid.UUID, dict[uuid.UUID, Inventory]]
+    data: OrderCreateIn,
+    quantities: dict[uuid.UUID, int],
+    stock: dict[uuid.UUID, dict[uuid.UUID, Inventory]],
+    preference: dict[uuid.UUID, int],
 ) -> uuid.UUID:
     def has_all(branch_id: uuid.UUID) -> bool:
         return all(
@@ -104,9 +127,11 @@ def _choose_branch(
             raise ConflictError("La sucursal elegida no tiene unidades suficientes. Prueba con otra sucursal.")
         return branch_id
 
-    # Domicilio: primera sucursal (orden estable) con todas las unidades.
+    # Domicilio: primero la sucursal donde el carrito tenía apartadas más unidades.
     # Pendiente: elegir la más cercana con PostGIS cuando haya geocodificación.
-    candidates = sorted({b for per_branch in stock.values() for b in per_branch})
+    candidates = sorted(
+        {b for per_branch in stock.values() for b in per_branch}, key=lambda b: (-preference.get(b, 0), str(b))
+    )
     for branch_id in candidates:
         if has_all(branch_id):
             return branch_id
@@ -114,29 +139,58 @@ def _choose_branch(
 
 
 def create_order(db: Session, user: User, data: OrderCreateIn) -> OrderOut:
+    """Convierte el carrito reservado en pedido, en UNA transacción:
+
+    1. Bloquea el carrito, sus reservas y el inventario (mismo orden que el carrito).
+    2. Si alguna reserva venció, la libera y rechaza el pedido (el cliente revisa el carrito).
+    3. Devuelve las unidades de la reserva temporal y, sin soltar los bloqueos,
+       las vuelve a apartar para el pedido: nunca cuentan dos veces ni quedan libres.
+    """
     _validate_schedule(data)
+    consent.ensure_current_policy(data.policy_version)
 
     quantities: dict[uuid.UUID, int] = {}
     for item in data.items:
         quantities[item.product_id] = quantities.get(item.product_id, 0) + item.quantity
 
+    cart = get_active_cart(db, user.id, for_update=True)
+    if cart is None or not cart.items:
+        raise ConflictError("Tu carrito está vacío o su reserva venció. Agrega los productos de nuevo.")
+    expired = reservations.purge_cart(db, cart)
+    if expired:
+        db.commit()  # la liberación se conserva aunque el pedido se rechace
+        raise ConflictError(
+            f"La reserva de {', '.join(expired)} venció y lo quitamos del carrito. Revísalo antes de confirmar."
+        )
+    if {i.product_id: i.quantity for i in cart.items} != quantities:
+        raise ConflictError("Tu carrito cambió. Revísalo antes de confirmar el pedido.")
+
     products = get_products(db, list(quantities))
-    missing = set(quantities) - set(products)
-    if missing:
+    if set(quantities) - set(products):
         raise NotFoundError("Uno de los productos ya no está disponible.")
 
-    # Bloqueo de inventario hasta el commit: dos pedidos no pueden vender la misma unidad.
     stock: dict[uuid.UUID, dict[uuid.UUID, Inventory]] = {pid: {} for pid in quantities}
     for inv in repo.lock_inventory(db, list(quantities)):
         stock[inv.product_id][inv.branch_id] = inv
 
-    branch_id = _choose_branch(data, quantities, stock)
+    # Reserva temporal → libre (en memoria, filas bloqueadas): preferencia de sucursal.
+    preference: dict[uuid.UUID, int] = {}
+    for item in cart.items:
+        for reservation in item.reservations:
+            inv = reservation.inventory
+            inv.reserved_quantity -= reservation.quantity
+            inv.available_quantity += reservation.quantity
+            preference[inv.branch_id] = preference.get(inv.branch_id, 0) + reservation.quantity
+        item.reservations.clear()
+
+    branch_id = _choose_branch(data, quantities, stock, preference)
     branch = get_active_branch(db, branch_id)
     if branch is None:
         raise NotFoundError("La sucursal no existe.")
     if data.fulfillment.method == FulfillmentMethod.PICKUP and BranchService.PICKUP not in branch.services:
         raise ServiceError("Esa sucursal no ofrece recogida de pedidos.")
 
+    # Libre → reserva del pedido.
     order_items = []
     for pid, qty in quantities.items():
         inv = stock[pid][branch_id]
@@ -168,11 +222,11 @@ def create_order(db: Session, user: User, data: OrderCreateIn) -> OrderOut:
         items=order_items,
     )
     db.add(order)
+    db.flush()
+    consent.record_consent(db, user.id, ConsentPurpose.ORDER, order_id=order.id)
 
     # El carrito se convierte en pedido: el usuario empieza uno nuevo.
-    cart = get_active_cart(db, user.id, for_update=True)
-    if cart:
-        cart.status = CartStatus.CONVERTED
+    cart.status = CartStatus.CONVERTED
 
     db.commit()
     db.refresh(order)

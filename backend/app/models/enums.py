@@ -35,6 +35,11 @@ class PaymentMethod(StrEnum):
     WALLET = "billetera"
 
 
+class ConsentPurpose(StrEnum):
+    REGISTRATION = "registro"
+    ORDER = "pedido"
+
+
 class BranchService(StrEnum):
     SALE = "venta"
     RENTAL = "alquiler"

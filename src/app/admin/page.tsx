@@ -174,7 +174,7 @@ export default async function AdminDashboardPage() {
           </div>
           <dl className="mt-4 space-y-2 text-sm">
             <div className="flex justify-between"><dt>Disponibles</dt><dd className="tabular font-medium">{d.unitsAvailable}</dd></div>
-            <div className="flex justify-between"><dt>Reservadas por pedidos</dt><dd className="tabular font-medium">{d.unitsReserved}</dd></div>
+            <div className="flex justify-between"><dt>Reservadas (carritos y pedidos)</dt><dd className="tabular font-medium">{d.unitsReserved}</dd></div>
             <div className="flex justify-between border-t border-border pt-2"><dt>Unidades físicas</dt><dd className="tabular font-medium">{d.unitsTotal}</dd></div>
           </dl>
         </section>

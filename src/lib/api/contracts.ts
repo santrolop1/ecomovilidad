@@ -1,8 +1,10 @@
 import type {
   Branch,
   Cart,
+  ConsentRecord,
   ContactMessageInput,
   CreateOrderInput,
+  CustomerOrder,
   FaqGroup,
   HomeContent,
   LoginInput,
@@ -12,6 +14,7 @@ import type {
   ProductCategory,
   ProductFilters,
   ProductListResult,
+  ProfileInput,
   RegisterInput,
   RentalVehicle,
   Service,
@@ -61,8 +64,12 @@ export interface CartApi {
 }
 
 export interface OrdersApi {
-  /** POST /orders (requiere sesión) */
+  /** POST /orders (requiere sesión y carrito reservado) */
   createOrder(input: CreateOrderInput): Promise<Order>;
+  /** GET /orders — pedidos del usuario autenticado */
+  listOrders(): Promise<CustomerOrder[]>;
+  /** GET /orders/:id — null si no existe o es de otro usuario */
+  getOrder(id: string): Promise<CustomerOrder | null>;
 }
 
 export interface ContentApi {
@@ -84,6 +91,16 @@ export interface AuthApi {
   logout(): Promise<void>;
   /** GET /auth/me — null si no hay sesión válida. */
   me(): Promise<User | null>;
+  /** PATCH /auth/me — solo datos personales */
+  updateProfile(input: ProfileInput): Promise<User>;
+  /** POST /auth/password */
+  changePassword(currentPassword: string, newPassword: string): Promise<void>;
+  /** POST /auth/password-reset/request — misma respuesta exista o no la cuenta */
+  requestPasswordReset(email: string): Promise<void>;
+  /** POST /auth/password-reset/confirm */
+  confirmPasswordReset(token: string, newPassword: string): Promise<void>;
+  /** GET /auth/me/consents — evidencia Ley 1581 */
+  listConsents(): Promise<ConsentRecord[]>;
 }
 
 export interface ApiClient {

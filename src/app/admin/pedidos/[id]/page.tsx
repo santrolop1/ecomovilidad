@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AdminPageHeader } from "@/features/admin/components/admin-page-header";
 import { OrderStatusActions } from "@/features/admin/components/order-status-actions";
-import { orderStatusTone, StatusBadge } from "@/features/admin/components/status-badge";
+import { orderStatusTone, StatusBadge } from "@/components/shared/status-badge";
 import { fulfillmentLabels, orderStatusLabels, paymentLabels } from "@/features/admin/lib/labels";
 import { adminApi } from "@/lib/api/admin";
 import { isApiError } from "@/lib/api/errors";

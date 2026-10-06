@@ -18,6 +18,13 @@ class Settings(BaseSettings):
     cookie_secure: bool = False
     session_ttl_hours: int = Field(default=24 * 7, ge=1, le=24 * 30)
     environment: str = "development"
+    # URL pública del frontend (enlaces en correos de recuperación).
+    frontend_url: str = "http://localhost:3000"
+    password_reset_ttl_minutes: int = Field(default=30, ge=5, le=24 * 60)
+    # Versión vigente de la política de tratamiento de datos (Ley 1581).
+    privacy_policy_version: str = "2026-10-06"
+    # Proxies de confianza (CIDR) cuyo X-Forwarded-For se acepta como IP del cliente.
+    trusted_proxies: list[str] = []
 
 
 @lru_cache

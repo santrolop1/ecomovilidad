@@ -6,7 +6,7 @@ import { setProductActive } from "@/features/admin/actions";
 import { AdminPageHeader } from "@/features/admin/components/admin-page-header";
 import { ConfirmAction } from "@/features/admin/components/confirm-action";
 import { ProductForm } from "@/features/admin/components/product-form";
-import { StatusBadge } from "@/features/admin/components/status-badge";
+import { StatusBadge } from "@/components/shared/status-badge";
 import { StockEditor } from "@/features/admin/components/stock-editor";
 import { adminApi } from "@/lib/api/admin";
 import { isApiError } from "@/lib/api/errors";

@@ -40,6 +40,11 @@ export function LoginForm({ next = "/" }: { next?: string }) {
       <FormField id="login-password" label="Contraseña" error={form.fieldErrors.password}>
         {(control) => <PasswordInput {...control} name="password" autoComplete="current-password" maxLength={128} />}
       </FormField>
+      <p className="-mt-2 text-right text-sm">
+        <Link href="/recuperar" className="underline underline-offset-4">
+          ¿Olvidaste tu contraseña?
+        </Link>
+      </p>
       <Button type="submit" size="xl" variant="brand" className="w-full" disabled={form.isPending}>
         {form.isPending ? "Ingresando…" : "Ingresar"}
       </Button>

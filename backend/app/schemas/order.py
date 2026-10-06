@@ -54,11 +54,15 @@ class OrderCreateIn(ApiModel):
     fulfillment: FulfillmentIn
     payment_method: PaymentMethod
     data_consent: Literal[True]
+    # Versión de la política que vio el cliente (Ley 1581). Opcional; si llega debe ser la vigente.
+    policy_version: str | None = Field(default=None, max_length=20)
 
 
 class OrderItemOut(ApiModel):
     product_id: uuid.UUID
+    slug: str
     name: str
+    image_url: str | None = None
     quantity: int
     unit_price: int
     subtotal: int
@@ -70,10 +74,20 @@ class OrderOut(ApiModel):
     subtotal: int
     shipping_cost: int
     total: int
+    item_count: int
     branch_id: uuid.UUID
+    branch_name: str
+    branch_city: str
+    branch_address: str
     fulfillment_method: FulfillmentMethod
+    delivery_address: str | None = None
+    delivery_city: str | None = None
     scheduled_date: date
     time_slot: str
     payment_method: PaymentMethod
+    contact_name: str
+    contact_email: str
+    contact_phone: str
     items: list[OrderItemOut]
     created_at: datetime
+    updated_at: datetime

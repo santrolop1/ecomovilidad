@@ -11,7 +11,7 @@ import { checkoutSchema } from "./lib/schema";
  * incluirá `paymentRedirectUrl` hacia la pasarela.
  */
 export async function createOrder(input: unknown): Promise<ActionResult<Order>> {
-  return runAction(checkoutSchema, input, ({ items, customer, fulfillment, paymentMethod, dataConsent }) =>
-    api.orders.createOrder({ items, customer, fulfillment, paymentMethod, dataConsent }),
+  return runAction(checkoutSchema, input, ({ items, customer, fulfillment, paymentMethod, dataConsent, policyVersion }) =>
+    api.orders.createOrder({ items, customer, fulfillment, paymentMethod, dataConsent, policyVersion }),
   );
 }

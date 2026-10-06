@@ -22,6 +22,21 @@ export interface RegisterInput {
   phone: string;
   password: string;
   dataConsent: true;
+  policyVersion?: string;
+}
+
+export interface ProfileInput {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  documentNumber: string;
+}
+
+export interface ConsentRecord {
+  purpose: "registro" | "pedido";
+  policyVersion: string;
+  orderId?: string;
+  acceptedAt: string;
 }
 
 /**

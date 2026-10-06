@@ -61,7 +61,7 @@ Fuente: `SRS_EcoMovilidad_v3_0` (22/sep/2026). Módulo 8 tomado del Plan de Desa
 | ID | Descripción | Estado | Implementación |
 | --- | --- | --- | --- |
 | RF-6.1 | Catálogo con filtros por categoría, precio, marca y especificaciones | **Implementado** | `GET /products` (filtros, orden, facetas) + `/catalogo` y `/catalogo/[slug]`. Administrable desde `/admin/productos` (crear, editar, precio, especificaciones, destacados, activar). Pruebas en pytest y Vitest. |
-| RF-6.2 | Reserva de 15 minutos al agregar al carrito; vuelve al stock si no se paga | **Pendiente** | Hoy el inventario se aparta al **crear el pedido** (`available` → `reserved`, con bloqueo de filas) y el panel lo libera al cancelar o lo descuenta al completar. No hay reserva al agregar al carrito ni vencimiento automático. |
+| RF-6.2 | Reserva de 15 minutos al agregar al carrito; vuelve al stock si no se paga | **Implementado** | Tabla `cart_reservations` (migración 0003). Agregar al carrito con sesión aparta inventario con `SELECT … FOR UPDATE` durante 15 min (renovado en cada cambio). Las vencidas se liberan en cada solicitud a la API (`SKIP LOCKED`) o con `python -m app.cli release-expired`. Al crear el pedido la reserva pasa al pedido sin doble conteo; con reserva vencida el pedido se rechaza (409) y el checkout se bloquea. Contador en carrito y checkout. 15 pruebas pytest (incluida concurrencia con hilos) y pruebas Vitest. **Límites:** como no hay pagos, "si no se paga" equivale a "si no se crea el pedido"; el carrito de visitantes no reserva. |
 | RF-6.3 | Carrito persistente entre dispositivos para usuarios autenticados | **Implementado** | `carts`/`cart_items` y `GET/POST/PATCH/DELETE /cart…`. Fusión del carrito local al iniciar sesión. Probado en pytest y en navegador con dos sesiones. |
 
 ## Módulo 7 — Solicitudes y reporte de entrega/recogida
@@ -79,19 +79,23 @@ Fuente: `SRS_EcoMovilidad_v3_0` (22/sep/2026). Módulo 8 tomado del Plan de Desa
 | M8-1 | Registro de usuarios | **Implementado** | `POST /auth/register`: argon2id, correo único, contraseña con letras y números, consentimiento obligatorio. |
 | M8-2 | Inicio y cierre de sesión | **Implementado** | `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`. Sesiones en servidor, revocables y con expiración; cookies httpOnly; CSRF. |
 | M8-3 | Rol administrativo y gestión de cuentas | **Implementado** | `users.is_admin` (migración 0002), asignado por CLI (`python -m app.cli make-admin`). Panel `/admin/usuarios`: listar, buscar, ver y desactivar o reactivar (cierra sesiones). Protegido en FastAPI (403 sin rol). |
-| M8-4 | Perfil propio, recuperación de contraseña, roles intermedios (operador, domiciliario) | **Pendiente** | — |
+| M8-4 | Perfil propio | **Implementado** | `PATCH /auth/me` (nombre, apellido, celular, documento; otros campos → 422) y `POST /auth/password` (cierra otras sesiones). Página `/cuenta`. |
+| M8-5 | Recuperación de contraseña | **Parcial** | Real: `POST /auth/password-reset/request` (202 genérico, máx. 3/h) y `/confirm` (cierra todas las sesiones); token SHA-256, 30 min, un uso; páginas `/recuperar` y `/recuperar/nueva`. Pendiente: proveedor de correo; en desarrollo el enlace se escribe en el log de la API. |
+| M8-6 | Límite de intentos de login | **Implementado** | Tabla `login_attempts`: 5 fallos/cuenta y 30/IP en 15 min → 429 uniforme. IP solo de `X-Forwarded-For` de proxies en `TRUSTED_PROXIES`. Límites documentados en DOCUMENTACION.md §14. |
+| M8-7 | Mis pedidos | **Implementado** | `GET /orders`, `GET /orders/{id}` (404 si es ajeno); `/cuenta/pedidos` y `/cuenta/pedidos/[id]`. Nunca muestra "Pago confirmado". |
+| M8-8 | Roles intermedios (operador, domiciliario) | **Pendiente** | — |
 
 ## Requisitos no funcionales
 
 | ID | Descripción | Estado | Implementación |
 | --- | --- | --- | --- |
-| RNF-3.2 | Interfaz adaptable a móviles | **Implementado** | Revisado a 390 px y 1280 px sin desbordamientos. |
+| RNF-3.2 | Interfaz adaptable a móviles | **Implementado** | Revisado a 360, 390, 768, 1024, 1280 y 1440 px sin desbordamientos (incluidas las rutas de cuenta, carrito y checkout). |
 | RNF-3.3 | Disponibilidad 99,9% con réplicas | **Pendiente** | Solo existe el entorno local con Docker Compose. |
 | RNF-3.4 | Carga inicial < 1,8 s; mapa < 3 s | **Pendiente** (medición) | Hay SSG/ISR, Server Components y carga diferida del mapa, pero no se ha medido. |
 | RNF-3.5 | API RESTful escalable | **Implementado** | FastAPI versionada en `/api/v1`. |
 | RNF-3.6 | HTTPS/TLS 1.3 y WSS | **Pendiente** | Local por HTTP. Las cookies son `Secure` en producción. Sin WebSockets. |
 | RNF-3.7 | FAQ y manuales en el portal | **Mock** | `/ayuda` con contenido mock; sin manuales. |
-| LEG-1581 | Tratamiento de datos (Habeas Data) | **Parcial** | El consentimiento es obligatorio y FastAPI lo valida en registro y pedido. Pendiente: guardar la evidencia (fecha y versión de la política) y el texto legal definitivo. |
+| LEG-1581 | Tratamiento de datos (Habeas Data) | **Parcial** | Real: consentimiento obligatorio y **evidencia** en `consent_records` (usuario, fecha, versión de la política, pedido) en registro y en cada pedido; versión desactualizada → 409; historial en `/cuenta`. Pendiente: texto legal definitivo revisado por un abogado. |
 | LEG-1480 | Estatuto del Consumidor y retracto | **Pendiente** | Solo hay texto informativo. |
 | LEG-AEROCIVIL | Normativa RAC para drones | **Pendiente** | Solo hay aviso informativo en las fichas de drones. |
 | PCI-DSS | Datos de tarjeta | **Preparado** | El frontend y el backend no reciben datos de tarjeta; el pago irá en la pasarela. |

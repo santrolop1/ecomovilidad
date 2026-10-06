@@ -4,7 +4,7 @@ import { AdminPageHeader } from "@/features/admin/components/admin-page-header";
 import { BranchForm } from "@/features/admin/components/branch-form";
 import { ConfirmAction } from "@/features/admin/components/confirm-action";
 import { type Column, DataTable } from "@/features/admin/components/data-table";
-import { StatusBadge } from "@/features/admin/components/status-badge";
+import { StatusBadge } from "@/components/shared/status-badge";
 import { adminApi } from "@/lib/api/admin";
 import type { InventoryRow } from "@/lib/api/admin-schemas";
 import { isApiError } from "@/lib/api/errors";

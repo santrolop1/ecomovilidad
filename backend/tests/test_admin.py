@@ -9,7 +9,7 @@ from app.models import Inventory, User
 from app.models.enums import SERVICE_AREA_CITIES
 from app.schemas.admin import ServiceAreaCity
 
-from .conftest import PASSWORD, csrf, register
+from .conftest import PASSWORD, add_to_cart, csrf, register
 
 A = "/api/v1/admin"
 
@@ -221,6 +221,7 @@ def place_order(client, slug="patinova-city-80", quantity=2):
         "paymentMethod": "pse",
         "dataConsent": True,
     }
+    add_to_cart(client, product["id"], quantity)
     order = client.post("/api/v1/orders", json=body, headers=csrf(client)).json()
     return order, uuid.UUID(product["id"]), uuid.UUID(branch_id)
 

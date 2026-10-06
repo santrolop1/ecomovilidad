@@ -1,5 +1,5 @@
 import "server-only";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 
 /** Mismos nombres que emite FastAPI (backend/app/core/security.py). */
 export const SESSION_COOKIE = "em_session";
@@ -47,4 +47,11 @@ export async function clearSessionCookies(): Promise<void> {
 
 export async function hasSessionCookie(): Promise<boolean> {
   return (await cookies()).has(SESSION_COOKIE);
+}
+
+/** IP del navegador según la cabecera que recibió Next.js (si hay proxy delante). */
+export async function forwardedFor(): Promise<Record<string, string>> {
+  const incoming = await headers();
+  const ip = incoming.get("x-forwarded-for") ?? incoming.get("x-real-ip");
+  return ip ? { "X-Forwarded-For": ip } : {};
 }

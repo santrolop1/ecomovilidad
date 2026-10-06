@@ -3,7 +3,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { AdminPageHeader } from "@/features/admin/components/admin-page-header";
 import { type Column, DataTable } from "@/features/admin/components/data-table";
 import { Pagination } from "@/features/admin/components/pagination";
-import { rentalStatusTone, StatusBadge } from "@/features/admin/components/status-badge";
+import { rentalStatusTone, StatusBadge } from "@/components/shared/status-badge";
 import { rentalStatusLabels } from "@/features/admin/lib/labels";
 import { oneOf, pageParam, param } from "@/features/admin/lib/params";
 import { adminApi } from "@/lib/api/admin";

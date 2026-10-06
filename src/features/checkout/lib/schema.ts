@@ -50,6 +50,7 @@ export const checkoutSchema = z
     }),
     paymentMethod: z.enum(["pse", "tarjeta", "billetera"], { error: "Elige un método de pago." }),
     dataConsent: consentField,
+    policyVersion: z.string().max(20).optional(),
   })
   .superRefine((values, ctx) => {
     const { method, address, city, branchId } = values.fulfillment;

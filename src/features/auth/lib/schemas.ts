@@ -35,3 +35,38 @@ export const registerSchema = z
 export function safeNextPath(value: unknown): string {
   return typeof value === "string" && value.startsWith("/") && !value.startsWith("//") ? value : "/";
 }
+
+const strongPassword = z
+  .string()
+  .min(PASSWORD_MIN_LENGTH, `Usa al menos ${PASSWORD_MIN_LENGTH} caracteres.`)
+  .max(128, "Máximo 128 caracteres.")
+  .regex(/[A-Za-zÁÉÍÓÚáéíóúÑñ]/, "Incluye al menos una letra.")
+  .regex(/\d/, "Incluye al menos un número.");
+
+export const profileSchema = z.object({
+  firstName: nameField,
+  lastName: nameField,
+  phone: phoneField,
+  documentNumber: z
+    .string()
+    .trim()
+    .regex(/^(?:[A-Za-z0-9-]{5,20})?$/, "Número de documento no válido."),
+});
+
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Escribe tu contraseña actual.").max(128),
+    newPassword: strongPassword,
+    confirmPassword: z.string(),
+  })
+  .refine((v) => v.newPassword === v.confirmPassword, { message: "Las contraseñas no coinciden.", path: ["confirmPassword"] });
+
+export const resetRequestSchema = z.object({ email: emailField });
+
+export const resetConfirmSchema = z
+  .object({
+    token: z.string().min(20, "El enlace no es válido.").max(200),
+    newPassword: strongPassword,
+    confirmPassword: z.string(),
+  })
+  .refine((v) => v.newPassword === v.confirmPassword, { message: "Las contraseñas no coinciden.", path: ["confirmPassword"] });

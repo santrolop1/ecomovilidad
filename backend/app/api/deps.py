@@ -10,6 +10,17 @@ from app.services import auth as auth_service
 
 DbSession = Annotated[Session, Depends(get_db)]
 
+
+def release_expired_reservations(db: DbSession) -> None:
+    """RF 6.2: antes de atender cualquier solicitud se liberan las reservas de
+    carrito vencidas. Así ninguna reserva vencida bloquea inventario al
+    consultar disponibilidad, modificar el carrito o crear un pedido."""
+    from app.services.reservations import release_expired
+
+    release_expired(db)
+    db.commit()
+
+
 SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 
 

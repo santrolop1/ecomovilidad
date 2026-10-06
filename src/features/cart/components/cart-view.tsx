@@ -10,7 +10,7 @@ import { CartLineItem } from "./cart-line-item";
 import { OrderSummary } from "./order-summary";
 
 export function CartView() {
-  const { cart, isReady, itemCount, subtotal, total, setQuantity, removeItem, clear } = useCart();
+  const { cart, isReady, isRemote, itemCount, subtotal, total, setQuantity, removeItem, clear, refresh } = useCart();
 
   if (!isReady) {
     return (
@@ -58,9 +58,15 @@ export function CartView() {
               item={item}
               onQuantityChange={(quantity) => setQuantity(item.productId, quantity)}
               onRemove={() => removeItem(item.productId)}
+              onReservationExpire={refresh}
             />
           ))}
         </ul>
+        <p className="mt-4 text-sm text-muted-foreground">
+          {isRemote
+            ? `Apartamos las unidades de cada producto durante ${cart.reservationMinutes ?? 15} minutos desde el último cambio. Si la reserva vence, el producto sale del carrito y vuelve a estar disponible para otros clientes.`
+            : "Las unidades se apartan durante 15 minutos cuando inicias sesión. Sin sesión, el carrito no reserva inventario."}
+        </p>
       </section>
       <div className="lg:sticky lg:top-24">
         <OrderSummary itemCount={itemCount} subtotal={subtotal} total={total}>

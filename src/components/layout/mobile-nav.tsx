@@ -55,6 +55,16 @@ export function MobileNav({ items }: { items: readonly NavItem[] }) {
           {user ? (
             <div className="mt-8 grid gap-3">
               <p className="text-sm text-muted-foreground">Sesión de {user.firstName}</p>
+              <Button asChild variant="outline" size="xl">
+                <Link href="/cuenta/pedidos" onClick={() => setOpen(false)}>
+                  Mis pedidos
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="xl">
+                <Link href="/cuenta" onClick={() => setOpen(false)}>
+                  Mi cuenta
+                </Link>
+              </Button>
               {user.isAdmin && (
                 <Button asChild variant="brand" size="xl">
                   <Link href="/admin" onClick={() => setOpen(false)}>

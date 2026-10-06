@@ -1,6 +1,6 @@
 import type { z } from "zod";
 import { ApiError, type ApiErrorCode } from "./errors";
-import { relaySessionCookies, sessionHeaders } from "./session-cookies";
+import { forwardedFor, relaySessionCookies, sessionHeaders } from "./session-cookies";
 
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
@@ -28,6 +28,7 @@ function codeForStatus(status: number): ApiErrorCode {
   if (status === 401 || status === 403) return "UNAUTHORIZED";
   if (status === 404) return "NOT_FOUND";
   if (status === 409) return "OUT_OF_STOCK";
+  if (status === 429) return "RATE_LIMITED";
   if (status === 422 || status === 400) return "VALIDATION_ERROR";
   if (status >= 500) return "SERVICE_UNAVAILABLE";
   return "UNKNOWN";
@@ -67,6 +68,8 @@ export function createHttpClient(baseUrl: string, timeoutMs = DEFAULT_TIMEOUT_MS
         if (!headers) throw new ApiError("UNAUTHORIZED", "Inicia sesión para continuar.", 401);
         authHeaders = headers;
       }
+      // Login/registro: se reenvía la IP del cliente para el límite de intentos por IP.
+      if (options.relayCookies) authHeaders = { ...authHeaders, ...(await forwardedFor()) };
 
       let response: Response;
       try {

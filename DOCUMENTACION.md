@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | **Producto** | Portal web, tienda en línea y panel de operación |
-| **Versión** | 0.3.0 (fase 3: panel administrativo) |
+| **Versión** | 0.4.0 (fase 4: experiencia del cliente) |
 | **Fecha** | 6 de octubre de 2026 |
 | **Estado** | En desarrollo. Funciona localmente sobre datos de **demostración**. No está desplegado en producción. |
 | **Repositorio** | `ecomovilidad/` (Next.js + FastAPI + PostgreSQL/PostGIS) |
@@ -31,14 +31,14 @@ Unir en una sola plataforma los dos negocios que define el SRS:
 - **Venta** de vehículos nuevos con inventario real por sucursal.
 - **Servicios** sobre una flota propia: alquiler, domicilios y mantenimiento.
 
-Esta versión cumple el objetivo de la fase: **una tienda real funcionando sobre Next.js, FastAPI y PostgreSQL/PostGIS, con un panel para operarla**. Pagos, domicilios con seguimiento, GPS y mantenimiento siguen pendientes (ver §5 y §21).
+La versión 0.4.0 cierra la experiencia de compra del cliente **hasta el pedido**: reserva de inventario de 15 minutos al agregar al carrito, "Mis pedidos", perfil, recuperación de contraseña, límite de intentos de login y evidencia del consentimiento. **El pedido se registra pero no se cobra:** pagos, domicilios con seguimiento, GPS y mantenimiento siguen pendientes (ver §5 y §21).
 
 ## 3. Usuarios
 
 | Usuario | Qué puede hacer hoy |
 | --- | --- |
 | Visitante | Navegar el catálogo, las sucursales y la oferta de alquiler; armar un carrito local. |
-| Cliente con cuenta | Registrarse, iniciar sesión, mantener un carrito persistente entre dispositivos y crear pedidos. |
+| Cliente con cuenta | Registrarse, iniciar sesión, recuperar su contraseña, editar su perfil, reservar productos en el carrito durante 15 minutos, crear pedidos y consultarlos en "Mis pedidos". |
 | Administrador | Usar el panel `/admin`. El rol se asigna solo desde el servidor. |
 | Domiciliario, operador de punto | Definidos en el SRS. **Sin implementar.** |
 
@@ -73,7 +73,13 @@ Funciona de punta a punta con FastAPI y PostgreSQL y tiene pruebas automáticas.
 - Registro, inicio y cierre de sesión con sesiones de servidor, cookies httpOnly y protección CSRF.
 - Carrito persistente para usuarios con sesión (el mismo en cualquier dispositivo).
 - Carrito local para visitantes y fusión con la cuenta al iniciar sesión.
-- Pedidos con reserva de inventario transaccional en una sucursal.
+- **Reserva temporal de inventario de 15 minutos (RF 6.2)** al agregar al carrito con sesión, con vencimiento y liberación automática, contador en el carrito y en el checkout, y bloqueo del checkout si la reserva venció (ver §12).
+- Pedidos con reserva de inventario transaccional en una sucursal; la reserva del carrito se convierte en la del pedido sin contar dos veces.
+- **Mis pedidos** (`/cuenta/pedidos` y `/cuenta/pedidos/[id]`): solo los pedidos propios (404 para pedidos ajenos).
+- **Perfil** (`/cuenta`): editar nombre, apellido, celular y documento; cambiar la contraseña (cierra las demás sesiones).
+- **Recuperación de contraseña** con token de un solo uso, guardado como hash y con vencimiento de 30 minutos. Al cambiarla se cierran todas las sesiones.
+- **Límite de intentos de login** sin Redis: 5 fallos por cuenta y 30 por IP en 15 minutos (ver §14).
+- **Evidencia del consentimiento (Ley 1581):** usuario, fecha y versión de la política, en el registro y en cada pedido.
 - Ciclo de vida del pedido desde el panel: confirmar, completar (descuenta inventario) y cancelar (libera inventario).
 - Panel de operación completo (ver §15), protegido por un rol en la base de datos.
 - Rol administrativo `users.is_admin`, asignado por CLI o por el seed de desarrollo.
@@ -85,8 +91,10 @@ Funciona de punta a punta con FastAPI y PostgreSQL y tiene pruebas automáticas.
 - **Alquileres.** Existen la tabla `rentals`, su consulta por usuario y el listado en el panel. **No hay forma de crear alquileres** desde la tienda ni el panel. La oferta de `/alquiler` (tarifas y vehículos) es mock.
 - **Franjas horarias (RF 7.1).** El checkout permite elegir fecha y franja, y FastAPI las valida y guarda. La lista de franjas y su "sin cupo" son mock; no hay capacidad real por franja.
 - **Mapa de sucursales (RF 1.2).** Las coordenadas son reales en PostGIS y la disponibilidad se refresca cada 60 s. El mapa es esquemático; el adaptador de Google Maps existe pero **no se ha probado con una API key real**.
-- **Ley 1581.** El consentimiento es obligatorio y se valida en registro y pedido, pero **no se guarda** como evidencia.
-- **Autenticación.** Faltan recuperación de contraseña, edición de perfil y límite de intentos de login.
+- **Ley 1581.** La evidencia del consentimiento se guarda (§14), pero el **texto legal** de la política sigue pendiente de revisión jurídica.
+- **Recuperación de contraseña.** El flujo es real, pero **no se envían correos**: no hay proveedor de correo. En desarrollo el enlace se escribe en el log de la API (`docker compose logs api`); en otros entornos no se registra el token y el correo no sale.
+- **Vencimiento de reservas.** Es perezoso: se libera en cada solicitud a la API (o con el comando opcional `release-expired` en un cron). Sin tráfico, las unidades quedan apartadas hasta la siguiente solicitud, aunque nadie puede comprarlas con una reserva vencida.
+- **Pedidos del cliente.** Se consultan, pero no se pueden cancelar desde la tienda ni pagar; no hay historial de estados.
 
 ### Mock
 
@@ -108,7 +116,7 @@ No existe.
 - Validación de entrega con QR y firma digital.
 - Mantenimiento preventivo real: umbrales, bloqueo automático y bitácora.
 - CMS administrable y formulario de contacto conectado.
-- Reserva temporal de inventario de 15 minutos al agregar al carrito (RF 6.2).
+- Proveedor real de correo (envío del enlace de recuperación).
 - Carga de imágenes desde el panel.
 - Historial de cambios de estado de pedidos.
 - Despliegue en AWS y HTTPS/TLS 1.3.
@@ -131,7 +139,7 @@ PostgreSQL 16 + PostGIS 3.6
 
 - El navegador **nunca** llama directamente a FastAPI: todas las llamadas salen del servidor de Next.js.
 - Desarrollo local con **Docker Compose**: base de datos y API. En macOS el runtime es **Colima**.
-- Sin Redis, Kafka, Celery, Kubernetes ni servicios de nube en esta fase.
+- Sin Redis, Kafka, Celery, Kubernetes ni servicios de nube en esta fase. Las reservas vencidas y los límites de login se resuelven en PostgreSQL.
 
 ## 7. Frontend
 
@@ -140,15 +148,15 @@ PostgreSQL 16 + PostGIS 3.6
 **Estructura (`src/`):**
 
 ```
-app/(sitio)/   tienda pública (header + footer)
+app/(sitio)/   tienda pública (header + footer), incluida la cuenta del cliente
 app/admin/     panel de operación (shell propio)
-features/      catalog, cart, checkout, auth, branches, rentals, admin, contact, content, home
+features/      catalog, cart, checkout, auth, account, branches, rentals, admin, contact, content, home
 components/    ui (shadcn), layout, shared
 lib/api/       contratos, cliente HTTP, implementación mock y real, API admin
 types/ mocks/ config/ hooks/
 ```
 
-**Rutas.** 16 rutas públicas y 14 del panel.
+**Rutas.** 21 rutas públicas y 14 del panel.
 
 | Pública | Datos con `API_MODE=real` |
 | --- | --- |
@@ -158,6 +166,9 @@ types/ mocks/ config/ hooks/
 | `/carrito` | Real con sesión; local sin sesión |
 | `/checkout` | Real; exige cuenta |
 | `/login`, `/registro` | Real |
+| `/recuperar`, `/recuperar/nueva` | Real (solicitar enlace y elegir contraseña nueva) |
+| `/cuenta` | Real; exige sesión: perfil, contraseña e historial de consentimientos |
+| `/cuenta/pedidos`, `/cuenta/pedidos/[id]` | Real; exige sesión; solo pedidos propios |
 | `/alquiler` | Oferta mock; sucursales reales |
 | `/servicios`, `/nosotros`, `/ayuda` | Contenido mock |
 | `/contacto` | Sin backend: responde "no disponible" |
@@ -177,11 +188,13 @@ Las secciones sin backend (CMS, oferta de alquiler, franjas) siguen usando el mo
 
 **Carrito.**
 - Visitantes: `localStorage`, validado con Zod.
-- Usuarios con sesión: carrito de FastAPI, con actualizaciones optimistas.
+- Usuarios con sesión: carrito de FastAPI, con actualizaciones optimistas y contador de la reserva (§12).
 
 **Imágenes.**
 - 14 fotografías reales en `public/images/products/` (WebP 1200×900, 2,1 MB en total), servidas con `next/image`, `sizes` por breakpoint y calidad 70.
 - El producto sin foto adecuada (Velox Carrera 110) muestra "Imagen pendiente".
+
+- "Mis pedidos" reutiliza las fotos del catálogo.
 
 **Responsive.** Probado a 360, 390, 768, 1024, 1280 y 1440 px. En el panel, las tablas se convierten en tarjetas en móvil y las columnas secundarias solo aparecen en pantallas anchas.
 
@@ -197,21 +210,25 @@ backend/app/
   models/          tablas y enums
   schemas/         entrada/salida Pydantic (JSON en camelCase)
   repositories/    consultas
-  services/        reglas de negocio (catálogo, carrito, pedidos, auth, admin/)
-  api/deps.py      sesión, CSRF y require_admin
+  core/email.py    adaptador de correo (desarrollo: log)
+  services/        reglas de negocio (catálogo, carrito, reservas, pedidos, auth,
+                   login_guard, consent, admin/)
+  api/deps.py      sesión, CSRF, require_admin y liberación de reservas vencidas
+  api/client_ip.py IP del cliente (X-Forwarded-For solo de proxies de confianza)
   api/routes/      endpoints /api/v1
-  cli.py           make-admin / revoke-admin
-backend/alembic/   migraciones 0001 (esquema) y 0002 (rol admin, imagen opcional)
+  cli.py           make-admin / revoke-admin / release-expired
+backend/alembic/   migraciones 0001 (esquema), 0002 (rol admin, imagen opcional)
+                   y 0003 (reservas y registros de seguridad)
 backend/tests/     pytest contra PostGIS real
 ```
 
 **Validaciones.** Pydantic valida toda entrada: longitudes, formatos, enums y coordenadas del área metropolitana. La base de datos repite las reglas críticas con restricciones `CHECK`, `UNIQUE` y claves foráneas.
 
 **Errores.**
-- Los errores de negocio responden `{"detail": "mensaje"}` con su código: 400, 401, 403, 404 o 409.
+- Los errores de negocio responden `{"detail": "mensaje"}` con su código: 400, 401, 403, 404, 409 o 429.
 - Las violaciones de unicidad (SKU, slug) se traducen a 409 con un mensaje legible.
 
-**Pruebas.** 81 pruebas pytest contra PostgreSQL + PostGIS real (ver §19).
+**Pruebas.** 121 pruebas pytest contra PostgreSQL + PostGIS real (ver §19).
 
 ## 9. Base de datos
 
@@ -227,20 +244,26 @@ PostgreSQL 16 + PostGIS. Claves primarias UUID (`gen_random_uuid()`) y marcas de
 | `inventory` | product_id, branch_id, disponible, reservado, total | único (producto, sucursal); cantidades ≥ 0; disponible + reservado ≤ total |
 | `carts` | user_id, status (active / converted / abandoned) | un solo carrito activo por usuario (índice único parcial) |
 | `cart_items` | cart_id, product_id, cantidad, precio unitario | único (carrito, producto); cantidad 1–10 |
+| `cart_reservations` | cart_item_id, inventory_id, cantidad, expires_at | → cart_items (CASCADE), → inventory (RESTRICT); cantidad > 0; índice por `expires_at`. La suma de reservas de una línea es su cantidad |
 | `orders` | user_id, estado, subtotal, envío, total, branch_id, datos de entrega, método de pago, contacto y documento | total = subtotal + envío; domicilio dentro del área; estados válidos |
 | `order_items` | order_id, product_id, cantidad, precio unitario, subtotal | subtotal = cantidad × precio |
 | `rentals` | user_id, product_id, branch_id, inicio, fin, estado, precio | fin > inicio; estados válidos |
+| `password_reset_tokens` | user_id, token_hash (SHA-256), expires_at, used_at | → users (CASCADE); hash único |
+| `login_attempts` | email_hash (SHA-256 del correo), ip_address, succeeded, created_at | índices por (email_hash, fecha) e (IP, fecha); se purgan a las 24 h |
+| `consent_records` | user_id, purpose (`registro` / `pedido`), policy_version, order_id, accepted_at | → users (CASCADE), → orders; un consentimiento de pedido exige `order_id` |
 
 **Relaciones principales:**
 - Un producto pertenece a una categoría y tiene una fila de inventario por sucursal.
-- Un usuario tiene sesiones, un carrito activo, pedidos y alquileres.
+- Un usuario tiene sesiones, un carrito activo, pedidos, alquileres, tokens de recuperación y consentimientos.
+- Una línea de carrito tiene una o varias reservas, cada una sobre una fila de inventario (puede repartirse entre sucursales).
 - Un pedido se despacha desde una sucursal y sus líneas apuntan a productos.
 
 **Migraciones:**
 - `0001`: esquema inicial y extensión PostGIS.
 - `0002`: `users.is_admin` y `products.image_url` opcional.
+- `0003`: `cart_reservations`, `password_reset_tokens`, `login_attempts` y `consent_records`. Las líneas de carrito anteriores, sin reserva, se retiran en la primera limpieza.
 
-Ambas son reversibles (probado `upgrade → downgrade → upgrade`) y `alembic check` no detecta diferencias con los modelos.
+Las tres son reversibles (probado `upgrade → downgrade → upgrade`) y `alembic check` no detecta diferencias con los modelos.
 
 ## 10. PostGIS
 
@@ -257,18 +280,21 @@ Cada fila (producto, sucursal) guarda tres cantidades:
 | Cantidad | Significado |
 | --- | --- |
 | `total_quantity` | unidades físicas |
-| `reserved_quantity` | apartadas por pedidos pendientes o confirmados |
+| `reserved_quantity` | apartadas por carritos (reserva de 15 min) y por pedidos pendientes o confirmados |
 | `available_quantity` | vendibles ahora |
 
 **Restricciones:** ninguna cantidad puede ser negativa y `disponible + reservado ≤ total`.
 
-**Transacciones.** Al crear, cancelar o completar un pedido, FastAPI bloquea las filas de inventario con `SELECT … FOR UPDATE`, en orden estable. Dos pedidos simultáneos no pueden vender la misma unidad.
+**Transacciones.** Al reservar en el carrito, al crear, cancelar o completar un pedido y al liberar reservas vencidas, FastAPI bloquea las filas de inventario con `SELECT … FOR UPDATE`, siempre en el mismo orden (carrito → reservas → inventario por producto y sucursal) para evitar interbloqueos. Dos clientes simultáneos no pueden apartar la misma unidad (probado con hilos concurrentes).
 
 **Flujo:**
 
 | Acción | Efecto en inventario |
 | --- | --- |
-| Crear pedido | disponible → reservado |
+| Agregar al carrito (con sesión) | disponible → reservado, durante 15 min |
+| Cambiar cantidad / quitar del carrito | se reserva o se libera la diferencia |
+| Reserva vencida | reservado → disponible; la línea sale del carrito |
+| Crear pedido | la reserva del carrito pasa al pedido (sin contar dos veces) |
 | Confirmar pedido | sin cambio |
 | Completar pedido | reservado − n y total − n (unidades vendidas) |
 | Cancelar pedido | reservado − n y disponible + n |
@@ -278,12 +304,30 @@ Cada fila (producto, sucursal) guarda tres cantidades:
 
 **Alertas.** El panel avisa de stock bajo con 5 unidades disponibles o menos, sumando sucursales.
 
-## 12. Carrito
+## 12. Carrito y reserva de 15 minutos (RF 6.2)
 
 - **Persistente:** usuarios con sesión, tablas `carts` y `cart_items`. Es el mismo en cualquier dispositivo. No supera el inventario disponible ni 10 unidades por producto. Al leerlo se actualizan los precios y se quitan los productos desactivados.
-- **Local:** visitantes, `localStorage` versionado y validado.
-- **Fusión:** al iniciar sesión, los productos del carrito local que no están en la cuenta se suben al carrito remoto; los agotados se omiten.
+- **Local:** visitantes, `localStorage` versionado y validado. **No reserva inventario**: la reserva empieza cuando el visitante inicia sesión y el carrito se fusiona.
+- **Fusión:** al iniciar sesión, los productos del carrito local que no están en la cuenta se suben al carrito remoto (y se reservan); los agotados se omiten.
 - **Al crear un pedido** el carrito pasa a `converted` y el usuario empieza uno nuevo.
+
+**Reserva.** FastAPI es la única autoridad:
+
+1. Agregar o aumentar una línea aparta las unidades en `inventory` (disponible → reservado) y crea filas en `cart_reservations` con `expires_at = ahora + 15 min`. Si no hay unidades suficientes responde 409 ("Solo quedan N unidades disponibles de …").
+2. Se prefiere una sola sucursal; si ninguna tiene todas las unidades, la reserva se reparte entre sucursales.
+3. Cada cambio en una línea renueva su vencimiento a 15 minutos. Reducir o quitar una línea libera las unidades sobrantes.
+4. **Vencimiento sin Celery ni Redis.** Una dependencia del router `/api/v1` libera las reservas vencidas en cada solicitud (`FOR UPDATE SKIP LOCKED`, para que varias solicitudes simultáneas no liberen dos veces la misma reserva) y retira esas líneas del carrito. Opcionalmente, un cron puede ejecutar `uv run python -m app.cli release-expired`.
+5. **Conversión en pedido.** `POST /orders` bloquea el carrito, rechaza con 409 si alguna reserva venció ("La reserva de X venció…") o si el carrito no coincide con lo enviado ("Tu carrito cambió…"), libera las reservas del carrito y reserva para el pedido **en la misma transacción**. El inventario nunca se cuenta dos veces.
+
+**Interfaz.**
+- Cada línea del carrito y el checkout muestran "Reservado durante 14:32". El contador se corrige con la hora del servidor (`serverTime`), para no depender del reloj del equipo.
+- Al vencer, la interfaz vuelve a consultar el carrito, retira la línea y avisa ("La reserva de X venció…").
+- El checkout se bloquea si la reserva venció y enlaza al carrito para volver a agregar el producto.
+
+**Limitaciones:**
+- El checkout no muestra en qué sucursal quedó la reserva. Para recogida, si se elige otra sucursal, el pedido se rechaza con un mensaje claro ("La sucursal elegida no tiene unidades suficientes").
+- Una reserva repartida entre sucursales no garantiza el pedido: el pedido se despacha desde una sola sucursal.
+- Quien vuelve al sitio después de que su reserva venció ve el carrito ya sin la línea, pero no recibe aviso.
 
 ## 13. Pedidos
 
@@ -291,9 +335,14 @@ Cada fila (producto, sucursal) guarda tres cantidades:
 2. `POST /api/v1/orders`:
    - valida fecha (no anterior a hoy), franja y municipio;
    - calcula precios con el catálogo (ignora totales enviados por el cliente);
-   - elige la sucursal: la de recogida, o la primera con stock completo para domicilio;
-   - reserva el inventario y crea el pedido en estado `pending`.
+   - exige que el carrito coincida con el pedido y que sus reservas estén vigentes;
+   - elige la sucursal: la de recogida, o para domicilio la que ya tiene la reserva (o la primera con stock completo);
+   - convierte la reserva del carrito en la del pedido, guarda el consentimiento y crea el pedido en estado `pending`.
 3. En el panel, un administrador lo **confirma**, lo **completa** o lo **cancela**. Solo se permiten estas transiciones: `pending → confirmed | cancelled` y `confirmed → completed | cancelled`.
+
+4. El cliente lo consulta en **Mis pedidos**: lista con foto, número, fecha, estado y total; detalle con productos, entrega (sucursal o dirección), fecha, franja, contacto y pago. Un pedido ajeno responde 404 (en la web y en el API) y sin sesión se redirige a `/login?next=…`.
+
+**Estados que ve el cliente:** "Pendiente de confirmación", "Confirmado", "Completado" y "Cancelado". La interfaz **nunca** muestra "Pago confirmado": el pago aparece como "Sin procesar: el pago en línea aún no está disponible."
 
 **No hay pagos:** el método de pago se guarda, pero no se cobra. El costo de envío es 0 porque el SRS no define tarifas. No se guarda historial de cambios de estado.
 
@@ -304,6 +353,26 @@ Cada fila (producto, sucursal) guarda tres cantidades:
   - contraseña de 10 caracteres o más, con letras y números;
   - autorización de datos obligatoria.
 - **Login** (`POST /auth/login`): verificación con **argon2id**. Si el correo no existe se verifica contra un hash ficticio y el mensaje es el mismo, para no revelar qué correos existen.
+- **Límite de intentos** (`login_attempts`, en PostgreSQL, sin Redis):
+  - 5 fallos por cuenta en 15 minutos;
+  - 30 fallos por IP en 15 minutos;
+  - superado el límite responde **429** con el mismo mensaje exista o no la cuenta ("Demasiados intentos fallidos. Espera 15 minutos e inténtalo de nuevo."); un login correcto borra los fallos de esa cuenta;
+  - el correo se guarda como hash SHA-256 y los registros se purgan a las 24 h;
+  - la IP solo se toma de `X-Forwarded-For` cuando la conexión viene de un proxy listado en `TRUSTED_PROXIES` (el servidor de Next.js); si un proxy de confianza no envía la cabecera, **no se aplica el límite por IP**, para no bloquear a todos los clientes que comparten el servidor de Next.js;
+  - **limitación:** un atacante con muchas IP solo queda frenado por el límite por cuenta, y un tercero puede bloquear temporalmente (15 min) una cuenta ajena fallando 5 veces.
+- **Perfil** (`PATCH /auth/me`): nombre, apellido, celular y documento. El esquema rechaza cualquier otro campo (422), así que no se puede cambiar `is_admin`, el correo ni la contraseña por esta vía.
+- **Cambio de contraseña** (`POST /auth/password`): exige la contraseña actual (con el mismo límite de intentos) y cierra las demás sesiones.
+- **Recuperación de contraseña:**
+  - `POST /auth/password-reset/request` responde siempre 202 con un mensaje genérico, exista o no el correo;
+  - token aleatorio guardado **solo como hash SHA-256**, válido 30 minutos (`PASSWORD_RESET_TTL_MINUTES`) y de un solo uso; pedir uno nuevo invalida los anteriores; máximo 3 solicitudes por hora por cuenta;
+  - `POST /auth/password-reset/confirm` cambia la contraseña y **cierra todas las sesiones**;
+  - **no se envían correos reales.** El adaptador de desarrollo escribe el enlace en el log de la API (`docker compose logs api`). Fuera de `ENVIRONMENT=development` no se registra el token y el correo no se envía hasta configurar un proveedor;
+  - la página `/recuperar/nueva` no envía el token en la cabecera `Referer`.
+- **Consentimiento (Ley 1581):**
+  - el registro y cada pedido guardan en `consent_records` el usuario, la fecha y la versión de la política aceptada (`registro` o `pedido`, con el número de pedido);
+  - versión vigente `2026-10-06` (`PRIVACY_POLICY_VERSION` en el backend y `src/config/legal.ts` en el frontend); si el cliente envía otra versión, FastAPI responde 409 y pide aceptar la vigente;
+  - el cliente ve su historial en `/cuenta` (`GET /auth/me/consents`);
+  - **pendiente:** el texto legal definitivo de la política, que debe revisar un abogado.
 - **Sesiones:**
   - token aleatorio de 256 bits, guardado en `user_sessions` **solo como hash SHA-256**;
   - expira a los 7 días (`SESSION_TTL_HOURS`);
@@ -392,11 +461,15 @@ Base: `http://localhost:8000/api/v1`. Documentación interactiva en `http://loca
 | --- | --- | --- |
 | POST | `/auth/register`, `/auth/login` | — |
 | POST | `/auth/logout` | ✔ |
-| GET | `/auth/me` | ✔ |
+| GET, PATCH | `/auth/me` (PATCH: nombre, apellido, celular, documento) | ✔ |
+| GET | `/auth/me/consents` | ✔ |
+| POST | `/auth/password` (cambio con la contraseña actual) | ✔ |
+| POST | `/auth/password-reset/request` (202 genérico) | — |
+| POST | `/auth/password-reset/confirm` (204) | — |
 | GET | `/cart` | ✔ |
 | POST | `/cart/items` | ✔ |
 | PATCH, DELETE | `/cart/items/{id}` | ✔ |
-| POST, GET | `/orders` | ✔ |
+| POST, GET | `/orders` (POST exige reservas vigentes y `policyVersion`) | ✔ |
 | GET | `/orders/{id}` | ✔ (404 si es de otro usuario) |
 | GET | `/rentals` | ✔ (alquileres propios) |
 
@@ -418,6 +491,8 @@ Base: `http://localhost:8000/api/v1`. Documentación interactiva en `http://loca
 | GET | `/admin/users` (`q`, `status`, `page`) |
 | GET, PATCH | `/admin/users/{id}` (cuerpo `{ "isActive": bool }`) |
 | GET | `/admin/rentals` (`status`, `page`) |
+
+Toda solicitud a `/api/v1` libera antes las reservas vencidas. Las respuestas de `/orders` omiten los campos vacíos (p. ej. sin dirección en recogida).
 
 Las listas paginadas devuelven `{ items, total, page, pageSize }` con 20 elementos por página.
 
@@ -442,6 +517,11 @@ Las listas paginadas devuelven `{ items, total, page, pageSize }` con 20 element
 | `CORS_ORIGINS` | No | Orígenes permitidos (JSON). |
 | `COOKIE_SECURE` | **`true` en producción** | Cookies solo por HTTPS. |
 | `SESSION_TTL_HOURS` | No (168) | Duración de la sesión. |
+| `ENVIRONMENT` | No (`development`) | Fuera de `development` no se escriben enlaces de recuperación en el log. |
+| `FRONTEND_URL` | En producción | Base de los enlaces de recuperación. |
+| `PASSWORD_RESET_TTL_MINUTES` | No (30) | Vigencia del enlace de recuperación. |
+| `PRIVACY_POLICY_VERSION` | No (`2026-10-06`) | Versión vigente de la política; debe coincidir con `src/config/legal.ts`. |
+| `TRUSTED_PROXIES` | Recomendada | CIDR (JSON) de los proxies cuyo `X-Forwarded-For` se acepta. En Docker Compose: redes privadas y `127.0.0.1`. |
 | `DEMO_ADMIN_EMAIL`, `DEMO_ADMIN_PASSWORD` | **No usar fuera de desarrollo** | Crean el admin de desarrollo al ejecutar el seed. |
 
 No hay secretos reales en el repositorio. `.env` y `backend/.env` están en `.gitignore`.
@@ -470,6 +550,12 @@ uv run pytest
 cd ..
 npm run check
 
+# Opcional: liberar reservas vencidas desde un cron
+#   cd backend && uv run python -m app.cli release-expired
+
+# Enlace de recuperación de contraseña en desarrollo
+#   docker compose logs api | grep "CORREO DE DESARROLLO" -A6
+
 # 5. Detener
 docker compose down        # conserva los datos
 docker compose down -v     # borra la base de datos
@@ -482,13 +568,14 @@ docker compose down -v     # borra la base de datos
 
 ## 19. Testing
 
-Resultados obtenidos el 6 de octubre de 2026 sobre una base de datos recreada desde cero (`docker compose down -v && docker compose up -d`):
+Resultados obtenidos el 6 de octubre de 2026 sobre una base de datos recreada desde cero (`docker compose down -v && docker compose up -d --build`, migraciones 0001 → 0003, seed DEMO):
 
 | Suite | Resultado |
 | --- | --- |
-| Backend, pytest (PostgreSQL + PostGIS real) | **81 / 81** pruebas |
+| Backend, pytest (PostgreSQL + PostGIS real) | **121 / 121** pruebas |
 | Backend, ruff (lint y formato) | Sin errores |
-| Frontend, Vitest | **54 / 54** pruebas en 14 archivos |
+| Migraciones | `upgrade → downgrade → upgrade` correcto; `alembic check` sin diferencias |
+| Frontend, Vitest | **71 / 71** pruebas en 19 archivos |
 | Frontend, typecheck (`tsc`) | Sin errores |
 | Frontend, ESLint | Sin errores ni advertencias |
 | Build de producción, `API_MODE=mock` | Correcto |
@@ -499,41 +586,52 @@ Resultados obtenidos el 6 de octubre de 2026 sobre una base de datos recreada de
 - Autenticación: registro, login, logout con CSRF, revocación de sesión.
 - Catálogo, categorías, sucursales e inventario.
 - Carrito: persistencia entre dispositivos, límites de stock, aislamiento entre usuarios.
-- Pedidos: reserva de inventario, alcance geográfico, fechas, franjas.
+- **Reservas (15 pruebas):** crear, ajustar cantidad, repartir entre sucursales, quitar; stock insuficiente; el vencimiento libera el inventario y otro cliente puede comprar esas unidades; conversión en pedido sin doble conteo; pedido rechazado con reserva vencida o carrito distinto; cancelar devuelve el stock; **concurrencia real con hilos**: de dos compradores de la última unidad gana uno, y tres limpiezas simultáneas no liberan dos veces.
+- Pedidos: reserva de inventario, alcance geográfico, fechas, franjas, contrato sin campos `null`.
+- **Cuenta (22 pruebas):** pedidos propios y 404 para ajenos; perfil y campos prohibidos (422); cambio de contraseña; recuperación completa (token de un uso, vencido, sesiones cerradas) con un buzón de prueba; límite de solicitudes de recuperación; límites de login por cuenta, por correo inexistente y por IP; proxy de confianza sin IP no bloquea a todos; consentimiento en registro y pedido; versión de política desactualizada (409).
 - Panel: permisos (401/403 en 7 endpoints), CRUD de productos, categorías y sucursales, ajuste de stock sin negativos, transiciones de pedido con su efecto en inventario, usuarios sin datos sensibles, desactivación que cierra sesiones, alquileres.
 
-**Pruebas manuales en navegador** (Playwright, build de producción en modo real):
-- Un cliente no puede ver el panel en ninguna ruta, no ve el enlace "Panel" y recibe 403 del API con su propia cookie.
-- Login de administrador y dashboard con cifras reales.
-- Pedido real de un cliente confirmado, completado (1 unidad vendida) y otro cancelado (inventario liberado).
-- Producto: cambio de precio reflejado en la tienda; stock negativo rechazado; desactivar (ficha pública → 404) y reactivar (→ 200); alta de producto nuevo.
-- Usuario desactivado: su sesión deja de ser válida (401).
-- Sucursal: edición visible en la tienda; coordenadas fuera del área rechazadas.
-- Categoría nueva: la tienda sigue funcionando.
-- **Responsive:** 25 rutas (públicas y del panel) × 6 anchos (360, 390, 768, 1024, 1280 y 1440 px) = 150 combinaciones, **sin desbordamiento horizontal**, más revisión visual de capturas en móvil, tablet y escritorio.
+**Cobertura de Vitest añadida en esta fase:** cálculo del contador y estado de la reserva (con corrección del reloj del servidor), componente del contador con temporizadores simulados, detección de líneas vencidas, tarjetas y detalle de "Mis pedidos" (sin "Pago confirmado"), esquemas de perfil y recuperación, contrato de pedidos.
+
+**Pruebas manuales en navegador** (Playwright, build de producción en modo real, base recreada):
+1. Registro con la versión de la política visible.
+2. Agregar al carrito: disponible 11 → 10; cantidad 2 → 9; quitar → 11.
+3. Contador "Reservado durante …" en carrito y checkout.
+4. Vencimiento en vivo: la línea desaparece con aviso, el stock vuelve y el checkout queda bloqueado.
+5. Pedido creado; "Ver mi pedido"; lista y detalle en "Mis pedidos".
+6. Cerrar sesión → `/cuenta/pedidos` redirige a login; al volver a entrar el pedido sigue ahí.
+7. Pedido de otro usuario → 404 en la web y en el API.
+8. Edición de perfil e historial de consentimientos (registro y pedido).
+9. Recuperación de contraseña con el enlace del log: reutilizar el enlace falla, la contraseña antigua falla y la nueva funciona.
+10. Sexto intento fallido de login → mensaje 429.
+11. Panel: las 8 secciones responden; el administrador confirma un pedido de cliente; un cliente nuevo no accede a `/admin` (UI) y recibe 403 del API.
+12. `API_MODE=mock`: la tienda funciona y `/cuenta` redirige a login.
+- **Responsive:** `/cuenta`, `/cuenta/pedidos`, detalle de pedido, `/carrito`, `/checkout`, `/recuperar` y `/recuperar/nueva` a 360, 390, 768, 1024, 1280 y 1440 px, sin desbordamiento horizontal ni errores de consola, con revisión visual de capturas.
 
 **Errores encontrados y corregidos durante esta fase:**
-- Los formularios enviaban al servidor datos ya transformados por Zod; un precio anterior vacío fallaba al revalidarse. Ahora se envía la entrada original.
-- Los errores de validación de un solo valor (stock) no mostraban mensaje.
-- El build en modo mock fallaba al prerenderizar `/admin`.
-- Las tablas del panel se cortaban en pantallas medianas.
-- Una prueba de inventario usaba un parámetro mal escrito y pasaba por casualidad.
+- Crear una línea de carrito con cantidad 0 violaba la restricción `CHECK` antes de reservar.
+- El límite de 3 recuperaciones por hora no funcionaba porque se borraban los tokens anteriores; ahora se marcan como usados.
+- El límite por IP habría bloqueado a todos los clientes (todos llegan desde la IP del servidor de Next.js); ahora solo se aplica con una IP fiable.
+- Una reserva vencida seguía visible si el reloj del equipo iba adelantado; se corrige con la hora del servidor y reintentos.
+- El carrito se desbordaba 24 px a 360 px.
+- "Mis pedidos" fallaba con pedidos de recogida porque el API enviaba `deliveryAddress: null`; ahora se omiten los campos vacíos, con pruebas de contrato en ambos lados.
 
 ## 20. Estado actual del producto
 
 | Área | Estado | Observación |
 | --- | --- | --- |
-| Frontend | IMPLEMENTADO | 16 rutas públicas y 14 de panel; modos mock y real; responsive verificado. |
-| Backend | IMPLEMENTADO | FastAPI `/api/v1` con catálogo, cuentas, carrito, pedidos y administración. |
-| Base de datos | IMPLEMENTADO | PostgreSQL 16 + PostGIS; 11 tablas; 2 migraciones reversibles; seed DEMO. |
-| Auth | PARCIAL | Real con sesiones, httpOnly, CSRF y rol admin. Falta recuperar contraseña, perfil y límite de intentos. |
+| Frontend | IMPLEMENTADO | 21 rutas públicas y 14 de panel; modos mock y real; responsive verificado. |
+| Backend | IMPLEMENTADO | FastAPI `/api/v1` con catálogo, cuentas, carrito con reservas, pedidos y administración. |
+| Base de datos | IMPLEMENTADO | PostgreSQL 16 + PostGIS; 15 tablas; 3 migraciones reversibles; seed DEMO. |
+| Auth | PARCIAL | Real: sesiones, httpOnly, CSRF, rol admin, perfil, cambio y recuperación de contraseña, límite de intentos. Falta un proveedor de correo real (el enlace solo sale en el log de desarrollo) y roles intermedios. |
 | Catálogo | IMPLEMENTADO | Real y administrable. Productos y marcas DEMO; fotos referenciales. |
 | Sucursales | IMPLEMENTADO | Reales y administrables. Datos DEMO (`is_demo`). |
-| Inventario | PARCIAL | Real: por sucursal, reservas por pedido, ajustes y alertas. Falta la reserva de 15 min (RF 6.2) y la auditoría de ajustes. |
-| Carrito | IMPLEMENTADO | Persistente entre dispositivos; local para visitantes; fusión. |
-| Pedidos | PARCIAL | Creación y gestión de estados reales. Sin pagos, sin historial, sin "mis pedidos" en la tienda. |
+| Inventario | PARCIAL | Real: por sucursal, reserva de 15 min en el carrito (RF 6.2), reservas por pedido, ajustes y alertas. Falta la auditoría de ajustes. |
+| Carrito | IMPLEMENTADO | Persistente entre dispositivos con reserva y contador; local (sin reserva) para visitantes; fusión. |
+| Pedidos | PARCIAL | Creación, gestión de estados y "Mis pedidos" reales. Sin pagos, sin historial de estados, sin cancelación por el cliente. |
 | Alquileres | PARCIAL | Tabla y consultas reales. La oferta y tarifas de `/alquiler` son MOCK; no se pueden crear alquileres. |
 | Admin | IMPLEMENTADO | Panel funcional protegido en backend y frontend. Sin carga de imágenes ni auditoría. |
+| Ley 1581 | PARCIAL | Evidencia real (usuario, fecha, versión) en registro y pedido. Texto legal pendiente de revisión. |
 | Pagos | PENDIENTE | Wompi no integrado; solo se guarda el método elegido. |
 | GPS | PENDIENTE | — |
 | WebSockets | PENDIENTE | — |
@@ -545,11 +643,11 @@ Resultados obtenidos el 6 de octubre de 2026 sobre una base de datos recreada de
 
 ## 21. Funcionalidades pendientes
 
-1. Reserva temporal de inventario de 15 minutos al agregar al carrito (RF 6.2).
+1. Proveedor real de correo para la recuperación de contraseña (y verificación del correo al registrarse).
 2. Pagos con Wompi (PSE, tarjetas, billeteras) y facturación electrónica DIAN (RF 4.1–4.3).
-3. Pantallas "mis pedidos" y "mis alquileres" para clientes; creación de alquileres con tarifas en la base de datos.
-4. Recuperación de contraseña, edición de perfil y límite de intentos de login.
-5. Evidencia del consentimiento Ley 1581 (fecha y versión de la política).
+3. "Mis alquileres" y creación de alquileres con tarifas en la base de datos; cancelación de pedidos por el cliente.
+4. Mostrar en el checkout la sucursal de la reserva y reservar en la sucursal de recogida elegida.
+5. Texto legal definitivo de la política de datos (revisión jurídica).
 6. Historial y auditoría de cambios (estados de pedido, ajustes de stock, acciones del panel).
 7. Carga de imágenes de producto desde el panel.
 8. Domicilios: asignación, seguimiento en tiempo real, estados de domicilio, QR y firma digital (RF 5.x, 7.2, 7.3).
@@ -574,6 +672,12 @@ Resultados obtenidos el 6 de octubre de 2026 sobre una base de datos recreada de
 | **Rol `is_admin` en la base + verificación en cada capa** | Autorización real en el backend; la UI solo informa. |
 | **Validación doble (Zod + Pydantic) y restricciones en la BD** | La interfaz no es la única defensa; la base de datos protege invariantes como el inventario no negativo. |
 | **Bloqueo de filas en inventario** | Evita sobreventa con pedidos simultáneos. |
+| **Reservas en PostgreSQL con vencimiento perezoso** | Cumple RF 6.2 sin Celery ni Redis: la liberación ocurre en cada solicitud con `SKIP LOCKED` y hay un comando para cron. |
+| **Orden de bloqueo único (carrito → reservas → inventario)** | Evita interbloqueos entre carrito, pedidos y limpieza. |
+| **Hora del servidor en el contador** | El vencimiento lo decide FastAPI; la interfaz solo lo muestra. |
+| **Límite de login en PostgreSQL e IP solo de proxies de confianza** | Sin Redis; evita que un cliente falsee su IP o que todos compartan la del servidor de Next.js. |
+| **Adaptador de correo** | El flujo de recuperación es real hoy; conectar un proveedor no cambia la lógica. |
+| **Versión de la política en el consentimiento** | Evidencia verificable de qué texto aceptó cada cliente. |
 | **JSON en camelCase** | Lo consume TypeScript sin capas de traducción. |
 | **Seed DEMO idempotente y marcado** | Entorno reproducible, sin presentar datos inventados como reales. |
 | **Fotos de Wikimedia Commons con atribución** | Fotografías reales con licencia verificable (CC0, CC BY, CC BY-SA). Sin foto adecuada se muestra "Imagen pendiente" en lugar de inventar una. |
@@ -583,12 +687,15 @@ Resultados obtenidos el 6 de octubre de 2026 sobre una base de datos recreada de
 
 | Riesgo | Impacto | Mitigación propuesta |
 | --- | --- | --- |
-| Sin límite de intentos de login | Ataques de fuerza bruta | Limitar por IP y por cuenta en FastAPI. |
-| Sin reserva de 15 min en el carrito | Un cliente puede encontrar el producto agotado al pagar | Reservas con vencimiento sobre `inventory`. |
+| Sin proveedor de correo | La recuperación de contraseña no llega al cliente fuera de desarrollo | Integrar un proveedor transaccional detrás de `EmailSender`. |
+| Bloqueo de cuentas ajenas | Un tercero puede bloquear una cuenta 15 min fallando 5 veces | Aceptable por ahora; añadir CAPTCHA o verificación adicional si se observa abuso. |
+| `TRUSTED_PROXIES` mal configurado | Sin límite por IP, o IP falseables | Listar solo la IP del servidor de Next.js en producción. |
+| Reservas sin tráfico | Las unidades vencidas siguen apartadas hasta la siguiente solicitud | Programar `release-expired` en un cron. |
+| Reserva repartida entre sucursales | El pedido puede rechazarse aunque haya stock en total | Reservar por sucursal elegida o permitir pedidos multi-sucursal. |
 | Sin auditoría de acciones del panel | No hay trazabilidad de cambios de precio, stock o estados | Tabla de eventos de auditoría. |
 | Datos DEMO llegando a producción | Información falsa visible a clientes | Bloquear el despliegue si hay sucursales `is_demo`; credenciales `DEMO_ADMIN_*` solo en local. |
 | Fotos referenciales con logos de marcas reales | Pueden confundir con los productos (ficticios) del catálogo | Sustituir por fotos propias de EcoMovilidad. |
-| Consentimiento Ley 1581 sin evidencia | Riesgo legal | Registrar fecha y versión aceptada. |
+| Texto de la política sin revisión legal | Riesgo legal pese a guardar la evidencia | Revisión jurídica y nueva versión de la política. |
 | Catálogo filtrado en memoria | Rendimiento con miles de productos | Mover los filtros a SQL cuando crezca. |
 | Categorías nuevas invisibles en la tienda | Productos creados en ellas no se venden | Volver dinámicas las categorías en la tienda si el SRS lo aprueba. |
 | Google Maps no probado | El mapa real puede fallar al activarlo | Probar con una key restringida antes de producción (existe fallback automático). |
@@ -598,12 +705,8 @@ Resultados obtenidos el 6 de octubre de 2026 sobre una base de datos recreada de
 
 En orden de prioridad:
 
-1. **Cerrar la tienda:**
-   - reserva de 15 minutos;
-   - "mis pedidos";
-   - recuperación de contraseña y límite de intentos;
-   - evidencia de consentimiento.
-2. **Pagos:** integración con Wompi (sandbox), confirmación automática de pedidos por webhook y factura electrónica DIAN.
+1. **Pagos:** integración con Wompi (sandbox), confirmación automática de pedidos por webhook, proveedor de correo transaccional (recuperación y confirmación de pedido) y factura electrónica DIAN.
+2. **Ajustes de la experiencia de compra:** sucursal de la reserva visible en el checkout, cancelación por el cliente e historial de estados.
 3. **Datos reales:** sucursales, catálogo y fotografías propias de EcoMovilidad; retirar los datos DEMO.
 4. **Operación:**
    - auditoría del panel;

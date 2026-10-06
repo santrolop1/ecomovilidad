@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Checkbox } from "@/components/ui/checkbox";
+import { PRIVACY_POLICY_VERSION } from "@/config/legal";
 
 interface ConsentCheckboxProps {
   id: string;
@@ -28,7 +29,7 @@ export function ConsentCheckbox({ id, name = "dataConsent", error }: ConsentChec
           <Link href="/privacidad" className="font-medium text-foreground underline underline-offset-4">
             política de tratamiento de datos
           </Link>{" "}
-          (Ley 1581 de 2012).
+          (Ley 1581 de 2012, versión {PRIVACY_POLICY_VERSION}).
         </label>
       </div>
       {error && (

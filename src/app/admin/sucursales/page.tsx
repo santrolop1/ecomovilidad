@@ -3,7 +3,7 @@ import { MapPin, Plus } from "lucide-react";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
 import { AdminPageHeader } from "@/features/admin/components/admin-page-header";
-import { StatusBadge } from "@/features/admin/components/status-badge";
+import { StatusBadge } from "@/components/shared/status-badge";
 import { serviceLabels } from "@/features/admin/lib/labels";
 import { adminApi } from "@/lib/api/admin";
 import { getAdminUser } from "@/features/admin/lib/guard";
