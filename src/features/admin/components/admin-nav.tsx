@@ -10,6 +10,7 @@ import {
   type LucideIcon,
   MapPin,
   Package,
+  Radar,
   ReceiptText,
   Users,
 } from "lucide-react";
@@ -17,6 +18,7 @@ import { cn } from "@/lib/utils";
 
 export const adminNav: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/admin", label: "Resumen", icon: LayoutDashboard },
+  { href: "/admin/operacion", label: "Operación", icon: Radar },
   { href: "/admin/pedidos", label: "Pedidos", icon: ReceiptText },
   { href: "/admin/productos", label: "Productos", icon: Package },
   { href: "/admin/inventario", label: "Inventario", icon: Boxes },

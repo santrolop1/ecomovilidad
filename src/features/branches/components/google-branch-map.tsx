@@ -89,7 +89,7 @@ export default function GoogleBranchMap({ apiKey, mapId, branches, selectedId, o
   }, [ready, selectedId, branches]);
 
   return (
-    <div className="relative aspect-[4/5] overflow-hidden rounded-3xl border border-border bg-muted">
+    <div className="relative size-full bg-muted">
       <div ref={containerRef} className="absolute inset-0" aria-label="Mapa de sucursales" role="region" />
       {!ready && <div className="absolute inset-0 animate-pulse bg-muted" aria-hidden="true" />}
     </div>

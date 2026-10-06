@@ -23,8 +23,9 @@ Actualizado: 6 de octubre de 2026. Detalle completo en [DOCUMENTACION.md](DOCUME
 | Admin | IMPLEMENTADO | `/admin` protegido en FastAPI (rol en BD) y en cada página. Pendiente: carga de imágenes, auditoría, roles intermedios. |
 | Ley 1581 | PARCIAL | Real: evidencia de consentimiento (usuario, fecha, versión `2026-10-06`) en registro y pedido; historial en `/cuenta`. Pendiente: texto legal revisado. |
 | Pagos | PENDIENTE | Wompi no integrado; solo se guarda el método elegido. |
-| Maps | PARCIAL | Coordenadas reales y `geography` en PostGIS; mapa esquemático. Google Maps sin probar con una key real. |
-| GPS | PENDIENTE | — |
+| Mapa público | IMPLEMENTADO | Leaflet + OpenStreetMap en el inicio y `/sucursales`: sucursales con coordenadas de PostGIS y disponibilidad real; fallback "Mapa temporalmente no disponible". |
+| Mapa operativo (admin) | MOCK | `/admin/operacion`: sucursales reales; activos, posiciones y estados **simulados** en el navegador (MODO DEMOSTRACIÓN). Preparado para sustituir la fuente por telemetría real. |
+| GPS | PENDIENTE | Sin dispositivos ni ingesta de telemetría. |
 | WebSockets | PENDIENTE | — |
 | Domicilios | PENDIENTE | Sin asignación, seguimiento ni estados de domicilio. |
 | QR | PENDIENTE | — |
