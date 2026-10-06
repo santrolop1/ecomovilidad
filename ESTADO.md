@@ -31,6 +31,7 @@ Actualizado: 6 de octubre de 2026. Detalle completo en [DOCUMENTACION.md](DOCUME
 | Firma digital | PENDIENTE | — |
 | Mantenimiento | MOCK | Regla del 90% solo sobre la oferta mock de alquiler. |
 | CMS | MOCK | `src/mocks/content.ts`. |
+| Demo pública | IMPLEMENTADO (temporal) | `scripts/demo.sh`: Cloudflare Tunnel temporal hacia Next.js en el Mac; FastAPI y PostgreSQL solo en `127.0.0.1`. Ver [DEMO_PUBLICA.md](DEMO_PUBLICA.md). Sin despliegue en la nube. |
 | Contacto | PENDIENTE | En modo real responde "no disponible". |
 
 ## Datos de demostración

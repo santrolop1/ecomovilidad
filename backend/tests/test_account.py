@@ -345,3 +345,25 @@ def test_contrato_pedido_de_recogida_sin_campos_nulos(auth_client):
     ):
         assert "deliveryAddress" not in payload and "deliveryCity" not in payload
         assert None not in payload.values()
+
+
+def test_cli_cambia_la_clave_y_cierra_sesiones(client, db):
+    from app.cli import change_password
+
+    register(client, "cli@correo.com")
+    assert client.get("/api/v1/auth/me").status_code == 200
+    assert change_password(db, "CLI@correo.com", "nueva-clave-demo-42")
+    db.commit()
+    assert client.get("/api/v1/auth/me").status_code == 401
+    login = client.post("/api/v1/auth/login", json={"email": "cli@correo.com", "password": "nueva-clave-demo-42"})
+    assert login.status_code == 200
+    assert not change_password(db, "nadie@correo.com", "nueva-clave-demo-42")
+
+
+def test_cli_rechaza_claves_debiles(db):
+    from pydantic import ValidationError
+
+    from app.cli import change_password
+
+    with pytest.raises(ValidationError):
+        change_password(db, "admin@ecomovilidad.dev", "corta")

@@ -1,5 +1,6 @@
 import "server-only";
 import { cookies, headers } from "next/headers";
+import { clientIpFromHeaders } from "./client-ip";
 
 /** Mismos nombres que emite FastAPI (backend/app/core/security.py). */
 export const SESSION_COOKIE = "em_session";
@@ -49,9 +50,8 @@ export async function hasSessionCookie(): Promise<boolean> {
   return (await cookies()).has(SESSION_COOKIE);
 }
 
-/** IP del navegador según la cabecera que recibió Next.js (si hay proxy delante). */
+/** IP del navegador para FastAPI (una sola IP fiable; ver client-ip.ts). */
 export async function forwardedFor(): Promise<Record<string, string>> {
-  const incoming = await headers();
-  const ip = incoming.get("x-forwarded-for") ?? incoming.get("x-real-ip");
+  const ip = clientIpFromHeaders(await headers());
   return ip ? { "X-Forwarded-For": ip } : {};
 }

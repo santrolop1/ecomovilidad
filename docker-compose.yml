@@ -16,7 +16,8 @@ services:
       POSTGRES_PASSWORD: CAMBIAR
     ports:
       # 5433 en el host para no chocar con un PostgreSQL local en 5432.
-      - "5433:5432"
+      # Solo en 127.0.0.1: no es accesible desde la red local ni desde Internet.
+      - "127.0.0.1:5433:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
       - ./backend/docker/initdb.sql:/docker-entrypoint-initdb.d/20-test-db.sql:ro
@@ -32,6 +33,8 @@ services:
       DATABASE_URL: postgresql+psycopg://ecomovilidad:CAMBIAR@db:5432/ecomovilidad
       CORS_ORIGINS: '["http://localhost:3000"]'
       COOKIE_SECURE: "false"
+      # Base de los enlaces de recuperación; scripts/demo.sh pone la URL del túnel.
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
       # Redes desde las que llega el servidor de Next.js (host/Colima/Docker).
       # Sin X-Forwarded-For, su IP no se usa para el límite por IP (solo el límite por cuenta).
       TRUSTED_PROXIES: '["10.0.0.0/8","172.16.0.0/12","192.168.0.0/16","127.0.0.1/32"]'
@@ -39,7 +42,8 @@ services:
       DEMO_ADMIN_EMAIL: admin@ecomovilidad.dev
       DEMO_ADMIN_PASSWORD: ELIMINADA
     ports:
-      - "8000:8000"
+      # Solo en 127.0.0.1: el navegador nunca llama a FastAPI; lo hace Next.js desde el servidor.
+      - "127.0.0.1:8000:8000"
     depends_on:
       db:
         condition: service_healthy
