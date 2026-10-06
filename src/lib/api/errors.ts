@@ -7,6 +7,7 @@ export type ApiErrorCode =
   | "INVALID_RESPONSE"
   | "OUT_OF_STOCK"
   | "SERVICE_UNAVAILABLE"
+  | "RATE_LIMITED"
   | "UNKNOWN";
 
 /** Error normalizado de la capa de API. Los componentes solo conocen este tipo. */

@@ -77,6 +77,15 @@ def csrf(client: TestClient) -> dict[str, str]:
     return {"X-CSRF-Token": client.cookies["em_csrf"]}
 
 
+def add_to_cart(client: TestClient, product_id: str, quantity: int = 1) -> dict:
+    """RF 6.2: un pedido se crea desde el carrito con reserva vigente."""
+    response = client.post(
+        "/api/v1/cart/items", json={"productId": product_id, "quantity": quantity}, headers=csrf(client)
+    )
+    assert response.status_code == 200, response.text
+    return response.json()
+
+
 @pytest.fixture
 def auth_client(client: TestClient) -> TestClient:
     register(client)

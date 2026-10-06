@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { CircleCheck, Lock, ShoppingBag, UserRound } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ConsentCheckbox } from "@/components/shared/consent-checkbox";
 import { EmptyState } from "@/components/shared/empty-state";
 import { FormAlert } from "@/components/shared/form-alert";
@@ -16,6 +16,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useSession } from "@/features/auth/use-session";
 import { useCart } from "@/features/cart/cart-provider";
 import { OrderSummary } from "@/features/cart/components/order-summary";
+import { ReservationTimer } from "@/features/cart/components/reservation-timer";
+import { reservationState } from "@/features/cart/lib/reservation";
+import { PRIVACY_POLICY_VERSION } from "@/config/legal";
+import { useNow } from "@/hooks/use-now";
 import { useActionForm } from "@/hooks/use-action-form";
 import { formatCOP } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -57,7 +61,7 @@ function ChoiceCard({ value, id, title, description }: { value: string; id: stri
 }
 
 export function CheckoutForm({ branches, timeSlots, minDate, requiresAccount }: CheckoutFormProps) {
-  const { cart, isReady, itemCount, subtotal, total, completeOrder } = useCart();
+  const { cart, isReady, isRemote, itemCount, subtotal, total, completeOrder, refresh } = useCart();
   const { user } = useSession();
   const [city, setCity] = useState("");
   const [method, setMethod] = useState<FulfillmentMethod>("domicilio");
@@ -73,6 +77,23 @@ export function CheckoutForm({ branches, timeSlots, minDate, requiresAccount }: 
     },
   });
   const errors = form.fieldErrors;
+
+  // RF 6.2: el checkout revalida la reserva con el servidor al entrar y cuando
+  // el pedido es rechazado; sin reserva vigente no se puede confirmar.
+  const refreshRef = useRef(refresh);
+  useEffect(() => {
+    refreshRef.current = refresh;
+  }, [refresh]);
+  useEffect(() => {
+    refreshRef.current();
+  }, []);
+  useEffect(() => {
+    if (form.formError) refreshRef.current();
+  }, [form.formError]);
+  const now = useNow(1000, isRemote);
+  const reservation = isRemote ? reservationState(cart, now) : null;
+  const reservationBlocked = reservation !== null && reservation.kind !== "active";
+
   const pickupBranches = branches.filter((branch) => branch.services.includes("recogida"));
 
   if (form.data) {
@@ -81,11 +102,18 @@ export function CheckoutForm({ branches, timeSlots, minDate, requiresAccount }: 
         <CircleCheck className="mx-auto size-12 text-volt-strong" aria-hidden="true" />
         <h2 className="font-display-tight mt-4 text-2xl">Pedido #{form.data.id.slice(0, 8).toUpperCase()} creado</h2>
         <p className="mt-3 text-muted-foreground">
-          Total {formatCOP(form.data.total)}. Registramos tu pedido con estado pendiente de pago.
+          Total {formatCOP(form.data.total)}. Quedó pendiente de confirmación; el pago en línea aún no está disponible.
         </p>
-        <Button asChild size="xl" className="mt-6">
-          <Link href="/catalogo">Volver al catálogo</Link>
-        </Button>
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
+          {isRemote && (
+            <Button asChild size="xl" variant="brand">
+              <Link href={`/cuenta/pedidos/${form.data.id}`}>Ver mi pedido</Link>
+            </Button>
+          )}
+          <Button asChild size="xl" variant="outline">
+            <Link href="/catalogo">Volver al catálogo</Link>
+          </Button>
+        </div>
       </div>
     );
   }
@@ -162,11 +190,29 @@ export function CheckoutForm({ branches, timeSlots, minDate, requiresAccount }: 
           },
           paymentMethod: payment || undefined,
           dataConsent: data.get("dataConsent") === "true",
+          policyVersion: PRIVACY_POLICY_VERSION,
         }, event.currentTarget);
       }}
     >
       <div className="min-w-0 space-y-6">
         {form.formError && <FormAlert variant="error">{form.formError}</FormAlert>}
+        {reservation?.kind === "active" && (
+          <div className="rounded-2xl border border-border bg-card p-4">
+            <ReservationTimer until={reservation.expiresAt} onExpire={() => refreshRef.current()} />
+            <p className="mt-1 text-sm text-muted-foreground">
+              Si el tiempo se acaba, liberamos las unidades y tendrás que agregarlas de nuevo.
+            </p>
+          </div>
+        )}
+        {reservationBlocked && (
+          <FormAlert variant="error">
+            La reserva de tu carrito venció. Vuelve al{" "}
+            <Link href="/carrito" className="font-medium underline underline-offset-4">
+              carrito
+            </Link>{" "}
+            y agrega los productos de nuevo para confirmar el pedido.
+          </FormAlert>
+        )}
 
         <Fieldset title="Tus datos">
           <div className="grid gap-5 sm:grid-cols-2">
@@ -341,7 +387,7 @@ export function CheckoutForm({ branches, timeSlots, minDate, requiresAccount }: 
               </li>
             ))}
           </ul>
-          <Button type="submit" size="xl" variant="brand" className="w-full" disabled={form.isPending}>
+          <Button type="submit" size="xl" variant="brand" className="w-full" disabled={form.isPending || reservationBlocked}>
             {form.isPending ? "Creando pedido…" : "Confirmar pedido"}
           </Button>
           <p className="text-xs text-muted-foreground">

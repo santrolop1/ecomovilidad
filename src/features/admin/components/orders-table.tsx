@@ -3,7 +3,7 @@ import { formatCOP, formatDateTime, shortId } from "@/lib/format";
 import type { AdminOrderSummary } from "@/lib/api/admin-schemas";
 import { orderStatusLabels } from "../lib/labels";
 import { type Column, DataTable } from "./data-table";
-import { orderStatusTone, StatusBadge } from "./status-badge";
+import { orderStatusTone, StatusBadge } from "@/components/shared/status-badge";
 
 const columns: Column<AdminOrderSummary>[] = [
   { header: "Pedido", cell: (o) => <span className="tabular">{shortId(o.id)}</span> },

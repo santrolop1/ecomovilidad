@@ -7,7 +7,7 @@ import { AdminPageHeader } from "@/features/admin/components/admin-page-header";
 import { type Column, DataTable } from "@/features/admin/components/data-table";
 import { FilterBar } from "@/features/admin/components/filter-bar";
 import { Pagination } from "@/features/admin/components/pagination";
-import { StatusBadge } from "@/features/admin/components/status-badge";
+import { StatusBadge } from "@/components/shared/status-badge";
 import { oneOf, pageParam, param } from "@/features/admin/lib/params";
 import { adminApi } from "@/lib/api/admin";
 import type { AdminProduct } from "@/lib/api/admin-schemas";

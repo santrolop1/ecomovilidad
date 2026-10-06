@@ -9,6 +9,8 @@ import {
   branchSchema,
   cartSchema,
   categoryListSchema,
+  consentSchema,
+  customerOrderSchema,
   orderSchema,
   productListSchema,
   publicProductSchema,
@@ -83,6 +85,16 @@ export function createRealApi(http: HttpClient): ApiClient {
     orders: {
       createOrder: (input) =>
         http.request(endpoints.orders, { method: "POST", body: input, schema: orderSchema, auth: true }),
+      listOrders: () => http.request(endpoints.orders, { schema: z.array(customerOrderSchema), auth: true }),
+      async getOrder(id) {
+        try {
+          return await http.request(endpoints.order(id), { schema: customerOrderSchema, auth: true });
+        } catch (error) {
+          // 404 (no existe o es de otro usuario) y 422 (id con formato inválido): no encontrado.
+          if (isApiError(error) && (error.code === "NOT_FOUND" || error.code === "VALIDATION_ERROR")) return null;
+          throw error;
+        }
+      },
     },
     content: {
       ...mock.content,
@@ -102,6 +114,23 @@ export function createRealApi(http: HttpClient): ApiClient {
       async logout() {
         await http.request(endpoints.authLogout, { method: "POST", schema: z.null(), auth: true });
       },
+      updateProfile: (input) =>
+        http.request(endpoints.authMe, { method: "PATCH", body: input, schema: userSchema, auth: true }),
+      async changePassword(currentPassword, newPassword) {
+        await http.request(endpoints.authPassword, {
+          method: "POST",
+          body: { currentPassword, newPassword },
+          schema: z.null(),
+          auth: true,
+        });
+      },
+      async requestPasswordReset(email) {
+        await http.request(endpoints.authResetRequest, { method: "POST", body: { email }, schema: z.unknown() });
+      },
+      async confirmPasswordReset(token, newPassword) {
+        await http.request(endpoints.authResetConfirm, { method: "POST", body: { token, newPassword }, schema: z.null() });
+      },
+      listConsents: () => http.request(endpoints.authConsents, { schema: z.array(consentSchema), auth: true }),
       async me() {
         try {
           return await http.request(endpoints.authMe, { schema: userSchema, auth: true });

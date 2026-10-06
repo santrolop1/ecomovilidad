@@ -25,12 +25,25 @@ def set_admin(email: str, value: bool) -> int:
         return 0
 
 
+def release_expired() -> int:
+    from app.services.reservations import release_expired as release
+
+    with SessionLocal() as db:
+        removed = release(db)
+        db.commit()
+    print(f"Reservas vencidas liberadas. Líneas de carrito retiradas: {removed}")
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(prog="app.cli")
     sub = parser.add_subparsers(dest="command", required=True)
     for name in ("make-admin", "revoke-admin"):
         sub.add_parser(name).add_argument("email")
+    sub.add_parser("release-expired")
     args = parser.parse_args()
+    if args.command == "release-expired":
+        return release_expired()
     return set_admin(args.email, args.command == "make-admin")
 
 

@@ -143,6 +143,13 @@ export function createMockApi({ latencyMs = 0 }: MockApiOptions = {}): ApiClient
           createdAt: now(),
         };
       },
+      // En modo demostración no hay cuentas: no hay pedidos que consultar.
+      async listOrders() {
+        return [];
+      },
+      async getOrder() {
+        return null;
+      },
     },
     content: {
       async getHomeContent() {
@@ -184,6 +191,21 @@ export function createMockApi({ latencyMs = 0 }: MockApiOptions = {}): ApiClient
         );
       },
       async logout() {},
+      async updateProfile() {
+        throw new ApiError("SERVICE_UNAVAILABLE", "Las cuentas requieren el backend (API_MODE=real).", 503);
+      },
+      async changePassword() {
+        throw new ApiError("SERVICE_UNAVAILABLE", "Las cuentas requieren el backend (API_MODE=real).", 503);
+      },
+      async requestPasswordReset() {
+        throw new ApiError("SERVICE_UNAVAILABLE", "Las cuentas requieren el backend (API_MODE=real).", 503);
+      },
+      async confirmPasswordReset() {
+        throw new ApiError("SERVICE_UNAVAILABLE", "Las cuentas requieren el backend (API_MODE=real).", 503);
+      },
+      async listConsents() {
+        return [];
+      },
       async me() {
         return null;
       },

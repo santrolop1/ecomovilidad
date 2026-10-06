@@ -14,6 +14,7 @@ MAX_QUANTITY_PER_ITEM = 10
 
 if TYPE_CHECKING:
     from .catalog import Product
+    from .reservation import CartReservation
 
 
 class Cart(UUIDPrimaryKey, Timestamps, Base):
@@ -50,3 +51,6 @@ class CartItem(UUIDPrimaryKey, Timestamps, Base):
 
     cart: Mapped[Cart] = relationship(back_populates="items")
     product: Mapped[Product] = relationship(lazy="joined")
+    reservations: Mapped[list[CartReservation]] = relationship(
+        back_populates="cart_item", cascade="all, delete-orphan", lazy="selectin"
+    )

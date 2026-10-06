@@ -43,6 +43,10 @@ export function AccountButton() {
   }
   return (
     <>
+      <Link href="/cuenta" className={linkClass}>
+        <UserRound className="size-4" aria-hidden="true" />
+        Mi cuenta
+      </Link>
       {user.isAdmin && (
         <Link href="/admin" className={linkClass}>
           <LayoutDashboard className="size-4" aria-hidden="true" />

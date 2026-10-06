@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PRIVACY_POLICY_VERSION } from "@/config/legal";
 import { siteConfig } from "@/config/site";
 import { LegalPage } from "@/features/content/components/legal-page";
 import { createPageMetadata } from "@/lib/seo";
@@ -13,7 +14,7 @@ export default function PrivacyPage() {
   return (
     <LegalPage
       title="Tratamiento de datos personales"
-      description="Conforme a la Ley 1581 de 2012 (Habeas Data)."
+      description={`Conforme a la Ley 1581 de 2012 (Habeas Data). Versión vigente: ${PRIVACY_POLICY_VERSION}.`}
       sections={[
         {
           title: "Responsable",
@@ -24,7 +25,8 @@ export default function PrivacyPage() {
           body: (
             <p>
               Solo tratamos tus datos con tu autorización previa, expresa e informada, que otorgas al marcar la casilla
-              correspondiente en cada formulario.
+              correspondiente en cada formulario. Guardamos como evidencia la fecha, la finalidad (registro o pedido) y la
+              versión de esta política que aceptaste; puedes consultarla en Mi cuenta.
             </p>
           ),
         },

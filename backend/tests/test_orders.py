@@ -5,7 +5,7 @@ from sqlalchemy import select
 
 from app.models import Cart, Inventory
 
-from .conftest import csrf, register
+from .conftest import add_to_cart, csrf, register
 
 TOMORROW = (date.today() + timedelta(days=1)).isoformat()
 
@@ -47,6 +47,7 @@ def test_pedido_con_recogida_reserva_inventario_en_la_sucursal(auth_client, db):
     branch_id = p["stock"]["byBranch"][0]["branchId"]
     before = inventory_of(db, p["id"])[uuid.UUID(branch_id)].available_quantity
 
+    add_to_cart(auth_client, p["id"], 2)
     response = auth_client.post(
         "/api/v1/orders",
         json=order_body(p["id"], 2, method="recogida", branchId=branch_id, address=None, city=None),
@@ -84,8 +85,12 @@ def test_domicilio_fuera_del_area_es_rechazado(auth_client):
 
 def test_sin_unidades_suficientes(auth_client):
     p = auth_client.get("/api/v1/products/velox-carrera-110").json()  # 4 unidades en una sucursal
-    response = auth_client.post("/api/v1/orders", json=order_body(p["id"], 5), headers=csrf(auth_client))
+    # Con RF 6.2 la falta de stock se detecta al reservar en el carrito.
+    response = auth_client.post(
+        "/api/v1/cart/items", json={"productId": p["id"], "quantity": 5}, headers=csrf(auth_client)
+    )
     assert response.status_code == 409
+    assert auth_client.post("/api/v1/orders", json=order_body(p["id"], 5), headers=csrf(auth_client)).status_code == 409
 
 
 def test_fecha_pasada_y_franja_invalida(auth_client):
@@ -105,6 +110,7 @@ def test_fecha_pasada_y_franja_invalida(auth_client):
 
 def test_listar_y_consultar_pedidos_propios(auth_client, client):
     p = auth_client.get("/api/v1/products/patinova-city-80").json()
+    add_to_cart(auth_client, p["id"])
     order = auth_client.post("/api/v1/orders", json=order_body(p["id"]), headers=csrf(auth_client)).json()
     assert [o["id"] for o in auth_client.get("/api/v1/orders").json()] == [order["id"]]
     assert auth_client.get(f"/api/v1/orders/{order['id']}").json()["items"][0]["quantity"] == 1

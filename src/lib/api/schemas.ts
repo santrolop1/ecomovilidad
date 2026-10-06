@@ -13,6 +13,8 @@ import type {
   RentalVehicle,
   Service,
   Session,
+  ConsentRecord,
+  CustomerOrder,
   TimeSlot,
   User,
 } from "@/types";
@@ -162,12 +164,15 @@ export const cartItemSchema = z.object({
   unitPrice: z.number().nonnegative(),
   quantity: z.number().int().positive(),
   maxQuantity: z.number().int().nonnegative(),
+  reservedUntil: isoDate.optional(),
 });
 
 export const cartSchema: z.ZodType<Cart> = z.object({
   id: z.string().optional(),
   items: z.array(cartItemSchema),
   updatedAt: isoDate,
+  reservationMinutes: z.number().int().positive().optional(),
+  serverTime: isoDate.optional(),
 });
 
 export const orderSchema: z.ZodType<Order> = z.object({
@@ -178,6 +183,47 @@ export const orderSchema: z.ZodType<Order> = z.object({
   total: z.number().nonnegative(),
   createdAt: isoDate,
   paymentRedirectUrl: z.url().optional(),
+});
+
+export const customerOrderSchema: z.ZodType<CustomerOrder> = z.object({
+  id: z.string(),
+  status: z.enum(["pending", "confirmed", "cancelled", "completed"]),
+  subtotal: z.number().nonnegative(),
+  shippingCost: z.number().nonnegative(),
+  total: z.number().nonnegative(),
+  createdAt: isoDate,
+  updatedAt: isoDate,
+  itemCount: z.number().int().nonnegative(),
+  branchName: z.string(),
+  branchCity: z.string(),
+  branchAddress: z.string(),
+  fulfillmentMethod: z.enum(["domicilio", "recogida"]),
+  deliveryAddress: z.string().optional(),
+  deliveryCity: z.string().optional(),
+  scheduledDate: z.string(),
+  timeSlot: z.string(),
+  paymentMethod: z.enum(["pse", "tarjeta", "billetera"]),
+  contactName: z.string(),
+  contactEmail: z.string(),
+  contactPhone: z.string(),
+  items: z.array(
+    z.object({
+      productId: z.string(),
+      slug: z.string(),
+      name: z.string(),
+      imageUrl: z.string().optional(),
+      quantity: z.number().int().positive(),
+      unitPrice: z.number().nonnegative(),
+      subtotal: z.number().nonnegative(),
+    }),
+  ),
+});
+
+export const consentSchema: z.ZodType<ConsentRecord> = z.object({
+  purpose: z.enum(["registro", "pedido"]),
+  policyVersion: z.string(),
+  orderId: z.string().optional(),
+  acceptedAt: isoDate,
 });
 
 export const userSchema: z.ZodType<User> = z.object({
