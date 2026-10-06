@@ -25,12 +25,13 @@ export function BranchExplorer({ initialBranches, mapConfig }: BranchExplorerPro
   const cities = new Set(branches.map((b) => b.city));
   const latestUpdate = branches.flatMap((b) => (b.inventoryUpdatedAt ? [b.inventoryUpdatedAt] : [])).sort().at(-1);
 
-  function select(branchId: string) {
+  const isStacked = () => window.matchMedia("(max-width: 1023px)").matches;
+
+  // Al tocar un marcador se abre su popup (con enlace a la tarjeta). En móvil y
+  // tablet el mapa va arriba: "Ver en el mapa" en una tarjeta sube hasta él.
+  function selectFromList(branchId: string) {
     setSelectedId(branchId);
-    const branch = branches.find((b) => b.id === branchId);
-    if (branch && window.matchMedia("(max-width: 1023px)").matches) {
-      document.getElementById(branch.slug)?.scrollIntoView({ block: "start" });
-    }
+    if (isStacked()) document.getElementById("mapa-sucursales")?.scrollIntoView({ block: "start" });
   }
 
   return (
@@ -49,14 +50,21 @@ export function BranchExplorer({ initialBranches, mapConfig }: BranchExplorerPro
         <ul className="grid gap-4 xl:grid-cols-2">
           {branches.map((branch) => (
             <li key={branch.id}>
-              <BranchCard branch={branch} selected={selectedId === branch.id} onSelect={() => select(branch.id)} />
+              <BranchCard branch={branch} selected={selectedId === branch.id} onSelect={() => selectFromList(branch.id)} />
             </li>
           ))}
         </ul>
       </div>
-      <div className="order-first lg:order-none">
+      <div id="mapa-sucursales" className="order-first scroll-mt-20 lg:order-none">
         <div className="lg:sticky lg:top-24">
-          <ServiceMap config={mapConfig} branches={branches} selectedId={selectedId} onSelect={select} />
+          <ServiceMap
+            config={mapConfig}
+            branches={branches}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+            detailsHref={(branch) => `#${branch.slug}`}
+            className="aspect-auto h-[min(68svh,520px)] lg:h-[calc(100svh-8rem)] lg:max-h-[760px]"
+          />
         </div>
       </div>
     </div>

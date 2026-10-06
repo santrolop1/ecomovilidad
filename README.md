@@ -2,7 +2,7 @@
 
 Tienda, servicios y panel de operación de **EcoMovilidad Colombia S.A.S.** en el área metropolitana de Bucaramanga (Bucaramanga, Floridablanca, Girón y Piedecuesta).
 
-Next.js 16 · FastAPI · PostgreSQL 16 + PostGIS 3
+Next.js 16 · FastAPI · PostgreSQL 16 + PostGIS 3 · Leaflet + OpenStreetMap
 
 ## Inicio rápido
 
@@ -43,5 +43,7 @@ cd backend && uv run pytest          # requiere: docker compose up -d db
 - [REQUISITOS.md](REQUISITOS.md): requisitos del SRS con estado verificable.
 - [ESTADO.md](ESTADO.md): estado por área (implementado, parcial, mock, pendiente).
 - [DEMO_PUBLICA.md](DEMO_PUBLICA.md): cómo publicar una demo temporal con Cloudflare Tunnel.
+
+Mapas: el público (inicio y `/sucursales`) usa OpenStreetMap con las sucursales reales de la base; el operativo del panel (`/admin/operacion`) muestra activos **simulados** (modo demostración) porque aún no hay telemetría GPS. Detalle en DOCUMENTACION.md §10.
 
 Las sucursales, productos y datos de contacto son **datos de demostración**. Las fotos de producto provienen de Wikimedia Commons (créditos en `/creditos`).

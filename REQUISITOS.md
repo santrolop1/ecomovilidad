@@ -21,16 +21,16 @@ Fuente: `SRS_EcoMovilidad_v3_0` (22/sep/2026). Módulo 8 tomado del Plan de Desa
 | ID | Descripción | Estado | Implementación |
 | --- | --- | --- | --- |
 | RF-1.1 | Administradores actualizan propuesta de valor, banners y noticias sin desplegar código | **Mock** | Contrato `ContentApi` y vigencia de banners en el frontend; el contenido sale de `src/mocks/content.ts`. Sin modelo de contenido, sin endpoints, sin panel. |
-| RF-1.2 | Mapa público con la disponibilidad de inventario por sucursal en tiempo real | **Parcial** | Real: `GET /branches` con disponibilidad por categoría desde la tabla `inventory`; refresco cada 60 s (`/api/branches`, TanStack Query); `branches.location` en PostGIS. Pendiente: mapa con calles (el adaptador de Google Maps no está probado con una key), tiempo real por eventos. |
+| RF-1.2 | Mapa público con la disponibilidad de inventario por sucursal en tiempo real | **Parcial** | Real: `GET /branches` con disponibilidad por categoría desde la tabla `inventory`; refresco cada 60 s (`/api/branches`, TanStack Query); `branches.location` en PostGIS. Mapa real con Leaflet + OpenStreetMap (sin API key) en el inicio y `/sucursales`, con popups de disponibilidad por categoría y fallback. Pendiente: tiempo real por eventos (hoy es consulta periódica). |
 | RF-1.3 | Metadatos dinámicos, URLs amigables y sitemap autogenerado | **Implementado** | `generateMetadata`, canonical, Open Graph y Twitter, `sitemap.ts` con los productos de la API, `robots.ts`, JSON-LD y 404 reales. |
 
 ## Módulo 2 — Panel de administración en tiempo real
 
 | ID | Descripción | Estado | Implementación |
 | --- | --- | --- | --- |
-| RF-2.1 | Telemetría GPS de la flota con refresco ≤ 3 s | **Pendiente** | — |
+| RF-2.1 | Telemetría GPS de la flota con refresco ≤ 3 s | **Mock** | `/admin/operacion` muestra la flota con actualización cada 3 s, pero las posiciones son **simuladas** en el navegador (MODO DEMOSTRACIÓN). No hay dispositivos GPS, ingesta ni WebSockets. Interfaz `TelemetrySource` lista para la fuente real. |
 | RF-2.2 | Geocercas con alertas | **Preparado** | Solo la base: PostGIS habilitado y columna `geography` con índice GiST en sucursales. No hay geocercas. |
-| RF-2.3 | Dashboard de métricas de flota | **Pendiente** | El panel `/admin` tiene un resumen comercial (pedidos, inventario, usuarios, alquileres registrados), no métricas de flota en tiempo real (activa, en mantenimiento, alquilada, en tránsito). |
+| RF-2.3 | Dashboard de métricas de flota | **Mock** | `/admin/operacion` calcula activos, disponibles, en uso, en mantenimiento e incidencias, pero sobre la flota **simulada**. El resumen `/admin` sigue siendo comercial. |
 
 ## Módulo 3 — Mantenimiento preventivo
 
@@ -91,7 +91,7 @@ Fuente: `SRS_EcoMovilidad_v3_0` (22/sep/2026). Módulo 8 tomado del Plan de Desa
 | --- | --- | --- | --- |
 | RNF-3.2 | Interfaz adaptable a móviles | **Implementado** | Revisado a 360, 390, 768, 1024, 1280 y 1440 px sin desbordamientos (incluidas las rutas de cuenta, carrito y checkout). |
 | RNF-3.3 | Disponibilidad 99,9% con réplicas | **Pendiente** | Solo existe el entorno local con Docker Compose. |
-| RNF-3.4 | Carga inicial < 1,8 s; mapa < 3 s | **Pendiente** (medición) | Hay SSG/ISR, Server Components y carga diferida del mapa, pero no se ha medido. |
+| RNF-3.4 | Carga inicial < 1,8 s; mapa < 3 s | **Pendiente** (medición) | Hay SSG/ISR, Server Components y carga diferida de Leaflet (solo en las páginas con mapa), pero no se ha medido. |
 | RNF-3.5 | API RESTful escalable | **Implementado** | FastAPI versionada en `/api/v1`. |
 | RNF-3.6 | HTTPS/TLS 1.3 y WSS | **Pendiente** | Local por HTTP. Las cookies son `Secure` en producción. Sin WebSockets. |
 | RNF-3.7 | FAQ y manuales en el portal | **Mock** | `/ayuda` con contenido mock; sin manuales. |

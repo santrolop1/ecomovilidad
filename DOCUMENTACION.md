@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | **Producto** | Portal web, tienda en línea y panel de operación |
-| **Versión** | 0.4.0 (fase 4: experiencia del cliente) |
+| **Versión** | 0.5.3 (fase 5.3: mapas) |
 | **Fecha** | 6 de octubre de 2026 |
 | **Estado** | En desarrollo. Funciona localmente sobre datos de **demostración**. No está desplegado en producción. |
 | **Repositorio** | `ecomovilidad/` (Next.js + FastAPI + PostgreSQL/PostGIS) |
@@ -84,13 +84,14 @@ Funciona de punta a punta con FastAPI y PostgreSQL y tiene pruebas automáticas.
 - Panel de operación completo (ver §15), protegido por un rol en la base de datos.
 - Rol administrativo `users.is_admin`, asignado por CLI o por el seed de desarrollo.
 - PostGIS: punto geográfico de cada sucursal con índice espacial.
+- **Mapa público real** (Leaflet + OpenStreetMap) en el inicio y en `/sucursales`: sucursales con sus coordenadas de la base de datos y disponibilidad real por categoría; fallback si el mapa no carga (§10).
 - Fotografías reales de producto (Wikimedia Commons) con atribución y la página `/creditos`.
 
 ### Implementado parcialmente
 
 - **Alquileres.** Existen la tabla `rentals`, su consulta por usuario y el listado en el panel. **No hay forma de crear alquileres** desde la tienda ni el panel. La oferta de `/alquiler` (tarifas y vehículos) es mock.
 - **Franjas horarias (RF 7.1).** El checkout permite elegir fecha y franja, y FastAPI las valida y guarda. La lista de franjas y su "sin cupo" son mock; no hay capacidad real por franja.
-- **Mapa de sucursales (RF 1.2).** Las coordenadas son reales en PostGIS y la disponibilidad se refresca cada 60 s. El mapa es esquemático; el adaptador de Google Maps existe pero **no se ha probado con una API key real**.
+- **Mapa de sucursales (RF 1.2).** Mapa real con coordenadas de PostGIS y disponibilidad que se refresca cada 60 s. No es "tiempo real" por eventos: se consulta periódicamente.
 - **Ley 1581.** La evidencia del consentimiento se guarda (§14), pero el **texto legal** de la política sigue pendiente de revisión jurídica.
 - **Recuperación de contraseña.** El flujo es real, pero **no se envían correos**: no hay proveedor de correo. En desarrollo el enlace se escribe en el log de la API (`docker compose logs api`); en otros entornos no se registra el token y el correo no sale.
 - **Vencimiento de reservas.** Es perezoso: se libera en cada solicitud a la API (o con el comando opcional `release-expired` en un cron). Sin tráfico, las unidades quedan apartadas hasta la siguiente solicitud, aunque nadie puede comprarlas con una reserva vencida.
@@ -103,6 +104,7 @@ Solo existe con datos de demostración, sin backend.
 - Contenido editorial (CMS): hero, banners, propuesta de valor, noticias, FAQ y servicios.
 - Oferta de alquiler con tarifas y la regla de mantenimiento al 90% (RF 3.2) aplicada a esa oferta.
 - Lista de franjas horarias.
+- **Mapa operativo del panel** (`/admin/operacion`): las sucursales son reales, pero los activos, sus posiciones y estados son **simulados** en el navegador (MODO DEMOSTRACIÓN, §10).
 - `API_MODE=mock` completo: toda la tienda funciona sin backend con datos en memoria; el login responde "no disponible" y el panel muestra "requiere backend".
 
 ### Pendiente
@@ -151,19 +153,19 @@ PostgreSQL 16 + PostGIS 3.6
 ```
 app/(sitio)/   tienda pública (header + footer), incluida la cuenta del cliente
 app/admin/     panel de operación (shell propio)
-features/      catalog, cart, checkout, auth, account, branches, rentals, admin, contact, content, home
-components/    ui (shadcn), layout, shared
+features/      catalog, cart, checkout, auth, account, branches, rentals, admin, operations, contact, content, home
+components/    ui (shadcn), layout, shared, map (base de Leaflet compartida)
 lib/api/       contratos, cliente HTTP, implementación mock y real, API admin
 types/ mocks/ config/ hooks/
 ```
 
-**Rutas.** 21 rutas públicas y 14 del panel.
+**Rutas.** 21 rutas públicas y 15 del panel.
 
 | Pública | Datos con `API_MODE=real` |
 | --- | --- |
 | `/` | Categorías, destacados y sucursales reales; contenido editorial mock |
 | `/catalogo`, `/catalogo/[slug]` | Real |
-| `/sucursales` | Real (refresco cada 60 s) |
+| `/sucursales` | Real (refresco cada 60 s), con mapa de OpenStreetMap |
 | `/carrito` | Real con sesión; local sin sesión |
 | `/checkout` | Real; exige cuenta |
 | `/login`, `/registro` | Real |
@@ -176,7 +178,7 @@ types/ mocks/ config/ hooks/
 | `/privacidad`, `/terminos` | Estáticas, pendientes de revisión legal |
 | `/creditos` | Autores y licencias de las fotos |
 
-Las 14 rutas del panel se detallan en §15.
+Las 15 rutas del panel se detallan en §15. Los mapas se describen en §10.
 
 **`API_MODE`.**
 
@@ -266,13 +268,49 @@ PostgreSQL 16 + PostGIS. Claves primarias UUID (`gen_random_uuid()`) y marcas de
 
 Las tres son reversibles (probado `upgrade → downgrade → upgrade`) y `alembic check` no detecta diferencias con los modelos.
 
-## 10. PostGIS
+## 10. PostGIS y mapas
 
 - `branches.location` es una columna `geography(Point, 4326)` **generada** a partir de `latitude` y `longitude`: `ST_SetSRID(ST_MakePoint(lng, lat), 4326)::geography`. Nunca se desincroniza de las coordenadas.
 - Índice **GiST** (`ix_branches_location`), listo para `ST_DWithin` y `ST_Distance`.
 - Prueba automática: la distancia Cabecera–Piedecuesta da unos 15,6 km.
 - Las coordenadas se editan en el panel; PostGIS recalcula el punto.
-- **No implementado:** geocercas, sucursal más cercana al cliente (falta geocodificar direcciones) y telemetría.
+- **No implementado:** geocercas, sucursal más cercana al cliente (falta geocodificar direcciones) y telemetría GPS.
+
+### Mapas
+
+**Tecnología.** Leaflet 1.9 + React-Leaflet 5. Sin API key y sin servicios de AWS.
+
+**Cartografía.** Teselas estándar de **OpenStreetMap** (`tile.openstreetmap.org`), con la atribución obligatoria "© Colaboradores de OpenStreetMap". El modo oscuro es un filtro CSS sobre las teselas. Se descartaron los estilos oscuros de CARTO porque hoy devuelven teselas marcadas "API KEY REQUIRED". La política de uso de OSM admite tráfico moderado (demos); para producción con tráfico real conviene un proveedor de teselas con contrato.
+
+**Dos mapas distintos sobre una base común:**
+
+| | Mapa público | Mapa operativo |
+| --- | --- | --- |
+| Dónde | Portada del inicio (versión resumida, sustituye la antigua ilustración esquemática) y `/sucursales` (completo, con lista sincronizada) | `/admin/operacion` ("Operación en tiempo real") |
+| Aspecto | Oscuro con calles y nombres legibles, marcadores verdes con halo, popups redondeados | Casi monocromo y más oscuro; activos por forma (tipo) y color (estado), recorridos, bases cuadradas |
+| Datos | **Reales:** sucursales y coordenadas de la base de datos (`GET /branches`) y unidades disponibles por categoría del inventario | **Sucursales reales** como bases; **activos, posiciones y estados simulados** (MODO DEMOSTRACIÓN) |
+| Interacción | Popup con municipio, dirección, unidades disponibles por categoría, "Ver horarios" y "Cómo llegar"; la lista y el mapa están sincronizados | Indicadores, filtros por estado, lista de activos, detalle del activo, pausar o reanudar |
+
+- **Vista inicial:** se ajusta al área metropolitana (Bucaramanga, Floridablanca, Girón y Piedecuesta) y no permite alejarse a otras regiones (`maxBounds`).
+- **Componentes compartidos** (`src/components/map/`): `BaseMap` (mapa, teselas, zoom, atribución), `useTileHealth` (detecta que el proveedor no carga), `MapFallback` ("Mapa temporalmente no disponible") y `MapBoundary` (si el código del mapa falla). Mapa público: `features/branches/components/branch-map.tsx` y `service-map.tsx`. Mapa operativo: `features/operations/`.
+- **Fallback:** si no carga ninguna tesela en 12 s, o hay varios errores, o falla el código del mapa, se muestra "Mapa temporalmente no disponible" con la lista de sucursales (municipio, nombre y dirección). La página nunca se rompe.
+- **Rendimiento:** Leaflet se descarga solo en las páginas con mapa (`next/dynamic`, `ssr: false`); en el inicio está en la portada, así que se carga al abrir la página; la sección "Puntos de servicio" del inicio es una lista sin mapa, para no crear una segunda instancia. Una instancia por mapa; los iconos del mapa operativo se reutilizan para no recrear el DOM en cada actualización.
+- **Google Maps:** el adaptador anterior se conserva y solo se usa si se configura `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` (no hay ninguna configurada).
+- No hay mapa en `/alquiler`: su oferta es mock y la ubicación de los puntos de alquiler ya está en `/sucursales`.
+
+**Mapa operativo y simulación (MODO DEMOSTRACIÓN).** No hay telemetría GPS física. La interfaz lo dice explícitamente ("Modo demostración", "Datos simulados… no hay telemetría GPS conectada").
+
+- `createSimulatedTelemetry` (`features/operations/lib/simulated-telemetry.ts`) genera en el **navegador** una flota determinista de 29 activos alrededor de las sucursales activas reales: 2 bicicletas, 2 patinetas y 1 domicilio por sucursal, más 4 drones.
+- Estados: disponible, en uso, mantenimiento e incidencia, con colores consistentes en marcadores, leyenda, indicadores y lista.
+- Cada 3 s: los activos en uso viajan desde su sucursal a un destino y regresan; los domicilios muestran la línea a su punto de entrega; hay cambios de estado ocasionales y consumo y carga de batería.
+- El tiempo de la simulación avanza 10 veces más rápido para que el movimiento se vea a escala metropolitana. Todas las posiciones quedan dentro del área metropolitana (probado).
+- No escribe en la base de datos ni llama a la API: no se mezcla con datos reales.
+
+**Cómo se reemplazará por telemetría real.** El panel consume la interfaz `TelemetrySource` (`features/operations/lib/telemetry.ts`): `subscribe(listener)` emite `TelemetrySnapshot { assets, at, origin }`. Para pasar a datos reales:
+
+1. FastAPI recibe y guarda posiciones de los dispositivos (tabla de activos y de posiciones; PostGIS para geocercas).
+2. Un endpoint de streaming (WebSocket o Server-Sent Events) publica los snapshots, con la misma forma y `origin: "gps"`.
+3. En el frontend, una `createLiveTelemetry(url)` que implemente `TelemetrySource` sustituye a `createSimulatedTelemetry` en la página. Indicadores, mapa y lista no cambian; el aviso "Modo demostración" se oculta cuando `origin` es `"gps"`.
 
 ## 11. Inventario
 
@@ -419,6 +457,7 @@ Ruta `/admin`. Consume exclusivamente el API real `/api/v1/admin` y no tiene ver
 | `/admin/pedidos`, `/[id]` | Listar, buscar (cliente, correo, número), filtrar por estado. Detalle con cliente, documento, productos, cantidades, totales, entrega, dirección y pago. Cambiar estado con confirmación (efecto en inventario). |
 | `/admin/usuarios`, `/[id]` | Listar, buscar, filtrar (activas, desactivadas, administradores). Detalle con pedidos recientes. Desactivar o reactivar con confirmación (cierra sus sesiones; un admin no puede desactivarse a sí mismo). **Nunca** se muestran contraseñas, hashes ni sesiones. |
 | `/admin/alquileres` | Listado de la tabla `rentals` filtrable por estado. No se inventan tarifas ni disponibilidad. |
+| `/admin/operacion` | "Operación en tiempo real": mapa operativo con indicadores (activos, disponibles, en uso, en mantenimiento, incidencias), filtros, lista y detalle de activos. **MODO DEMOSTRACIÓN:** sucursales reales y activos simulados (§10). |
 
 **Experiencia de uso:**
 - Barra lateral en escritorio y menú lateral en móvil y tablet.
@@ -508,7 +547,7 @@ Las listas paginadas devuelven `{ items, total, page, pageSize }` con 20 element
 | `API_MODE` | No (por defecto `mock`) | `mock` o `real`. |
 | `API_BASE_URL` | **Sí con `API_MODE=real`** | p. ej. `http://localhost:8000/api/v1`. Solo servidor. |
 | `MOCK_LATENCY_MS` | No | Latencia artificial del mock. |
-| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | No | Activa Google Maps (no probado). Pública por diseño: restringirla por dominio. |
+| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | No | Opcional. Sin ella (lo habitual) el mapa usa OpenStreetMap. Si se define, el mapa público usa Google Maps (no probado). Pública por diseño: restringirla por dominio. |
 | `NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID` | No | Map ID de Google Maps. |
 
 **Backend** (`backend/.env`, ver `backend/.env.example`):
@@ -574,10 +613,10 @@ Resultados obtenidos el 6 de octubre de 2026 sobre una base de datos recreada de
 
 | Suite | Resultado |
 | --- | --- |
-| Backend, pytest (PostgreSQL + PostGIS real) | **121 / 121** pruebas |
+| Backend, pytest (PostgreSQL + PostGIS real) | **123 / 123** pruebas |
 | Backend, ruff (lint y formato) | Sin errores |
 | Migraciones | `upgrade → downgrade → upgrade` correcto; `alembic check` sin diferencias |
-| Frontend, Vitest | **71 / 71** pruebas en 19 archivos |
+| Frontend, Vitest | **81 / 81** pruebas en 22 archivos (fase 5.3) |
 | Frontend, typecheck (`tsc`) | Sin errores |
 | Frontend, ESLint | Sin errores ni advertencias |
 | Build de producción, `API_MODE=mock` | Correcto |
@@ -610,7 +649,17 @@ Resultados obtenidos el 6 de octubre de 2026 sobre una base de datos recreada de
 12. `API_MODE=mock`: la tienda funciona y `/cuenta` redirige a login.
 - **Responsive:** `/cuenta`, `/cuenta/pedidos`, detalle de pedido, `/carrito`, `/checkout`, `/recuperar` y `/recuperar/nueva` a 360, 390, 768, 1024, 1280 y 1440 px, sin desbordamiento horizontal ni errores de consola, con revisión visual de capturas.
 
-**Errores encontrados y corregidos durante esta fase:**
+**Fase 5.3 (mapas), pruebas automáticas:** simulación de telemetría (flota determinista de 29 activos, todos dentro del área metropolitana durante 600 ticks, velocidad acotada, los cuatro estados aparecen, origen `simulada`, sin estado interno en el snapshot, se detiene sin suscriptores) y detección de proveedor caído (`useTileHealth`: sin teselas a tiempo, errores repetidos, sin falsos positivos).
+
+**Fase 5.3, pruebas manuales** (build de producción en modo real detrás de un túnel de Cloudflare de prueba):
+- `/sucursales`: 5 marcadores en sus coordenadas reales, vista inicial del área metropolitana, popups con disponibilidad real, lista y mapa sincronizados en ambos sentidos; el popup queda dentro de la pantalla y sin tapar el zoom ni el rótulo en 360, 390, 768 y 1280 px.
+- Inicio: la portada muestra el mapa real (una sola instancia en la página, teselas de OpenStreetMap, 5 sucursales, zoom, arrastre y popup táctil); sin rastro de la ilustración esquemática anterior (cuadrícula, rutas y etiquetas dibujadas a mano), que se eliminó. La tarjeta "Disponible ahora" va debajo del mapa para no tapar marcadores.
+- Proveedor bloqueado: aparece "Mapa temporalmente no disponible" con la lista de sucursales; el mapa no cae en el fallback por sí solo pasado el umbral de 12 s.
+- `/admin/operacion`: 29 activos y 5 sucursales, indicadores, posiciones que cambian cada 3 s, filtros, detalle y pausa; aviso "Modo demostración".
+- Regresión: login, carrito con reserva, checkout y Mis pedidos sin cambios.
+- Responsive: inicio, `/sucursales`, `/admin/operacion`, `/login`, `/carrito`, `/checkout`, `/alquiler` y `/admin` a 360, 390, 768, 1024, 1280 y 1440 px, sin scroll horizontal y con botones de zoom de 40 px. Corregido en esta fase: a 1024 px con sesión de administrador la cabecera pública desbordaba 12 px; entre 1024 y 1279 px sus tres enlaces ("Mi cuenta", "Panel", "Salir") se muestran solo con icono (texto para lectores de pantalla y como tooltip).
+
+**Errores encontrados y corregidos durante la fase 4:**
 - Crear una línea de carrito con cantidad 0 violaba la restricción `CHECK` antes de reservar.
 - El límite de 3 recuperaciones por hora no funcionaba porque se borraban los tokens anteriores; ahora se marcan como usados.
 - El límite por IP habría bloqueado a todos los clientes (todos llegan desde la IP del servidor de Next.js); ahora solo se aplica con una IP fiable.
@@ -622,7 +671,7 @@ Resultados obtenidos el 6 de octubre de 2026 sobre una base de datos recreada de
 
 | Área | Estado | Observación |
 | --- | --- | --- |
-| Frontend | IMPLEMENTADO | 21 rutas públicas y 14 de panel; modos mock y real; responsive verificado. |
+| Frontend | IMPLEMENTADO | 21 rutas públicas y 15 de panel; modos mock y real; responsive verificado. |
 | Backend | IMPLEMENTADO | FastAPI `/api/v1` con catálogo, cuentas, carrito con reservas, pedidos y administración. |
 | Base de datos | IMPLEMENTADO | PostgreSQL 16 + PostGIS; 15 tablas; 3 migraciones reversibles; seed DEMO. |
 | Auth | PARCIAL | Real: sesiones, httpOnly, CSRF, rol admin, perfil, cambio y recuperación de contraseña, límite de intentos. Falta un proveedor de correo real (el enlace solo sale en el log de desarrollo) y roles intermedios. |
@@ -635,7 +684,8 @@ Resultados obtenidos el 6 de octubre de 2026 sobre una base de datos recreada de
 | Admin | IMPLEMENTADO | Panel funcional protegido en backend y frontend. Sin carga de imágenes ni auditoría. |
 | Ley 1581 | PARCIAL | Evidencia real (usuario, fecha, versión) en registro y pedido. Texto legal pendiente de revisión. |
 | Pagos | PENDIENTE | Wompi no integrado; solo se guarda el método elegido. |
-| GPS | PENDIENTE | — |
+| Mapas | IMPLEMENTADO / MOCK | Público real (Leaflet + OpenStreetMap, sucursales e inventario de la BD). Operativo del panel con posiciones **simuladas** (MODO DEMOSTRACIÓN). |
+| GPS | PENDIENTE | Sin telemetría física; el mapa operativo usa una fuente simulada sustituible (`TelemetrySource`). |
 | WebSockets | PENDIENTE | — |
 | Domicilios | PENDIENTE | Sin asignación, seguimiento ni estados de domicilio. |
 | QR | PENDIENTE | — |
@@ -674,6 +724,9 @@ Resultados obtenidos el 6 de octubre de 2026 sobre una base de datos recreada de
 | **Rol `is_admin` en la base + verificación en cada capa** | Autorización real en el backend; la UI solo informa. |
 | **Validación doble (Zod + Pydantic) y restricciones en la BD** | La interfaz no es la única defensa; la base de datos protege invariantes como el inventario no negativo. |
 | **Bloqueo de filas en inventario** | Evita sobreventa con pedidos simultáneos. |
+| **Leaflet + OpenStreetMap** | Mapa real sin API key ni costo; funciona en la demo pública. Carga diferida para no pesar en páginas sin mapa. |
+| **Mapa público y operativo separados sobre una base común** | Cada uno con su propósito y aspecto; teselas, controles y fallback no se duplican. |
+| **Telemetría detrás de `TelemetrySource`** | La simulación de la demo se reemplaza por GPS real (WebSocket/SSE) sin cambiar la interfaz del panel. |
 | **Reservas en PostgreSQL con vencimiento perezoso** | Cumple RF 6.2 sin Celery ni Redis: la liberación ocurre en cada solicitud con `SKIP LOCKED` y hay un comando para cron. |
 | **Orden de bloqueo único (carrito → reservas → inventario)** | Evita interbloqueos entre carrito, pedidos y limpieza. |
 | **Hora del servidor en el contador** | El vencimiento lo decide FastAPI; la interfaz solo lo muestra. |
@@ -700,7 +753,9 @@ Resultados obtenidos el 6 de octubre de 2026 sobre una base de datos recreada de
 | Texto de la política sin revisión legal | Riesgo legal pese a guardar la evidencia | Revisión jurídica y nueva versión de la política. |
 | Catálogo filtrado en memoria | Rendimiento con miles de productos | Mover los filtros a SQL cuando crezca. |
 | Categorías nuevas invisibles en la tienda | Productos creados en ellas no se venden | Volver dinámicas las categorías en la tienda si el SRS lo aprueba. |
-| Google Maps no probado | El mapa real puede fallar al activarlo | Probar con una key restringida antes de producción (existe fallback automático). |
+| Teselas públicas de OpenStreetMap | Sin garantía de servicio y con política de uso moderado; con tráfico alto pueden limitarse | Contratar un proveedor de teselas (o alojar teselas propias) antes de producción; el fallback evita que la página se rompa. |
+| Mapa operativo simulado confundido con datos reales | Decisiones operativas sobre datos ficticios | Aviso permanente "Modo demostración" y origen `simulada` en cada snapshot; reemplazar por telemetría real (§10). |
+| Google Maps no probado | Solo aplica si se configura una key | Probar con una key restringida antes de usarla (existe fallback automático). |
 | Discrepancia SRS v3.0 / SDP (Módulo 8) | Alcance de usuarios sin requisito formal | Emitir SRS v3.1. |
 
 ## 24. Próximas fases recomendadas
@@ -717,7 +772,7 @@ En orden de prioridad:
    - roles de operador de punto.
 5. **Alquiler real:** tarifas en base de datos, creación de reservas y disponibilidad por fechas.
 6. **Domicilios:** asignación, estados de domicilio (RF 5.3), QR y firma (RF 7.2, 7.3).
-7. **Flota en tiempo real:** GPS, WebSockets, mantenimiento preventivo y geocercas (Módulos 2 y 3).
+7. **Flota en tiempo real:** dispositivos GPS, ingesta en FastAPI, streaming (WebSocket/SSE) que implemente `TelemetrySource`, mantenimiento preventivo y geocercas (Módulos 2 y 3).
 8. **Despliegue:** AWS, HTTPS/TLS 1.3, monitoreo, copias de seguridad y pruebas E2E en CI.
 
 ---

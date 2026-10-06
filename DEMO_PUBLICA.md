@@ -64,7 +64,7 @@ Apagar Docker por completo: `docker compose down` (conserva datos) o `docker com
 scripts/demo.sh stop && scripts/demo.sh start
 ```
 
-La URL cambia: hay que enviar la nueva. Para empezar con la base limpia (sin cuentas ni pedidos de pruebas anteriores):
+La URL cambia: hay que enviar la nueva. Después de actualizar el código (por ejemplo, para ver los mapas nuevos), hay que reiniciar así la demo: `start` vuelve a compilar Next.js. Para empezar con la base limpia (sin cuentas ni pedidos de pruebas anteriores):
 
 ```bash
 scripts/demo.sh stop --all && docker compose down -v && scripts/demo.sh start
@@ -91,7 +91,7 @@ scripts/demo.sh stop --all && docker compose down -v && scripts/demo.sh start
 
 ## Qué puede probar el profesor
 
-Inicio, catálogo, ficha de producto, sucursales, registro, login, carrito con reserva de 15 minutos, checkout, crear pedido, "Mis pedidos", cerrar sesión y volver a entrar, y el panel `/admin` (con la cuenta de administrador).
+Inicio, catálogo, ficha de producto, sucursales con **mapa real** (OpenStreetMap), registro, login, carrito con reserva de 15 minutos, checkout, crear pedido, "Mis pedidos", cerrar sesión y volver a entrar, y el panel `/admin` (con la cuenta de administrador), incluida "Operación" (`/admin/operacion`), cuyo mapa muestra activos **simulados** en modo demostración.
 
 Todos los datos comerciales son **de demostración** (`is_demo = true`, marcados en la interfaz). El pago **no se procesa**: los pedidos quedan "Pendiente de confirmación".
 
@@ -110,7 +110,8 @@ Todos los datos comerciales son **de demostración** (`is_demo = true`, marcados
 - Los túneles rápidos de Cloudflare no tienen garantía de disponibilidad y están pensados para pruebas, no para producción.
 - El rendimiento depende del Mac y de su conexión de subida.
 - **Recuperación de contraseña:** no hay proveedor de correo; el enlace solo aparece en `docker compose logs api` del Mac, así que un visitante no puede completarla por su cuenta.
-- Sin pagos, domicilios con seguimiento, GPS, QR ni firma (ver ESTADO.md).
+- Sin pagos, domicilios con seguimiento, GPS, QR ni firma (ver ESTADO.md). El mapa operativo del panel es una **simulación** claramente marcada; no hay telemetría GPS.
+- Los mapas cargan teselas de `tile.openstreetmap.org` desde el navegador del visitante (sin API key). Si no cargan, la página muestra "Mapa temporalmente no disponible" y conserva la lista de sucursales.
 - Sin copias de seguridad: `docker compose down -v` borra los datos.
 - Para una URL fija haría falta un túnel con nombre (cuenta de Cloudflare y un dominio). No se configuró en esta fase.
 

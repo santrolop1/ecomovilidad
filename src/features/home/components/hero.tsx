@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/shared/container";
-import { clusterByCity } from "@/features/branches/lib/geo";
+import { ServiceMap } from "@/features/branches/components/service-map";
+import { availableUnits } from "@/features/branches/lib/geo";
 import type { Branch, HeroContent } from "@/types";
-import { HeroRoute } from "./hero-route";
 
 interface HeroProps {
   content: HeroContent;
@@ -11,12 +11,9 @@ interface HeroProps {
 }
 
 export function Hero({ content, branches }: HeroProps) {
-  const cities = clusterByCity(branches);
   // Sucursal con más unidades: dato real para la tarjeta de disponibilidad.
-  const spotlight = [...branches].sort(
-    (a, b) => b.inventory.reduce((s, i) => s + i.available, 0) - a.inventory.reduce((s, i) => s + i.available, 0),
-  )[0];
-  const spotlightTotal = spotlight?.inventory.reduce((s, i) => s + i.available, 0) ?? 0;
+  const spotlight = [...branches].sort((a, b) => availableUnits(b) - availableUnits(a))[0];
+  const spotlightTotal = spotlight ? availableUnits(spotlight) : 0;
 
   return (
     <section aria-labelledby="hero-title" className="surface-ink relative overflow-hidden">
@@ -36,14 +33,13 @@ export function Hero({ content, branches }: HeroProps) {
           </div>
         </div>
 
-        <div className="relative mx-auto w-full max-w-[420px] lg:max-w-none">
-          <div className="aspect-[400/466] w-full">
-            <HeroRoute cities={cities} />
-          </div>
+        {/* Mapa real (OpenStreetMap): el mismo componente y los mismos datos que /sucursales. */}
+        <div className="mx-auto w-full max-w-[520px] min-w-0 space-y-3 lg:max-w-none">
+          <ServiceMap branches={branches} className="aspect-[4/5] sm:aspect-[4/3] lg:aspect-[400/466]" />
           {spotlight && (
             <Link
               href={`/sucursales#${spotlight.slug}`}
-              className="absolute right-6 bottom-4 left-0 rounded-2xl border border-border bg-ink-2/90 p-4 backdrop-blur transition-colors hover:border-volt/50 sm:right-auto sm:w-72"
+              className="block rounded-2xl border border-border bg-ink-2 p-4 transition-colors hover:border-volt/50"
             >
               <span className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span className="size-2 rounded-full bg-volt" aria-hidden="true" />
