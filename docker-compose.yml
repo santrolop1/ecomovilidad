@@ -1,0 +1,47 @@
+# Entorno local reproducible: PostgreSQL 16 + PostGIS 3 y la API FastAPI.
+#   docker compose up -d        → levanta base de datos y API
+#   docker compose down         → detiene (conserva datos)
+#   docker compose down -v      → detiene y borra los datos
+name: ecomovilidad
+
+services:
+  db:
+    build:
+      context: ./backend/docker
+      dockerfile: db.Dockerfile
+    image: ecomovilidad-db:16-postgis3
+    environment:
+      POSTGRES_DB: ecomovilidad
+      POSTGRES_USER: ecomovilidad
+      POSTGRES_PASSWORD: CAMBIAR
+    ports:
+      # 5433 en el host para no chocar con un PostgreSQL local en 5432.
+      - "5433:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./backend/docker/initdb.sql:/docker-entrypoint-initdb.d/20-test-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ecomovilidad -d ecomovilidad"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+psycopg://ecomovilidad:CAMBIAR@db:5432/ecomovilidad
+      CORS_ORIGINS: '["http://localhost:3000"]'
+      COOKIE_SECURE: "false"
+      # Administrador SOLO para desarrollo local. Nunca usar estas credenciales en producción.
+      DEMO_ADMIN_EMAIL: admin@ecomovilidad.dev
+      DEMO_ADMIN_PASSWORD: ELIMINADA
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    # Aplica migraciones y carga los datos demo (idempotente) antes de arrancar.
+    command: sh -c "alembic upgrade head && python -m app.db.seed && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+
+volumes:
+  db-data:

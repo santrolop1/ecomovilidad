@@ -1,0 +1,115 @@
+import { z } from "zod";
+import { catalogFiltersToSearchParams } from "@/features/catalog/lib/search-params";
+import type { ApiClient } from "../contracts";
+import { endpoints } from "../endpoints";
+import { ApiError, isApiError } from "../errors";
+import type { HttpClient } from "../http-client";
+import { createMockApi } from "../mock";
+import {
+  branchSchema,
+  cartSchema,
+  categoryListSchema,
+  orderSchema,
+  productListSchema,
+  publicProductSchema,
+  sessionSchema,
+  userSchema,
+} from "../schemas";
+
+/** Revalidación de lecturas públicas desde Server Components. */
+const CATALOG_REVALIDATE_S = 60;
+/** La disponibilidad por sucursal cambia con cada pedido (RF 1.2). */
+const AVAILABILITY_REVALIDATE_S = 15;
+
+/**
+ * Implementación contra FastAPI (API_MODE=real).
+ *
+ * REAL: catálogo, categorías, sucursales, autenticación, carrito y pedidos.
+ * SIGUE EN MOCK (no existe backend todavía): contenido CMS, FAQ, servicios,
+ * oferta de alquiler con tarifas y franjas horarias. El formulario de
+ * contacto responde "no disponible" en lugar de simular un envío.
+ */
+export function createRealApi(http: HttpClient): ApiClient {
+  const mock = createMockApi();
+
+  return {
+    catalog: {
+      listProducts: (filters = {}) =>
+        http.request(endpoints.products, {
+          schema: productListSchema,
+          query: catalogFiltersToSearchParams(filters),
+          next: { revalidate: CATALOG_REVALIDATE_S, tags: ["products"] },
+        }),
+      async getProductBySlug(slug) {
+        try {
+          return await http.request(endpoints.product(slug), {
+            schema: publicProductSchema,
+            next: { revalidate: CATALOG_REVALIDATE_S, tags: ["products", `product:${slug}`] },
+          });
+        } catch (error) {
+          if (isApiError(error) && error.code === "NOT_FOUND") return null;
+          throw error;
+        }
+      },
+      listFeaturedProducts: (limit = 4) =>
+        http.request(endpoints.products, {
+          schema: productListSchema.transform((result) => result.items),
+          query: new URLSearchParams({ destacados: "true", limite: String(limit) }),
+          next: { revalidate: CATALOG_REVALIDATE_S, tags: ["products"] },
+        }),
+      listCategories: () =>
+        http.request(endpoints.categories, {
+          schema: categoryListSchema,
+          next: { revalidate: CATALOG_REVALIDATE_S, tags: ["categories"] },
+        }),
+    },
+    branches: {
+      listBranches: () =>
+        http.request(endpoints.branches, {
+          schema: z.array(branchSchema),
+          next: { revalidate: AVAILABILITY_REVALIDATE_S, tags: ["branches"] },
+        }),
+    },
+    rentals: mock.rentals,
+    cart: {
+      getCart: () => http.request(endpoints.cart, { schema: cartSchema, auth: true }),
+      addItem: (productId, quantity) =>
+        http.request(endpoints.cartItems, { method: "POST", body: { productId, quantity }, schema: cartSchema, auth: true }),
+      updateItem: (itemId, quantity) =>
+        http.request(endpoints.cartItem(itemId), { method: "PATCH", body: { quantity }, schema: cartSchema, auth: true }),
+      removeItem: (itemId) =>
+        http.request(endpoints.cartItem(itemId), { method: "DELETE", schema: cartSchema, auth: true }),
+    },
+    orders: {
+      createOrder: (input) =>
+        http.request(endpoints.orders, { method: "POST", body: input, schema: orderSchema, auth: true }),
+    },
+    content: {
+      ...mock.content,
+      async sendContactMessage() {
+        throw new ApiError(
+          "SERVICE_UNAVAILABLE",
+          "El formulario de contacto aún no está conectado. Escríbenos al correo de contacto.",
+          503,
+        );
+      },
+    },
+    auth: {
+      login: (input) =>
+        http.request(endpoints.authLogin, { method: "POST", body: input, schema: sessionSchema, relayCookies: true }),
+      register: (input) =>
+        http.request(endpoints.authRegister, { method: "POST", body: input, schema: sessionSchema, relayCookies: true }),
+      async logout() {
+        await http.request(endpoints.authLogout, { method: "POST", schema: z.null(), auth: true });
+      },
+      async me() {
+        try {
+          return await http.request(endpoints.authMe, { schema: userSchema, auth: true });
+        } catch (error) {
+          if (isApiError(error) && error.code === "UNAUTHORIZED") return null;
+          throw error;
+        }
+      },
+    },
+  };
+}

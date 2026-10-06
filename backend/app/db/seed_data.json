@@ -1,0 +1,1147 @@
+{
+  "_nota": "DATOS DE DEMOSTRACIÓN. Productos y marcas ficticios; sucursales, direcciones y teléfonos inventados dentro del área metropolitana de Bucaramanga. Reemplazar con datos reales de EcoMovilidad.",
+  "categories": [
+    {
+      "slug": "bicicletas",
+      "name": "Bicicletas",
+      "description": "Urbanas, plegables y de montaña con asistencia eléctrica."
+    },
+    {
+      "slug": "patinetas",
+      "name": "Patinetas",
+      "description": "Patinetas eléctricas para recorridos diarios en ciudad."
+    },
+    {
+      "slug": "patines",
+      "name": "Patines",
+      "description": "Patines de línea para ciudad, fitness y velocidad."
+    },
+    {
+      "slug": "drones",
+      "name": "Drones",
+      "description": "Drones para fotografía y uso profesional, con geocercas configuradas."
+    }
+  ],
+  "branches": [
+    {
+      "slug": "bucaramanga-cabecera",
+      "name": "Cabecera",
+      "city": "Bucaramanga",
+      "neighborhood": "Cabecera del Llano",
+      "address": "Carrera 35 # 48-20",
+      "phone": "+57 607 000 0101",
+      "latitude": 7.1172,
+      "longitude": -73.1095,
+      "opening_hours": [
+        {
+          "days": "Lunes a viernes",
+          "opens": "08:00",
+          "closes": "19:00"
+        },
+        {
+          "days": "Sábados",
+          "opens": "09:00",
+          "closes": "17:00"
+        },
+        {
+          "days": "Domingos y festivos",
+          "opens": "10:00",
+          "closes": "15:00"
+        }
+      ],
+      "services": [
+        "venta",
+        "alquiler",
+        "mantenimiento",
+        "recogida",
+        "devolucion"
+      ]
+    },
+    {
+      "slug": "bucaramanga-centro",
+      "name": "Centro",
+      "city": "Bucaramanga",
+      "neighborhood": "Centro",
+      "address": "Calle 35 # 19-40",
+      "phone": "+57 607 000 0102",
+      "latitude": 7.119,
+      "longitude": -73.124,
+      "opening_hours": [
+        {
+          "days": "Lunes a viernes",
+          "opens": "08:00",
+          "closes": "19:00"
+        },
+        {
+          "days": "Sábados",
+          "opens": "09:00",
+          "closes": "17:00"
+        }
+      ],
+      "services": [
+        "venta",
+        "alquiler",
+        "recogida",
+        "devolucion"
+      ]
+    },
+    {
+      "slug": "floridablanca-canaveral",
+      "name": "Cañaveral",
+      "city": "Floridablanca",
+      "neighborhood": "Cañaveral",
+      "address": "Carrera 25 # 30-15",
+      "phone": "+57 607 000 0201",
+      "latitude": 7.0695,
+      "longitude": -73.104,
+      "opening_hours": [
+        {
+          "days": "Lunes a viernes",
+          "opens": "08:00",
+          "closes": "19:00"
+        },
+        {
+          "days": "Sábados",
+          "opens": "09:00",
+          "closes": "17:00"
+        },
+        {
+          "days": "Domingos y festivos",
+          "opens": "10:00",
+          "closes": "15:00"
+        }
+      ],
+      "services": [
+        "venta",
+        "alquiler",
+        "mantenimiento",
+        "recogida",
+        "devolucion"
+      ]
+    },
+    {
+      "slug": "giron-centro",
+      "name": "Girón Centro",
+      "city": "Girón",
+      "neighborhood": "Centro histórico",
+      "address": "Calle 30 # 25-10",
+      "phone": "+57 607 000 0301",
+      "latitude": 7.0705,
+      "longitude": -73.169,
+      "opening_hours": [
+        {
+          "days": "Lunes a viernes",
+          "opens": "08:00",
+          "closes": "19:00"
+        },
+        {
+          "days": "Sábados",
+          "opens": "09:00",
+          "closes": "17:00"
+        }
+      ],
+      "services": [
+        "venta",
+        "alquiler",
+        "recogida",
+        "devolucion"
+      ]
+    },
+    {
+      "slug": "piedecuesta-centro",
+      "name": "Piedecuesta Centro",
+      "city": "Piedecuesta",
+      "neighborhood": "Centro",
+      "address": "Carrera 6 # 9-20",
+      "phone": "+57 607 000 0401",
+      "latitude": 6.989,
+      "longitude": -73.051,
+      "opening_hours": [
+        {
+          "days": "Lunes a viernes",
+          "opens": "08:00",
+          "closes": "19:00"
+        },
+        {
+          "days": "Sábados",
+          "opens": "09:00",
+          "closes": "17:00"
+        }
+      ],
+      "services": [
+        "venta",
+        "alquiler",
+        "mantenimiento",
+        "recogida",
+        "devolucion"
+      ]
+    }
+  ],
+  "products": [
+    {
+      "slug": "voltra-urbana-e1",
+      "sku": "BIC-VOL-E1",
+      "name": "Voltra Urbana E1",
+      "brand": "Voltra",
+      "category": "bicicletas",
+      "short_description": "Bicicleta eléctrica urbana con asistencia al pedaleo y batería extraíble.",
+      "description": "Pensada para trayectos diarios en ciudad. Cuadro de aluminio, motor trasero de 250 W con cinco niveles de asistencia y batería extraíble que puedes cargar en casa o en la oficina.",
+      "price": 5890000,
+      "compare_at_price": 6490000,
+      "specifications": [
+        {
+          "key": "tipo",
+          "label": "Tipo",
+          "value": "Urbana",
+          "facet": true
+        },
+        {
+          "key": "asistencia",
+          "label": "Asistencia",
+          "value": "Eléctrica",
+          "facet": true
+        },
+        {
+          "key": "autonomia",
+          "label": "Autonomía",
+          "value": 70,
+          "unit": "km"
+        },
+        {
+          "key": "velocidad",
+          "label": "Velocidad máxima asistida",
+          "value": 25,
+          "unit": "km/h"
+        },
+        {
+          "key": "bateria",
+          "label": "Batería",
+          "value": 504,
+          "unit": "Wh"
+        },
+        {
+          "key": "peso",
+          "label": "Peso",
+          "value": 22,
+          "unit": "kg"
+        },
+        {
+          "key": "rin",
+          "label": "Rin",
+          "value": "28 in"
+        }
+      ],
+      "highlights": [
+        "Batería extraíble",
+        "Luces integradas",
+        "Frenos de disco hidráulicos"
+      ],
+      "image_url": "/images/products/voltra-urbana-e1.webp",
+      "is_featured": true,
+      "inventory": [
+        {
+          "branch": "bucaramanga-cabecera",
+          "quantity": 6
+        },
+        {
+          "branch": "floridablanca-canaveral",
+          "quantity": 4
+        },
+        {
+          "branch": "giron-centro",
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "slug": "andina-pliega-20",
+      "sku": "BIC-AND-P20",
+      "name": "Andina Pliega 20",
+      "brand": "Andina Cycles",
+      "category": "bicicletas",
+      "short_description": "Plegable eléctrica para combinar con Metrolínea o el carro.",
+      "description": "Se pliega en menos de 15 segundos y cabe bajo el escritorio. Motor de 250 W, batería integrada en el tubo y rines de 20 pulgadas para maniobrar en tráfico.",
+      "price": 4390000,
+      "compare_at_price": null,
+      "specifications": [
+        {
+          "key": "tipo",
+          "label": "Tipo",
+          "value": "Plegable",
+          "facet": true
+        },
+        {
+          "key": "asistencia",
+          "label": "Asistencia",
+          "value": "Eléctrica",
+          "facet": true
+        },
+        {
+          "key": "autonomia",
+          "label": "Autonomía",
+          "value": 50,
+          "unit": "km"
+        },
+        {
+          "key": "velocidad",
+          "label": "Velocidad máxima asistida",
+          "value": 25,
+          "unit": "km/h"
+        },
+        {
+          "key": "bateria",
+          "label": "Batería",
+          "value": 360,
+          "unit": "Wh"
+        },
+        {
+          "key": "peso",
+          "label": "Peso",
+          "value": 17.5,
+          "unit": "kg"
+        },
+        {
+          "key": "rin",
+          "label": "Rin",
+          "value": "20 in"
+        }
+      ],
+      "highlights": [
+        "Plegado en 15 s",
+        "17,5 kg",
+        "Guardabarros incluidos"
+      ],
+      "image_url": "/images/products/andina-pliega-20.webp",
+      "is_featured": false,
+      "inventory": [
+        {
+          "branch": "bucaramanga-cabecera",
+          "quantity": 3
+        },
+        {
+          "branch": "bucaramanga-centro",
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "slug": "condor-trail-29",
+      "sku": "BIC-CON-T29",
+      "name": "Kóndor Trail 29",
+      "brand": "Kóndor",
+      "category": "bicicletas",
+      "short_description": "Eléctrica de montaña con motor central y suspensión doble.",
+      "description": "Motor central de alto torque para subir sin perder tracción, suspensión delantera y trasera de 130 mm y batería de 625 Wh para rutas largas fuera de la ciudad.",
+      "price": 9450000,
+      "compare_at_price": null,
+      "specifications": [
+        {
+          "key": "tipo",
+          "label": "Tipo",
+          "value": "Montaña",
+          "facet": true
+        },
+        {
+          "key": "asistencia",
+          "label": "Asistencia",
+          "value": "Eléctrica",
+          "facet": true
+        },
+        {
+          "key": "autonomia",
+          "label": "Autonomía",
+          "value": 90,
+          "unit": "km"
+        },
+        {
+          "key": "velocidad",
+          "label": "Velocidad máxima asistida",
+          "value": 25,
+          "unit": "km/h"
+        },
+        {
+          "key": "bateria",
+          "label": "Batería",
+          "value": 625,
+          "unit": "Wh"
+        },
+        {
+          "key": "peso",
+          "label": "Peso",
+          "value": 24,
+          "unit": "kg"
+        },
+        {
+          "key": "rin",
+          "label": "Rin",
+          "value": "29 in"
+        }
+      ],
+      "highlights": [
+        "Motor central 85 Nm",
+        "Suspensión doble",
+        "Transmisión 12 velocidades"
+      ],
+      "image_url": "/images/products/condor-trail-29.webp",
+      "is_featured": true,
+      "inventory": [
+        {
+          "branch": "floridablanca-canaveral",
+          "quantity": 2
+        },
+        {
+          "branch": "bucaramanga-cabecera",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "andina-ruta-mecanica",
+      "sku": "BIC-AND-RM",
+      "name": "Andina Ruta",
+      "brand": "Andina Cycles",
+      "category": "bicicletas",
+      "short_description": "Bicicleta urbana mecánica, liviana y de bajo mantenimiento.",
+      "description": "Para quienes prefieren pedalear sin motor. Cuadro de aluminio, transmisión interna de 3 velocidades y correa de carbono que no requiere lubricación.",
+      "price": 1890000,
+      "compare_at_price": null,
+      "specifications": [
+        {
+          "key": "tipo",
+          "label": "Tipo",
+          "value": "Urbana",
+          "facet": true
+        },
+        {
+          "key": "asistencia",
+          "label": "Asistencia",
+          "value": "Mecánica",
+          "facet": true
+        },
+        {
+          "key": "peso",
+          "label": "Peso",
+          "value": 12.8,
+          "unit": "kg"
+        },
+        {
+          "key": "rin",
+          "label": "Rin",
+          "value": "28 in"
+        },
+        {
+          "key": "transmision",
+          "label": "Transmisión",
+          "value": "Interna 3 velocidades"
+        }
+      ],
+      "highlights": [
+        "Transmisión por correa",
+        "12,8 kg",
+        "Sin cadena que lubricar"
+      ],
+      "image_url": "/images/products/andina-ruta-mecanica.webp",
+      "is_featured": false,
+      "inventory": [
+        {
+          "branch": "bucaramanga-centro",
+          "quantity": 5
+        },
+        {
+          "branch": "giron-centro",
+          "quantity": 4
+        },
+        {
+          "branch": "piedecuesta-centro",
+          "quantity": 3
+        }
+      ]
+    },
+    {
+      "slug": "voltra-s2-urbana",
+      "sku": "PAT-VOL-S2",
+      "name": "Voltra S2",
+      "brand": "Voltra",
+      "category": "patinetas",
+      "short_description": "Patineta eléctrica urbana con doble freno y llantas sin cámara.",
+      "description": "Motor de 350 W, freno regenerativo más freno de disco trasero y llantas de 10 pulgadas sin cámara para absorber el pavimento irregular.",
+      "price": 2690000,
+      "compare_at_price": 2990000,
+      "specifications": [
+        {
+          "key": "uso",
+          "label": "Uso",
+          "value": "Urbana",
+          "facet": true
+        },
+        {
+          "key": "proteccion",
+          "label": "Resistencia al agua",
+          "value": "IPX5",
+          "facet": true
+        },
+        {
+          "key": "autonomia",
+          "label": "Autonomía",
+          "value": 40,
+          "unit": "km"
+        },
+        {
+          "key": "velocidad",
+          "label": "Velocidad máxima",
+          "value": 25,
+          "unit": "km/h"
+        },
+        {
+          "key": "potencia",
+          "label": "Potencia",
+          "value": 350,
+          "unit": "W"
+        },
+        {
+          "key": "peso",
+          "label": "Peso",
+          "value": 16,
+          "unit": "kg"
+        }
+      ],
+      "highlights": [
+        "Llantas 10 in sin cámara",
+        "Doble freno",
+        "App con bloqueo"
+      ],
+      "image_url": "/images/products/voltra-s2-urbana.webp",
+      "is_featured": true,
+      "inventory": [
+        {
+          "branch": "bucaramanga-cabecera",
+          "quantity": 8
+        },
+        {
+          "branch": "bucaramanga-centro",
+          "quantity": 6
+        },
+        {
+          "branch": "floridablanca-canaveral",
+          "quantity": 7
+        },
+        {
+          "branch": "piedecuesta-centro",
+          "quantity": 4
+        }
+      ]
+    },
+    {
+      "slug": "rueda-norte-city-lite",
+      "sku": "PAT-RN-CL",
+      "name": "Rueda Norte City Lite",
+      "brand": "Rueda Norte",
+      "category": "patinetas",
+      "short_description": "La más liviana del catálogo: 12 kg y plegado en un paso.",
+      "description": "Ideal para trayectos cortos y para subirla al apartamento. Motor de 250 W, batería de 280 Wh y manubrio plegable.",
+      "price": 1790000,
+      "compare_at_price": null,
+      "specifications": [
+        {
+          "key": "uso",
+          "label": "Uso",
+          "value": "Urbana",
+          "facet": true
+        },
+        {
+          "key": "proteccion",
+          "label": "Resistencia al agua",
+          "value": "IPX4",
+          "facet": true
+        },
+        {
+          "key": "autonomia",
+          "label": "Autonomía",
+          "value": 25,
+          "unit": "km"
+        },
+        {
+          "key": "velocidad",
+          "label": "Velocidad máxima",
+          "value": 25,
+          "unit": "km/h"
+        },
+        {
+          "key": "potencia",
+          "label": "Potencia",
+          "value": 250,
+          "unit": "W"
+        },
+        {
+          "key": "peso",
+          "label": "Peso",
+          "value": 12,
+          "unit": "kg"
+        }
+      ],
+      "highlights": [
+        "12 kg",
+        "Plegado en un paso",
+        "Carga completa en 4 h"
+      ],
+      "image_url": "/images/products/rueda-norte-city-lite.webp",
+      "is_featured": false,
+      "inventory": [
+        {
+          "branch": "giron-centro",
+          "quantity": 5
+        },
+        {
+          "branch": "bucaramanga-centro",
+          "quantity": 4
+        }
+      ]
+    },
+    {
+      "slug": "condor-x-terreno",
+      "sku": "PAT-CON-XT",
+      "name": "Kóndor X Terreno",
+      "brand": "Kóndor",
+      "category": "patinetas",
+      "short_description": "Doble motor y suspensión para lomas y vías destapadas.",
+      "description": "Dos motores de 500 W, suspensión delantera y trasera y llantas todo terreno de 11 pulgadas. Pensada para las pendientes de la meseta de Bucaramanga y la subida a Piedecuesta.",
+      "price": 4590000,
+      "compare_at_price": null,
+      "specifications": [
+        {
+          "key": "uso",
+          "label": "Uso",
+          "value": "Todo terreno",
+          "facet": true
+        },
+        {
+          "key": "proteccion",
+          "label": "Resistencia al agua",
+          "value": "IPX5",
+          "facet": true
+        },
+        {
+          "key": "autonomia",
+          "label": "Autonomía",
+          "value": 60,
+          "unit": "km"
+        },
+        {
+          "key": "velocidad",
+          "label": "Velocidad máxima",
+          "value": 25,
+          "unit": "km/h"
+        },
+        {
+          "key": "potencia",
+          "label": "Potencia",
+          "value": 1000,
+          "unit": "W"
+        },
+        {
+          "key": "peso",
+          "label": "Peso",
+          "value": 29,
+          "unit": "kg"
+        }
+      ],
+      "highlights": [
+        "Doble motor",
+        "Suspensión completa",
+        "Pendientes de hasta 25%"
+      ],
+      "image_url": "/images/products/condor-x-terreno.webp",
+      "is_featured": true,
+      "inventory": [
+        {
+          "branch": "floridablanca-canaveral",
+          "quantity": 3
+        }
+      ]
+    },
+    {
+      "slug": "rueda-norte-commuter-pro",
+      "sku": "PAT-RN-CP",
+      "name": "Rueda Norte Commuter Pro",
+      "brand": "Rueda Norte",
+      "category": "patinetas",
+      "short_description": "Autonomía extendida para recorridos largos entre semana.",
+      "description": "Batería de 610 Wh para ir y volver del trabajo varios días sin cargar. Pantalla integrada, direccionales y suspensión delantera.",
+      "price": 3390000,
+      "compare_at_price": null,
+      "specifications": [
+        {
+          "key": "uso",
+          "label": "Uso",
+          "value": "Urbana",
+          "facet": true
+        },
+        {
+          "key": "proteccion",
+          "label": "Resistencia al agua",
+          "value": "IPX5",
+          "facet": true
+        },
+        {
+          "key": "autonomia",
+          "label": "Autonomía",
+          "value": 65,
+          "unit": "km"
+        },
+        {
+          "key": "velocidad",
+          "label": "Velocidad máxima",
+          "value": 25,
+          "unit": "km/h"
+        },
+        {
+          "key": "potencia",
+          "label": "Potencia",
+          "value": 500,
+          "unit": "W"
+        },
+        {
+          "key": "peso",
+          "label": "Peso",
+          "value": 21,
+          "unit": "kg"
+        }
+      ],
+      "highlights": [
+        "65 km de autonomía",
+        "Direccionales",
+        "Suspensión delantera"
+      ],
+      "image_url": "/images/products/rueda-norte-commuter-pro.webp",
+      "is_featured": false,
+      "inventory": []
+    },
+    {
+      "slug": "patinova-city-80",
+      "sku": "PTN-PNV-C80",
+      "name": "Patinova City 80",
+      "brand": "Patinova",
+      "category": "patines",
+      "short_description": "Patines de línea urbanos con bota semirrígida y ruedas de 80 mm.",
+      "description": "Bota semirrígida con cierre de hebilla y cordones, chasis de aluminio y ruedas de 80 mm que equilibran velocidad y control para la ciclovía.",
+      "price": 689000,
+      "compare_at_price": null,
+      "specifications": [
+        {
+          "key": "tipo",
+          "label": "Tipo",
+          "value": "Urbano",
+          "facet": true
+        },
+        {
+          "key": "ruedas",
+          "label": "Ruedas",
+          "value": "4 × 80 mm",
+          "facet": true
+        },
+        {
+          "key": "rodamientos",
+          "label": "Rodamientos",
+          "value": "ABEC 7"
+        },
+        {
+          "key": "tallas",
+          "label": "Tallas",
+          "value": "36 – 44"
+        },
+        {
+          "key": "peso",
+          "label": "Peso del par",
+          "value": 2.9,
+          "unit": "kg"
+        }
+      ],
+      "highlights": [
+        "Chasis de aluminio",
+        "Freno trasero intercambiable",
+        "Tallas 36 – 44"
+      ],
+      "image_url": "/images/products/patinova-city-80.webp",
+      "is_featured": true,
+      "inventory": [
+        {
+          "branch": "bucaramanga-cabecera",
+          "quantity": 5
+        },
+        {
+          "branch": "floridablanca-canaveral",
+          "quantity": 3
+        },
+        {
+          "branch": "giron-centro",
+          "quantity": 3
+        }
+      ]
+    },
+    {
+      "slug": "patinova-fit-84",
+      "sku": "PTN-PNV-F84",
+      "name": "Patinova Fit 84",
+      "brand": "Patinova",
+      "category": "patines",
+      "short_description": "Para entrenamiento y distancias largas, con ruedas de 84 mm.",
+      "description": "Bota ventilada, plantilla acolchada y ruedas de 84 mm para mantener el ritmo en recorridos largos sin cansar el pie.",
+      "price": 849000,
+      "compare_at_price": null,
+      "specifications": [
+        {
+          "key": "tipo",
+          "label": "Tipo",
+          "value": "Fitness",
+          "facet": true
+        },
+        {
+          "key": "ruedas",
+          "label": "Ruedas",
+          "value": "4 × 84 mm",
+          "facet": true
+        },
+        {
+          "key": "rodamientos",
+          "label": "Rodamientos",
+          "value": "ABEC 9"
+        },
+        {
+          "key": "tallas",
+          "label": "Tallas",
+          "value": "37 – 45"
+        },
+        {
+          "key": "peso",
+          "label": "Peso del par",
+          "value": 3.1,
+          "unit": "kg"
+        }
+      ],
+      "highlights": [
+        "Bota ventilada",
+        "ABEC 9",
+        "Plantilla acolchada"
+      ],
+      "image_url": "/images/products/patinova-fit-84.webp",
+      "is_featured": false,
+      "inventory": [
+        {
+          "branch": "bucaramanga-centro",
+          "quantity": 2
+        },
+        {
+          "branch": "giron-centro",
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "slug": "velox-carrera-110",
+      "sku": "PTN-VLX-C110",
+      "name": "Velox Carrera 110",
+      "brand": "Velox",
+      "category": "patines",
+      "short_description": "Patines de velocidad con bota de carbono y tres ruedas de 110 mm.",
+      "description": "Para patinadores de competencia: bota baja de fibra de carbono, chasis de 3 × 110 mm y rodamientos de precisión.",
+      "price": 1290000,
+      "compare_at_price": null,
+      "specifications": [
+        {
+          "key": "tipo",
+          "label": "Tipo",
+          "value": "Velocidad",
+          "facet": true
+        },
+        {
+          "key": "ruedas",
+          "label": "Ruedas",
+          "value": "3 × 110 mm",
+          "facet": true
+        },
+        {
+          "key": "rodamientos",
+          "label": "Rodamientos",
+          "value": "ILQ-9"
+        },
+        {
+          "key": "tallas",
+          "label": "Tallas",
+          "value": "35 – 45"
+        },
+        {
+          "key": "peso",
+          "label": "Peso del par",
+          "value": 2.2,
+          "unit": "kg"
+        }
+      ],
+      "highlights": [
+        "Bota de carbono",
+        "3 × 110 mm",
+        "2,2 kg el par"
+      ],
+      "image_url": null,
+      "is_featured": false,
+      "inventory": [
+        {
+          "branch": "bucaramanga-cabecera",
+          "quantity": 4
+        }
+      ]
+    },
+    {
+      "slug": "velox-junior-ajustable",
+      "sku": "PTN-VLX-JR",
+      "name": "Velox Junior Ajustable",
+      "brand": "Velox",
+      "category": "patines",
+      "short_description": "Patines ajustables a cuatro tallas para niños y niñas.",
+      "description": "Crecen con quien los usa: se ajustan a cuatro tallas. Bota rígida con soporte de tobillo y ruedas de 72 mm para aprender con control.",
+      "price": 459000,
+      "compare_at_price": null,
+      "specifications": [
+        {
+          "key": "tipo",
+          "label": "Tipo",
+          "value": "Urbano",
+          "facet": true
+        },
+        {
+          "key": "ruedas",
+          "label": "Ruedas",
+          "value": "4 × 72 mm",
+          "facet": true
+        },
+        {
+          "key": "rodamientos",
+          "label": "Rodamientos",
+          "value": "ABEC 5"
+        },
+        {
+          "key": "tallas",
+          "label": "Tallas",
+          "value": "30 – 37 (ajustable)"
+        },
+        {
+          "key": "peso",
+          "label": "Peso del par",
+          "value": 2.4,
+          "unit": "kg"
+        }
+      ],
+      "highlights": [
+        "Ajustable a 4 tallas",
+        "Soporte de tobillo",
+        "Ruedas de 72 mm"
+      ],
+      "image_url": "/images/products/velox-junior-ajustable.webp",
+      "is_featured": false,
+      "inventory": [
+        {
+          "branch": "bucaramanga-centro",
+          "quantity": 4
+        },
+        {
+          "branch": "floridablanca-canaveral",
+          "quantity": 3
+        }
+      ]
+    },
+    {
+      "slug": "aeroandes-mini-4k",
+      "sku": "DRN-AA-M4K",
+      "name": "AeroAndes Mini 4K",
+      "brand": "AeroAndes",
+      "category": "drones",
+      "short_description": "Dron compacto de menos de 250 g con cámara 4K estabilizada.",
+      "description": "Plegable y fácil de llevar. Cámara 4K en cardán de tres ejes, 31 minutos de vuelo y retorno automático al punto de despegue cuando la batería está baja.",
+      "price": 2890000,
+      "compare_at_price": null,
+      "specifications": [
+        {
+          "key": "camara",
+          "label": "Cámara",
+          "value": "4K",
+          "facet": true
+        },
+        {
+          "key": "clase",
+          "label": "Clase de peso",
+          "value": "Menos de 250 g",
+          "facet": true
+        },
+        {
+          "key": "vuelo",
+          "label": "Tiempo de vuelo",
+          "value": 31,
+          "unit": "min"
+        },
+        {
+          "key": "alcance",
+          "label": "Alcance de transmisión",
+          "value": 10,
+          "unit": "km"
+        },
+        {
+          "key": "peso",
+          "label": "Peso",
+          "value": 249,
+          "unit": "g"
+        },
+        {
+          "key": "rth",
+          "label": "Retorno automático (RTH)",
+          "value": "Sí"
+        }
+      ],
+      "highlights": [
+        "Menos de 250 g",
+        "Cardán de 3 ejes",
+        "Retorno automático"
+      ],
+      "image_url": "/images/products/aeroandes-mini-4k.webp",
+      "is_featured": true,
+      "inventory": [
+        {
+          "branch": "bucaramanga-cabecera",
+          "quantity": 2
+        },
+        {
+          "branch": "floridablanca-canaveral",
+          "quantity": 1
+        },
+        {
+          "branch": "piedecuesta-centro",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "aeroandes-pro-6k",
+      "sku": "DRN-AA-P6K",
+      "name": "AeroAndes Pro 6K",
+      "brand": "AeroAndes",
+      "category": "drones",
+      "short_description": "Cámara 6K, sensores de obstáculos omnidireccionales y 45 min de vuelo.",
+      "description": "Para producción audiovisual e inspecciones. Sensor de una pulgada, detección de obstáculos en todas las direcciones y geocercas configurables.",
+      "price": 7990000,
+      "compare_at_price": null,
+      "specifications": [
+        {
+          "key": "camara",
+          "label": "Cámara",
+          "value": "6K",
+          "facet": true
+        },
+        {
+          "key": "clase",
+          "label": "Clase de peso",
+          "value": "Más de 250 g",
+          "facet": true
+        },
+        {
+          "key": "vuelo",
+          "label": "Tiempo de vuelo",
+          "value": 45,
+          "unit": "min"
+        },
+        {
+          "key": "alcance",
+          "label": "Alcance de transmisión",
+          "value": 15,
+          "unit": "km"
+        },
+        {
+          "key": "peso",
+          "label": "Peso",
+          "value": 895,
+          "unit": "g"
+        },
+        {
+          "key": "rth",
+          "label": "Retorno automático (RTH)",
+          "value": "Sí"
+        }
+      ],
+      "highlights": [
+        "Sensor de 1 in",
+        "Detección omnidireccional",
+        "Geocercas configurables"
+      ],
+      "image_url": "/images/products/aeroandes-pro-6k.webp",
+      "is_featured": false,
+      "inventory": [
+        {
+          "branch": "bucaramanga-cabecera",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "nimbo-explorer-4k",
+      "sku": "DRN-NIM-E4K",
+      "name": "Nimbo Explorer 4K",
+      "brand": "Nimbo",
+      "category": "drones",
+      "short_description": "Equilibrio entre precio y desempeño para tus primeros vuelos.",
+      "description": "Cámara 4K a 60 fps, 34 minutos de vuelo, modos de vuelo asistido y retorno automático. Incluye dos baterías.",
+      "price": 3990000,
+      "compare_at_price": null,
+      "specifications": [
+        {
+          "key": "camara",
+          "label": "Cámara",
+          "value": "4K",
+          "facet": true
+        },
+        {
+          "key": "clase",
+          "label": "Clase de peso",
+          "value": "Más de 250 g",
+          "facet": true
+        },
+        {
+          "key": "vuelo",
+          "label": "Tiempo de vuelo",
+          "value": 34,
+          "unit": "min"
+        },
+        {
+          "key": "alcance",
+          "label": "Alcance de transmisión",
+          "value": 12,
+          "unit": "km"
+        },
+        {
+          "key": "peso",
+          "label": "Peso",
+          "value": 570,
+          "unit": "g"
+        },
+        {
+          "key": "rth",
+          "label": "Retorno automático (RTH)",
+          "value": "Sí"
+        }
+      ],
+      "highlights": [
+        "Dos baterías incluidas",
+        "4K a 60 fps",
+        "Vuelo asistido"
+      ],
+      "image_url": "/images/products/nimbo-explorer-4k.webp",
+      "is_featured": false,
+      "inventory": [
+        {
+          "branch": "floridablanca-canaveral",
+          "quantity": 1
+        },
+        {
+          "branch": "giron-centro",
+          "quantity": 1
+        }
+      ]
+    }
+  ]
+}

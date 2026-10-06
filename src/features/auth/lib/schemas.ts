@@ -1,0 +1,37 @@
+import { z } from "zod";
+import { consentField, emailField, phoneField } from "@/lib/validation";
+
+export const PASSWORD_MIN_LENGTH = 10;
+
+const nameField = z.string().trim().min(2, "Escribe al menos 2 letras.").max(80, "Máximo 80 caracteres.");
+
+export const loginSchema = z.object({
+  email: emailField,
+  password: z.string().min(1, "Escribe tu contraseña.").max(128),
+});
+
+/** Mismas reglas que valida FastAPI (backend/app/schemas/auth.py). */
+export const registerSchema = z
+  .object({
+    firstName: nameField,
+    lastName: nameField,
+    email: emailField,
+    phone: phoneField,
+    password: z
+      .string()
+      .min(PASSWORD_MIN_LENGTH, `Usa al menos ${PASSWORD_MIN_LENGTH} caracteres.`)
+      .max(128, "Máximo 128 caracteres.")
+      .regex(/[A-Za-zÁÉÍÓÚáéíóúÑñ]/, "Incluye al menos una letra.")
+      .regex(/\d/, "Incluye al menos un número."),
+    confirmPassword: z.string(),
+    dataConsent: consentField,
+  })
+  .refine((values) => values.password === values.confirmPassword, {
+    message: "Las contraseñas no coinciden.",
+    path: ["confirmPassword"],
+  });
+
+/** Solo rutas internas: evita redirecciones abiertas (?next=https://otro-sitio). */
+export function safeNextPath(value: unknown): string {
+  return typeof value === "string" && value.startsWith("/") && !value.startsWith("//") ? value : "/";
+}
