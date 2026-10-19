@@ -2,11 +2,11 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/shared/container";
 import { durationLabels } from "@/features/rentals/lib/labels";
-import { totalAvailable } from "@/features/rentals/lib/maintenance";
+import { cheapestRate, totalUnits } from "@/features/rentals/lib/offers";
 import { formatCOP } from "@/lib/format";
-import type { RentalVehicle } from "@/types";
+import type { RentalOffer } from "@/types";
 
-export function RentalTeaser({ vehicles }: { vehicles: RentalVehicle[] }) {
+export function RentalTeaser({ vehicles }: { vehicles: RentalOffer[] }) {
   return (
     <section aria-labelledby="alquiler-title" className="surface-ink">
       <Container className="grid gap-12 py-20 lg:grid-cols-[1fr_1.2fr] lg:py-28">
@@ -15,8 +15,7 @@ export function RentalTeaser({ vehicles }: { vehicles: RentalVehicle[] }) {
             Alquila por horas, días o semanas
           </h2>
           <p className="mt-4 max-w-md text-lg text-muted-foreground">
-            Recoge en una sucursal o recibe el vehículo en tu dirección en la franja de dos horas que elijas. Devuélvelo
-            donde te quede mejor.
+            Elige vehículo, sucursal y horario; reserva y paga en línea. Recógelo y devuélvelo en la misma sucursal.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Button asChild size="xl" variant="brand">
@@ -30,9 +29,10 @@ export function RentalTeaser({ vehicles }: { vehicles: RentalVehicle[] }) {
 
         <ul className="divide-y divide-border border-y border-border">
           {vehicles.map((vehicle) => {
-            const cheapest = [...vehicle.rates].sort((a, b) => a.price - b.price)[0];
+            const cheapest = cheapestRate(vehicle);
+            if (!cheapest) return null;
             return (
-              <li key={vehicle.id}>
+              <li key={vehicle.productId}>
                 <Link
                   href={`/alquiler#${vehicle.slug}`}
                   className="grid grid-cols-[1fr_auto] items-baseline gap-x-6 gap-y-1 py-5 transition-colors hover:text-volt"
@@ -42,7 +42,7 @@ export function RentalTeaser({ vehicles }: { vehicles: RentalVehicle[] }) {
                     {formatCOP(cheapest.price)}
                     <span className="font-normal text-muted-foreground"> / {durationLabels[cheapest.unit].per}</span>
                   </span>
-                  <span className="text-sm text-muted-foreground">{totalAvailable(vehicle)} disponibles</span>
+                  <span className="text-sm text-muted-foreground">{totalUnits(vehicle)} en la flota</span>
                 </Link>
               </li>
             );

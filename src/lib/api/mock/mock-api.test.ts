@@ -17,8 +17,10 @@ describe("createMockApi", () => {
   });
 
   it("excluye vehículos que requieren revisión", async () => {
-    const vehicles = await api.rentals.listRentalVehicles();
-    expect(vehicles.every((v) => v.maintenance.thresholdUsage < 0.9)).toBe(true);
+    // "patineta-todo-terreno" está al 93 % de su umbral en los mocks (RF 3.2).
+    const offers = await api.rentals.listOffers();
+    expect(offers.length).toBeGreaterThan(0);
+    expect(offers.map((o) => o.slug)).not.toContain("patineta-todo-terreno");
   });
 
   it("agrega, actualiza y elimina líneas del carrito por id", async () => {
@@ -40,7 +42,6 @@ describe("createMockApi", () => {
       items: [{ productId: "prd-201", quantity: 2 }],
       customer: { fullName: "Ana Pérez", email: "ana@correo.com", phone: "3001234567", documentType: "CC", documentNumber: "1234567" },
       fulfillment: { method: "recogida", branchId: "br-bga-cabecera", date: "2026-12-01", timeSlotId: "slot-08" },
-      paymentMethod: "pse",
       dataConsent: true,
     });
     expect(order.total).toBe(2 * 689_000);

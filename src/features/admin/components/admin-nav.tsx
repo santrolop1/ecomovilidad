@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Boxes,
+  Bike,
   CalendarClock,
   FolderTree,
   LayoutDashboard,
@@ -26,6 +27,7 @@ export const adminNav: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/admin/sucursales", label: "Sucursales", icon: MapPin },
   { href: "/admin/usuarios", label: "Usuarios", icon: Users },
   { href: "/admin/alquileres", label: "Alquileres", icon: CalendarClock },
+  { href: "/admin/flota", label: "Flota", icon: Bike },
 ];
 
 export function AdminNav({ onNavigate }: { onNavigate?: () => void }) {

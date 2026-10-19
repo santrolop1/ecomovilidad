@@ -44,9 +44,9 @@ Fuente: `SRS_EcoMovilidad_v3_0` (22/sep/2026). Módulo 8 tomado del Plan de Desa
 
 | ID | Descripción | Estado | Implementación |
 | --- | --- | --- | --- |
-| RF-4.1 | PSE, tarjetas y billeteras digitales | **Preparado** | El checkout guarda el método elegido en `orders.payment_method` y el contrato admite `paymentRedirectUrl`. No hay cobro ni integración con Wompi. |
-| RF-4.2 | Factura electrónica DIAN (PDF y XML) | **Pendiente** | — |
-| RF-4.3 | Reembolsos con trazabilidad | **Pendiente** | El panel cancela pedidos y libera inventario, pero no hay pagos que reembolsar ni registro del motivo. |
+| RF-4.1 | PSE, tarjetas y billeteras digitales | **Implementado (pasarela de pruebas; Wompi listo para sus llaves)** | Wompi Web Checkout (tarjeta, PSE, Nequi y otros) para pedidos y alquileres: firma de integridad en FastAPI, verificación de la transacción con la llave privada, eventos con checksum e idempotencia, reintentos y vencimiento. 16 pruebas pytest. **Hoy** se usa la pasarela de pruebas propia (sin cobro real, mismo flujo) porque aún no hay llaves de Wompi; al configurarlas en `backend/.env` se usa Wompi sin cambiar código. |
+| RF-4.2 | Factura electrónica DIAN (PDF y XML) | **Parcial** | Factura de venta PDF y XML con consecutivo, IVA y referencia del pago, descargable por el cliente y el panel. **No es factura electrónica DIAN**: falta resolución, CUFE y proveedor tecnológico. |
+| RF-4.3 | Reembolsos con trazabilidad | **Pendiente** | Los pagos que requieren reembolso (aprobados fuera de plazo o duplicados) quedan marcados y aparecen en el panel; el reembolso se hace a mano en Wompi. |
 
 ## Módulo 5 — Domicilios con seguimiento
 
@@ -61,7 +61,7 @@ Fuente: `SRS_EcoMovilidad_v3_0` (22/sep/2026). Módulo 8 tomado del Plan de Desa
 | ID | Descripción | Estado | Implementación |
 | --- | --- | --- | --- |
 | RF-6.1 | Catálogo con filtros por categoría, precio, marca y especificaciones | **Implementado** | `GET /products` (filtros, orden, facetas) + `/catalogo` y `/catalogo/[slug]`. Administrable desde `/admin/productos` (crear, editar, precio, especificaciones, destacados, activar). Pruebas en pytest y Vitest. |
-| RF-6.2 | Reserva de 15 minutos al agregar al carrito; vuelve al stock si no se paga | **Implementado** | Tabla `cart_reservations` (migración 0003). Agregar al carrito con sesión aparta inventario con `SELECT … FOR UPDATE` durante 15 min (renovado en cada cambio). Las vencidas se liberan en cada solicitud a la API (`SKIP LOCKED`) o con `python -m app.cli release-expired`. Al crear el pedido la reserva pasa al pedido sin doble conteo; con reserva vencida el pedido se rechaza (409) y el checkout se bloquea. Contador en carrito y checkout. 15 pruebas pytest (incluida concurrencia con hilos) y pruebas Vitest. **Límites:** como no hay pagos, "si no se paga" equivale a "si no se crea el pedido"; el carrito de visitantes no reserva. |
+| RF-6.2 | Reserva de 15 minutos al agregar al carrito; vuelve al stock si no se paga | **Implementado** | Tabla `cart_reservations` (migración 0003). Agregar al carrito con sesión aparta inventario con `SELECT … FOR UPDATE` durante 15 min (renovado en cada cambio). Las vencidas se liberan en cada solicitud a la API (`SKIP LOCKED`) o con `python -m app.cli release-expired`. Al crear el pedido la reserva pasa al pedido sin doble conteo; con reserva vencida el pedido se rechaza (409) y el checkout se bloquea. Contador en carrito y checkout. 15 pruebas pytest (incluida concurrencia con hilos) y pruebas Vitest. Con los pagos, el pedido tiene además un plazo de pago: si vence sin pago, se cancela y libera el inventario. **Límite:** el carrito de visitantes no reserva. |
 | RF-6.3 | Carrito persistente entre dispositivos para usuarios autenticados | **Implementado** | `carts`/`cart_items` y `GET/POST/PATCH/DELETE /cart…`. Fusión del carrito local al iniciar sesión. Probado en pytest y en navegador con dos sesiones. |
 
 ## Módulo 7 — Solicitudes y reporte de entrega/recogida
@@ -98,4 +98,24 @@ Fuente: `SRS_EcoMovilidad_v3_0` (22/sep/2026). Módulo 8 tomado del Plan de Desa
 | LEG-1581 | Tratamiento de datos (Habeas Data) | **Parcial** | Real: consentimiento obligatorio y **evidencia** en `consent_records` (usuario, fecha, versión de la política, pedido) en registro y en cada pedido; versión desactualizada → 409; historial en `/cuenta`. Pendiente: texto legal definitivo revisado por un abogado. |
 | LEG-1480 | Estatuto del Consumidor y retracto | **Pendiente** | Solo hay texto informativo. |
 | LEG-AEROCIVIL | Normativa RAC para drones | **Pendiente** | Solo hay aviso informativo en las fichas de drones. |
-| PCI-DSS | Datos de tarjeta | **Preparado** | El frontend y el backend no reciben datos de tarjeta; el pago irá en la pasarela. |
+| PCI-DSS | Datos de tarjeta | **Implementado** | Los datos de pago se capturan solo en Wompi (Web Checkout); EcoMovilidad no los recibe ni los guarda. |
+
+## Casos de uso (diagramas de secuencia)
+
+| CU | Caso de uso | Estado | Implementación |
+| --- | --- | --- | --- |
+| CU-01 | Registrarse / iniciar sesión | **Implementado** | Sesión con cookie httpOnly (equivale al "token de sesión" del diagrama). |
+| CU-02 | Consultar catálogo | **Implementado** | Filtros, lista y detalle con stock por sucursal. |
+| CU-03 | Comprar dispositivo | **Implementado (pago de pruebas)** | Disponibilidad, reserva de 15 min, pago con Wompi, confirmación, descuento de inventario al pagar y factura (sin validación DIAN). |
+| CU-04 | Solicitar alquiler | **Implementado** | Vehículo y fechas, verificación de disponibilidad, reserva de una unidad, pago y confirmación. |
+| CU-05 | Realizar pago | **Implementado (pago de pruebas)** | Hoy con la pasarela de pruebas propia; listo para Wompi al configurar sus llaves. Redirección a la pasarela, autenticación y pago en la pasarela, confirmación verificada y comprobante (factura PDF/XML). |
+| CU-06 | Agendar entrega o recogida | **Parcial** | Fecha, franja y dirección reales; franjas mock y sin asignación de domiciliario. |
+| CU-07 | Seguimiento del domicilio | **Pendiente** | — |
+| CU-08 | Validar entrega con QR o firma | **Pendiente** | — |
+| CU-09 | Gestionar contenidos | **Mock** | Contenido en `src/mocks/content.ts`. |
+| CU-10 | Monitorear flota en tiempo real | **Mock** | `/admin/operacion` con posiciones simuladas (sin GPS). |
+| CU-11 | Geofencing | **Pendiente** | Solo la base PostGIS. |
+| CU-12 | Mantenimiento preventivo | **Parcial** | Unidades de la flota en mantenimiento salen de la oferta; sin umbrales, alertas ni bitácora. |
+| CU-13 | Gestionar inventario | **Parcial** | Consulta y ajuste del total por sucursal; sin registro de entradas y salidas. |
+| CU-14 | Gestionar domicilios | **Pendiente** | — |
+| CU-15 | Reembolso / cancelación | **Parcial** | Cancelación de lo no pagado en el panel; pagos que requieren reembolso marcados; sin reembolso por la pasarela ni solicitud del cliente. |

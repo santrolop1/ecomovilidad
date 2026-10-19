@@ -28,6 +28,7 @@ const columns: Column<AdminRental>[] = [
     ),
   },
   { header: "Sucursal", cell: (r) => r.branchName },
+  { header: "Unidad", cell: (r) => <span className="tabular">{r.unitCode ?? "–"}</span> },
   { header: "Inicio", cell: (r) => formatDateTime(r.startAt), className: "whitespace-nowrap" },
   { header: "Fin", cell: (r) => formatDateTime(r.endAt), className: "whitespace-nowrap" },
   { header: "Precio", numeric: true, cell: (r) => formatCOP(r.price) },
@@ -44,7 +45,12 @@ export default async function AdminRentalsPage({ searchParams }: PageProps<"/adm
     <>
       <AdminPageHeader
         title="Alquileres"
-        description="Reservas registradas en la tabla rentals. La tienda todavía no crea alquileres ni calcula disponibilidad o tarifas: la oferta de /alquiler es de demostración."
+        description="Reservas hechas en la tienda: cada una aparta una unidad de la flota. Pagado → entregado → devuelto."
+        actions={
+          <Link href="/admin/flota" className="inline-flex min-h-10 items-center rounded-full border border-border px-4 text-sm hover:border-ink/40">
+            Ver la flota
+          </Link>
+        }
       />
       <nav aria-label="Filtrar por estado" className="flex flex-wrap gap-2">
         {[undefined, ...rentalStatuses].map((s) => (
@@ -65,12 +71,13 @@ export default async function AdminRentalsPage({ searchParams }: PageProps<"/adm
         rows={result.items}
         columns={columns}
         rowKey={(r) => r.id}
+        rowHref={(r) => `/admin/alquileres/${r.id}`}
         caption="Alquileres"
         empty={
           <EmptyState
             icon={CalendarClock}
             title="No hay alquileres registrados"
-            description="Cuando exista el flujo de reserva en la tienda, los alquileres aparecerán aquí."
+            description="Las reservas hechas en /alquiler aparecerán aquí."
           />
         }
       />

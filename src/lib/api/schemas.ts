@@ -15,6 +15,15 @@ import type {
   Session,
   ConsentRecord,
   CustomerOrder,
+  CustomerRental,
+  InvoiceRef,
+  PaymentConfig,
+  PaymentResult,
+  PaymentSimulation,
+  PaymentStart,
+  PaymentSummary,
+  RentalOffer,
+  RentalQuote,
   TimeSlot,
   User,
 } from "@/types";
@@ -175,19 +184,69 @@ export const cartSchema: z.ZodType<Cart> = z.object({
   serverTime: isoDate.optional(),
 });
 
+const orderStatus = z.enum(["pending", "paid", "confirmed", "cancelled", "completed"]);
+const paymentStatus = z.enum(["pending", "approved", "declined", "voided", "error"]);
+
+export const paymentSummarySchema: z.ZodType<PaymentSummary> = z.object({
+  status: paymentStatus,
+  reference: z.string(),
+  paymentMethodType: z.string().optional(),
+  statusMessage: z.string().optional(),
+  approvedAt: isoDate.optional(),
+});
+
+export const invoiceRefSchema: z.ZodType<InvoiceRef> = z.object({ id: z.string(), number: z.string(), issuedAt: isoDate });
+
+const paymentProvider = z.enum(["wompi", "simulado"]);
+
+export const paymentStartSchema: z.ZodType<PaymentStart> = z.object({
+  checkoutUrl: z.url(),
+  reference: z.string(),
+  expiresAt: isoDate,
+  sandbox: z.boolean(),
+  provider: paymentProvider,
+});
+
+export const paymentSimulationSchema: z.ZodType<PaymentSimulation> = z.object({
+  reference: z.string(),
+  amount: z.number().int().nonnegative(),
+  status: paymentStatus,
+  target: z.enum(["pedido", "alquiler"]),
+  description: z.string(),
+  expiresAt: isoDate.optional(),
+});
+
+export const paymentResultSchema: z.ZodType<PaymentResult> = z.object({
+  status: paymentStatus,
+  reference: z.string(),
+  target: z.enum(["pedido", "alquiler"]),
+  orderId: z.string().optional(),
+  rentalId: z.string().optional(),
+  paymentMethodType: z.string().optional(),
+  statusMessage: z.string().optional(),
+  invoice: invoiceRefSchema.optional(),
+  requiresRefund: z.boolean(),
+});
+
+export const paymentConfigSchema: z.ZodType<PaymentConfig> = z.object({
+  enabled: z.boolean(),
+  sandbox: z.boolean(),
+  windowMinutes: z.number().int().positive(),
+  provider: paymentProvider.nullable().optional(),
+});
+
 export const orderSchema: z.ZodType<Order> = z.object({
   id: z.string(),
-  status: z.enum(["pending", "confirmed", "cancelled", "completed"]),
+  status: orderStatus,
   subtotal: z.number().nonnegative(),
   shippingCost: z.number().nonnegative(),
   total: z.number().nonnegative(),
   createdAt: isoDate,
-  paymentRedirectUrl: z.url().optional(),
 });
 
 export const customerOrderSchema: z.ZodType<CustomerOrder> = z.object({
   id: z.string(),
-  status: z.enum(["pending", "confirmed", "cancelled", "completed"]),
+  status: orderStatus,
   subtotal: z.number().nonnegative(),
   shippingCost: z.number().nonnegative(),
   total: z.number().nonnegative(),
@@ -202,7 +261,10 @@ export const customerOrderSchema: z.ZodType<CustomerOrder> = z.object({
   deliveryCity: z.string().optional(),
   scheduledDate: z.string(),
   timeSlot: z.string(),
-  paymentMethod: z.enum(["pse", "tarjeta", "billetera"]),
+  paymentMethod: z.enum(["pse", "tarjeta", "billetera"]).optional(),
+  paymentExpiresAt: isoDate.optional(),
+  payment: paymentSummarySchema.optional(),
+  invoice: invoiceRefSchema.optional(),
   contactName: z.string(),
   contactEmail: z.string(),
   contactPhone: z.string(),
@@ -220,9 +282,10 @@ export const customerOrderSchema: z.ZodType<CustomerOrder> = z.object({
 });
 
 export const consentSchema: z.ZodType<ConsentRecord> = z.object({
-  purpose: z.enum(["registro", "pedido"]),
+  purpose: z.enum(["registro", "pedido", "alquiler"]),
   policyVersion: z.string(),
   orderId: z.string().optional(),
+  rentalId: z.string().optional(),
   acceptedAt: isoDate,
 });
 
@@ -281,3 +344,50 @@ export const serviceSchema: z.ZodType<Service> = z.object({
 });
 
 export const idResponseSchema = z.object({ id: z.string() });
+
+export const rentalOfferSchema: z.ZodType<RentalOffer> = z.object({
+  productId: z.string(),
+  slug: z.string(),
+  name: z.string(),
+  category: z.string(),
+  shortDescription: z.string(),
+  imageUrl: z.string().optional(),
+  rates: z.array(z.object({ unit: z.enum(["hora", "dia"]), price: z.number().int().positive() })),
+  branches: z.array(
+    z.object({
+      branchId: z.string(),
+      branchSlug: z.string(),
+      branchName: z.string(),
+      branchCity: z.string(),
+      units: z.number().int().nonnegative(),
+    }),
+  ),
+});
+
+export const rentalQuoteSchema: z.ZodType<RentalQuote> = z.object({
+  price: z.number().int().nonnegative(),
+  hours: z.number().int().positive(),
+  pricing: z.enum(["hora", "dia"]),
+  availableUnits: z.number().int().nonnegative(),
+});
+
+export const customerRentalSchema: z.ZodType<CustomerRental> = z.object({
+  id: z.string(),
+  productId: z.string(),
+  productSlug: z.string().optional(),
+  productName: z.string(),
+  imageUrl: z.string().optional(),
+  branchId: z.string(),
+  branchName: z.string(),
+  branchCity: z.string().optional(),
+  branchAddress: z.string().optional(),
+  unitCode: z.string().optional(),
+  startAt: isoDate,
+  endAt: isoDate,
+  status: z.enum(["pending", "confirmed", "active", "completed", "cancelled"]),
+  price: z.number().int().nonnegative(),
+  paymentExpiresAt: isoDate.optional(),
+  payment: paymentSummarySchema.optional(),
+  invoice: invoiceRefSchema.optional(),
+  createdAt: isoDate.optional(),
+});

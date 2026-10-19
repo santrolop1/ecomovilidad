@@ -15,6 +15,7 @@ export const metadata = { title: { absolute: "Resumen | Panel EcoMovilidad" } };
 
 const statusBar: Record<(typeof orderStatuses)[number], string> = {
   pending: "bg-warning",
+  paid: "bg-volt-strong",
   confirmed: "bg-ink",
   completed: "bg-success",
   cancelled: "bg-destructive/70",
@@ -55,7 +56,7 @@ export default async function AdminDashboardPage() {
           pending > 0 && (
             <Button asChild variant="brand" size="xl">
               <Link href="/admin/pedidos?status=pending">
-                Revisar {pending} {pending === 1 ? "pedido pendiente" : "pedidos pendientes"}
+                {pending} {pending === 1 ? "pedido sin pagar" : "pedidos sin pagar"}
               </Link>
             </Button>
           )
@@ -63,8 +64,8 @@ export default async function AdminDashboardPage() {
       />
 
       <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-border bg-border md:grid-cols-3 xl:grid-cols-6">
-        <Figure label="Pedidos" value={d.ordersTotal} detail={`${pending} pendientes`} href="/admin/pedidos" />
-        <Figure label="Ventas confirmadas" value={formatCOP(d.revenueConfirmed)} detail="Confirmados y completados" />
+        <Figure label="Pedidos" value={d.ordersTotal} detail={`${pending} sin pagar`} href="/admin/pedidos" />
+        <Figure label="Ventas" value={formatCOP(d.revenueConfirmed)} detail="Pagadas, confirmadas y completadas" />
         <Figure label="Productos activos" value={d.productsActive} detail={`${d.productsFeatured} destacados, ${d.productsTotal} en total`} href="/admin/productos" />
         <Figure label="Unidades disponibles" value={d.unitsAvailable} detail={`${d.unitsReserved} reservadas`} href="/admin/inventario" />
         <Figure label="Sucursales activas" value={d.branchesActive} detail={`${d.branchesDemo} con datos demo`} href="/admin/sucursales" />
@@ -75,6 +76,36 @@ export default async function AdminDashboardPage() {
           href="/admin/usuarios"
         />
       </dl>
+
+      {d.paymentsRequiringRefund.length > 0 && (
+        <section aria-labelledby="reembolsos" className="rounded-2xl border border-destructive/40 bg-destructive/5 p-5">
+          <h2 id="reembolsos" className="font-display-tight flex items-center gap-2 text-lg text-destructive">
+            <AlertTriangle className="size-5" aria-hidden="true" />
+            Pagos que requieren reembolso
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            La pasarela aprobó estos pagos, pero no se pudieron aplicar (plazo vencido o pago duplicado). El reembolso se hace
+            hoy desde el panel de Wompi (CU-15 pendiente).
+          </p>
+          <ul className="mt-3 space-y-2 text-sm">
+            {d.paymentsRequiringRefund.map((alert) => (
+              <li key={alert.reference} className="flex flex-wrap items-center justify-between gap-2">
+                <span className="tabular break-all">{alert.reference}</span>
+                <span className="tabular font-semibold">{formatCOP(alert.amount)}</span>
+                {alert.orderId ? (
+                  <Link href={`/admin/pedidos/${alert.orderId}`} className="underline underline-offset-4">
+                    Ver pedido
+                  </Link>
+                ) : alert.rentalId ? (
+                  <Link href={`/admin/alquileres/${alert.rentalId}`} className="underline underline-offset-4">
+                    Ver alquiler
+                  </Link>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
         <section aria-labelledby="recientes" className="min-w-0 space-y-3">

@@ -4,7 +4,8 @@ import { z } from "zod";
 const id = z.string();
 const isoDate = z.string().min(1);
 
-export const orderStatuses = ["pending", "confirmed", "cancelled", "completed"] as const;
+export const orderStatuses = ["pending", "paid", "confirmed", "cancelled", "completed"] as const;
+export const rentalUnitStatuses = ["operativo", "mantenimiento", "retirado"] as const;
 export const rentalStatuses = ["pending", "confirmed", "active", "completed", "cancelled"] as const;
 export const branchServices = ["venta", "alquiler", "mantenimiento", "recogida", "devolucion"] as const;
 export const serviceAreaCities = ["Bucaramanga", "Floridablanca", "Girón", "Piedecuesta"] as const;
@@ -109,10 +110,26 @@ export const adminOrderSummarySchema = z.object({
   createdAt: isoDate,
 });
 
+export const adminPaymentSchema = z.object({
+  status: z.enum(["pending", "approved", "declined", "voided", "error"]),
+  reference: z.string(),
+  providerTransactionId: z.string().nullable().optional(),
+  paymentMethodType: z.string().nullable().optional(),
+  statusMessage: z.string().nullable().optional(),
+  approvedAt: isoDate.nullable().optional(),
+  requiresRefund: z.boolean(),
+  createdAt: isoDate,
+});
+
+const invoiceRef = z.object({ id, number: z.string(), issuedAt: isoDate });
+
 export const adminOrderDetailSchema = adminOrderSummarySchema.extend({
   subtotal: z.number(),
   shippingCost: z.number(),
-  paymentMethod: z.enum(["pse", "tarjeta", "billetera"]),
+  paymentMethod: z.enum(["pse", "tarjeta", "billetera"]).nullable().optional(),
+  paymentExpiresAt: isoDate.nullable().optional(),
+  payments: z.array(adminPaymentSchema),
+  invoice: invoiceRef.nullable().optional(),
   deliveryAddress: z.string().nullable(),
   deliveryCity: z.string().nullable(),
   timeSlot: z.string(),
@@ -159,10 +176,26 @@ export const adminRentalSchema = z.object({
   userName: z.string(),
   productName: z.string(),
   branchName: z.string(),
+  unitCode: z.string().nullable().optional(),
   startAt: isoDate,
   endAt: isoDate,
   price: z.number(),
   createdAt: isoDate,
+  payments: z.array(adminPaymentSchema).default([]),
+  invoice: invoiceRef.nullable().optional(),
+  allowedTransitions: z.array(rentalStatus).default([]),
+});
+
+export const rentalUnitSchema = z.object({
+  id,
+  code: z.string(),
+  status: z.enum(rentalUnitStatuses),
+  productId: id,
+  productName: z.string(),
+  branchId: id,
+  branchName: z.string(),
+  isDemo: z.boolean(),
+  nextRentalStart: isoDate.nullable().optional(),
 });
 
 export const dashboardSchema = z.object({
@@ -180,6 +213,17 @@ export const dashboardSchema = z.object({
   ordersTotal: z.number(),
   ordersByStatus: z.record(orderStatus, z.number()),
   revenueConfirmed: z.number(),
+  paymentsRequiringRefund: z
+    .array(
+      z.object({
+        reference: z.string(),
+        amount: z.number(),
+        orderId: id.nullable().optional(),
+        rentalId: id.nullable().optional(),
+        approvedAt: isoDate.nullable().optional(),
+      }),
+    )
+    .default([]),
   unitsAvailable: z.number(),
   unitsReserved: z.number(),
   unitsTotal: z.number(),
@@ -205,6 +249,9 @@ export type AdminOrderDetail = z.infer<typeof adminOrderDetailSchema>;
 export type AdminUser = z.infer<typeof adminUserSchema>;
 export type AdminUserDetail = z.infer<typeof adminUserDetailSchema>;
 export type AdminRental = z.infer<typeof adminRentalSchema>;
+export type AdminPayment = z.infer<typeof adminPaymentSchema>;
+export type RentalUnit = z.infer<typeof rentalUnitSchema>;
+export type RentalUnitStatusValue = (typeof rentalUnitStatuses)[number];
 export type Dashboard = z.infer<typeof dashboardSchema>;
 export interface Paged<T> {
   items: T[];

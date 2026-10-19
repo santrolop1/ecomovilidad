@@ -16,6 +16,9 @@ import {
   inventoryRowSchema,
   type OrderStatusValue,
   pageSchema,
+  type RentalStatusValue,
+  type RentalUnitStatusValue,
+  rentalUnitSchema,
 } from "./admin-schemas";
 import { ApiError } from "./errors";
 import { createHttpClient, type RequestOptions } from "./http-client";
@@ -90,4 +93,10 @@ export const adminApi = {
     send("PATCH", `/users/${encodeURIComponent(id)}`, adminUserDetailSchema, { isActive }),
 
   listRentals: (query: Query) => get("/rentals", pageSchema(adminRentalSchema), query),
+  getRental: (id: string) => get(`/rentals/${encodeURIComponent(id)}`, adminRentalSchema),
+  updateRentalStatus: (id: string, status: RentalStatusValue) =>
+    send("PATCH", `/rentals/${encodeURIComponent(id)}`, adminRentalSchema, { status }),
+  listRentalUnits: () => get("/rental-units", z.array(rentalUnitSchema)),
+  updateRentalUnit: (id: string, status: RentalUnitStatusValue) =>
+    send("PATCH", `/rental-units/${encodeURIComponent(id)}`, rentalUnitSchema, { status }),
 };

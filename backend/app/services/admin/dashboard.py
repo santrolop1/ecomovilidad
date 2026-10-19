@@ -8,6 +8,7 @@ from app.schemas.admin import DashboardOut, LowStockOut
 
 from .inventory import LOW_STOCK_THRESHOLD, inventory_totals
 from .orders import summaries
+from .payments import refund_alerts
 
 
 def get_dashboard(db: Session) -> DashboardOut:
@@ -22,7 +23,7 @@ def get_dashboard(db: Session) -> DashboardOut:
 
     revenue = db.scalar(
         select(func.coalesce(func.sum(Order.total), 0)).where(
-            Order.status.in_([OrderStatus.CONFIRMED, OrderStatus.COMPLETED])
+            Order.status.in_([OrderStatus.PAID, OrderStatus.CONFIRMED, OrderStatus.COMPLETED])
         )
     )
 
@@ -63,6 +64,7 @@ def get_dashboard(db: Session) -> DashboardOut:
         orders_total=sum(orders_by_status.values()),
         orders_by_status=orders_by_status,
         revenue_confirmed=int(revenue or 0),
+        payments_requiring_refund=refund_alerts(db),
         units_available=available,
         units_reserved=reserved,
         units_total=total,

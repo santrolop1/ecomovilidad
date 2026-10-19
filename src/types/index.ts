@@ -4,5 +4,6 @@ export type * from "./rental";
 export type * from "./service";
 export type * from "./cart";
 export type * from "./order";
+export type * from "./payment";
 export type * from "./user";
 export type * from "./content";

@@ -17,6 +17,8 @@ Administrador de **desarrollo** (solo local, definido en `docker-compose.yml`): 
 
 El enlace de recuperación de contraseña se ve en `docker compose logs api` (no hay proveedor de correo).
 
+Pagos: la app **está lista para recibir las llaves de Wompi**, pero por ahora usa una **pasarela de pruebas** propia (pago simulado, sin cobro real, mismo flujo). Para usar Wompi, pon sus llaves en `backend/.env` (ver `backend/.env.example`; nunca en Git) y reinicia la API. Detalles en DOCUMENTACION.md §13 y DEMO_PUBLICA.md.
+
 Sin Docker, `npm run dev` arranca la tienda con datos de demostración (`API_MODE=mock`; el panel requiere el backend).
 
 Detener: `docker compose down` (conserva datos) o `docker compose down -v` (borra datos).

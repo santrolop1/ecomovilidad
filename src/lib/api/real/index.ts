@@ -11,7 +11,14 @@ import {
   categoryListSchema,
   consentSchema,
   customerOrderSchema,
+  customerRentalSchema,
   orderSchema,
+  paymentConfigSchema,
+  paymentResultSchema,
+  paymentSimulationSchema,
+  paymentStartSchema,
+  rentalOfferSchema,
+  rentalQuoteSchema,
   productListSchema,
   publicProductSchema,
   sessionSchema,
@@ -26,10 +33,11 @@ const AVAILABILITY_REVALIDATE_S = 15;
 /**
  * Implementación contra FastAPI (API_MODE=real).
  *
- * REAL: catálogo, categorías, sucursales, autenticación, carrito y pedidos.
- * SIGUE EN MOCK (no existe backend todavía): contenido CMS, FAQ, servicios,
- * oferta de alquiler con tarifas y franjas horarias. El formulario de
- * contacto responde "no disponible" en lugar de simular un envío.
+ * REAL: catálogo, categorías, sucursales, autenticación, carrito, pedidos,
+ * pagos (Wompi), facturas y alquiler (oferta, cotización y reservas).
+ * SIGUE EN MOCK (no existe backend todavía): contenido CMS, FAQ, servicios y
+ * franjas horarias. El formulario de contacto responde "no disponible" en
+ * lugar de simular un envío.
  */
 export function createRealApi(http: HttpClient): ApiClient {
   const mock = createMockApi();
@@ -72,7 +80,54 @@ export function createRealApi(http: HttpClient): ApiClient {
           next: { revalidate: AVAILABILITY_REVALIDATE_S, tags: ["branches"] },
         }),
     },
-    rentals: mock.rentals,
+    rentals: {
+      listOffers: () =>
+        http.request(endpoints.rentalOffers, {
+          schema: z.array(rentalOfferSchema),
+          next: { revalidate: AVAILABILITY_REVALIDATE_S, tags: ["rental-offers"] },
+        }),
+      quote: (productId, input) =>
+        http.request(endpoints.rentalQuote(productId), { method: "POST", body: input, schema: rentalQuoteSchema }),
+      createRental: (input) =>
+        http.request(endpoints.rentals, { method: "POST", body: input, schema: customerRentalSchema, auth: true }),
+      listRentals: () => http.request(endpoints.rentals, { schema: z.array(customerRentalSchema), auth: true }),
+      async getRental(id) {
+        try {
+          return await http.request(endpoints.rental(id), { schema: customerRentalSchema, auth: true });
+        } catch (error) {
+          if (isApiError(error) && (error.code === "NOT_FOUND" || error.code === "VALIDATION_ERROR")) return null;
+          throw error;
+        }
+      },
+      listTimeSlots: mock.rentals.listTimeSlots,
+    },
+    payments: {
+      getConfig: () => http.request(endpoints.paymentsConfig, { schema: paymentConfigSchema }),
+      start: (target) =>
+        http.request(endpoints.payments, { method: "POST", body: target, schema: paymentStartSchema, auth: true }),
+      verify: (transactionId) =>
+        http.request(endpoints.paymentsVerify, {
+          method: "POST",
+          body: { transactionId },
+          schema: paymentResultSchema,
+          auth: true,
+        }),
+      async getSimulation(reference) {
+        try {
+          return await http.request(endpoints.paymentSimulation(reference), { schema: paymentSimulationSchema, auth: true });
+        } catch (error) {
+          if (isApiError(error) && error.code === "NOT_FOUND") return null;
+          throw error;
+        }
+      },
+      simulate: (reference, decision) =>
+        http.request(endpoints.paymentSimulation(reference), {
+          method: "POST",
+          body: { decision },
+          schema: z.object({ transactionId: z.string() }),
+          auth: true,
+        }),
+    },
     cart: {
       getCart: () => http.request(endpoints.cart, { schema: cartSchema, auth: true }),
       addItem: (productId, quantity) =>

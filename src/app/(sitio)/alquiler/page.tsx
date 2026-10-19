@@ -1,64 +1,58 @@
 import Link from "next/link";
-import { Gauge, ShieldCheck, Wrench } from "lucide-react";
+import { CalendarClock, ShieldCheck, Wrench } from "lucide-react";
 import { Container } from "@/components/shared/container";
+import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { RouteSteps } from "@/components/shared/route-steps";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { Button } from "@/components/ui/button";
-import { RentalVehicleCard } from "@/features/rentals/components/rental-vehicle-card";
-import { TimeSlotList } from "@/features/rentals/components/time-slot-list";
-import { MAINTENANCE_LOCK_THRESHOLD } from "@/features/rentals/lib/maintenance";
+import { RentalOfferCard } from "@/features/rentals/components/rental-offer-card";
 import { api } from "@/lib/api";
 import { createPageMetadata } from "@/lib/seo";
 
-/** Disponibilidad y franjas del día: regeneración periódica. */
-export const revalidate = 300;
+/** Tarifas y flota: regeneración frecuente (la disponibilidad por fechas se cotiza al reservar). */
+export const revalidate = 60;
 
 export const metadata = createPageMetadata({
   title: "Alquiler de bicicletas, patinetas, patines y drones",
-  description: "Alquila por horas, días o semanas. Recoge en sucursal o recibe en casa en la franja que elijas. Flota con mantenimiento preventivo.",
+  description: "Alquila por horas o días. Reserva, paga en línea y recoge en una sucursal del área metropolitana de Bucaramanga.",
   path: "/alquiler",
 });
 
 const steps = [
-  { title: "Elige vehículo y duración", description: "Por horas, días o semanas, según el vehículo." },
-  { title: "Define entrega o recogida", description: "En una sucursal o en tu dirección, en una franja de dos horas." },
-  { title: "Paga en línea", description: "Con PSE, tarjeta o billetera digital." },
-  { title: "Recibe y confirma", description: "Validamos la entrega con un código QR único o con tu firma digital." },
-  { title: "Devuelve", description: "En cualquier sucursal con alquiler o programando la recogida." },
+  { title: "Elige vehículo y sucursal", description: "Según la flota de cada sucursal." },
+  { title: "Define recogida y devolución", description: "Dentro del horario de la sucursal; te mostramos el precio y si hay unidades libres." },
+  { title: "Paga en línea", description: "Con tarjeta, PSE, Nequi u otros medios. Recibes la factura." },
+  { title: "Recoge", description: "En la sucursal, a la hora reservada. Te entregamos una unidad concreta de la flota." },
+  { title: "Devuelve", description: "En la misma sucursal, a la hora acordada." },
 ];
 
-const maintenancePoints = [
+const fleetPoints = [
   {
-    icon: Gauge,
-    title: "Control por uso",
-    description: "Medimos kilómetros recorridos en vehículos terrestres y horas de vuelo en drones.",
-  },
-  {
-    icon: ShieldCheck,
-    title: "Retiro preventivo",
-    description: `Al llegar al ${Math.round(MAINTENANCE_LOCK_THRESHOLD * 100)}% de su límite de uso, el equipo sale del catálogo hasta pasar revisión.`,
+    icon: CalendarClock,
+    title: "Disponibilidad real",
+    description: "Cada reserva aparta una unidad concreta: nunca se alquila dos veces la misma en el mismo horario.",
   },
   {
     icon: Wrench,
-    title: "Historial por equipo",
-    description: "Cada revisión registra piezas cambiadas, técnico responsable y fecha de salida del taller.",
+    title: "Fuera de servicio, fuera de la oferta",
+    description: "Las unidades en mantenimiento no se pueden reservar hasta volver a estar operativas.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Precio claro",
+    description: "Se cobra la opción más económica entre horas y días completos, con IVA incluido.",
   },
 ];
 
 export default async function RentalsPage() {
-  const today = new Date().toISOString().slice(0, 10);
-  const [vehicles, branches, slots] = await Promise.all([
-    api.rentals.listRentalVehicles(),
-    api.branches.listBranches(),
-    api.rentals.listTimeSlots(today),
-  ]);
+  const offers = await api.rentals.listOffers();
 
   return (
     <>
       <PageHeader
         title="Alquiler"
-        description="Vehículos revisados y listos para salir, con casco y accesorios. Recoge en sucursal o recíbelos donde estés."
+        description="Vehículos de nuestra flota, listos para salir. Reserva en línea y recoge en una sucursal del área metropolitana."
       >
         <div className="flex flex-wrap gap-3">
           <Button asChild size="xl" variant="brand">
@@ -75,13 +69,17 @@ export default async function RentalsPage() {
           <SectionHeading
             id="vehiculos-title"
             title="Vehículos disponibles"
-            description="Tarifas con IVA incluido. La disponibilidad se actualiza según la flota de cada sucursal."
+            description="Tarifas con IVA incluido. Al reservar verás si hay unidades libres para tus fechas."
           />
-          <div className="space-y-6">
-            {vehicles.map((vehicle) => (
-              <RentalVehicleCard key={vehicle.id} vehicle={vehicle} branches={branches} />
-            ))}
-          </div>
+          {offers.length === 0 ? (
+            <EmptyState icon={CalendarClock} title="No hay vehículos de alquiler por ahora" description="Vuelve pronto o escríbenos desde Contacto." />
+          ) : (
+            <div className="space-y-6">
+              {offers.map((offer) => (
+                <RentalOfferCard key={offer.productId} offer={offer} />
+              ))}
+            </div>
+          )}
         </section>
 
         <section aria-labelledby="proceso-title" className="space-y-10">
@@ -89,23 +87,14 @@ export default async function RentalsPage() {
           <RouteSteps steps={steps} />
         </section>
 
-        <section aria-labelledby="franjas-title" className="space-y-8">
+        <section aria-labelledby="flota-title" className="grid gap-10 lg:grid-cols-[1fr_1.4fr]">
           <SectionHeading
-            id="franjas-title"
-            title="Entrega y recogida a domicilio"
-            description="Eliges una franja de dos horas según la capacidad logística del día. Estas son las franjas de hoy."
-          />
-          <TimeSlotList slots={slots} />
-        </section>
-
-        <section aria-labelledby="mantenimiento-title" className="grid gap-10 lg:grid-cols-[1fr_1.4fr]">
-          <SectionHeading
-            id="mantenimiento-title"
-            title="Mantenimiento antes que reemplazo"
-            description="Si un equipo falla durante tu alquiler, lo reemplazamos. Pero preferimos que no pase."
+            id="flota-title"
+            title="Una flota que se cuida"
+            description="Si una unidad falla, sale de la oferta hasta que el taller la libera."
           />
           <ul className="grid gap-6 sm:grid-cols-3">
-            {maintenancePoints.map(({ icon: Icon, title, description }) => (
+            {fleetPoints.map(({ icon: Icon, title, description }) => (
               <li key={title} className="space-y-2">
                 <Icon className="size-6 text-volt-strong" aria-hidden="true" />
                 <h3 className="font-display-tight text-lg">{title}</h3>

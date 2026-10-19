@@ -15,8 +15,16 @@ import type {
   ProductFilters,
   ProductListResult,
   ProfileInput,
+  CreateRentalInput,
+  CustomerRental,
+  PaymentConfig,
+  PaymentResult,
+  PaymentSimulation,
+  PaymentStart,
   RegisterInput,
-  RentalVehicle,
+  RentalOffer,
+  RentalPeriodInput,
+  RentalQuote,
   Service,
   Session,
   TimeSlot,
@@ -45,8 +53,16 @@ export interface BranchesApi {
 }
 
 export interface RentalsApi {
-  /** Oferta de vehículos de alquiler con tarifas. SIN backend: siempre mock. */
-  listRentalVehicles(): Promise<RentalVehicle[]>;
+  /** GET /rental-offers — vehículos que se alquilan, tarifas y unidades por sucursal. */
+  listOffers(): Promise<RentalOffer[]>;
+  /** POST /rental-offers/:productId/quote — precio y unidades libres (no aparta nada). */
+  quote(productId: string, input: RentalPeriodInput): Promise<RentalQuote>;
+  /** POST /rentals — aparta una unidad por el plazo de pago (requiere sesión). */
+  createRental(input: CreateRentalInput): Promise<CustomerRental>;
+  /** GET /rentals — alquileres del usuario autenticado. */
+  listRentals(): Promise<CustomerRental[]>;
+  /** GET /rentals/:id — null si no existe o es de otro usuario. */
+  getRental(id: string): Promise<CustomerRental | null>;
   /** Franjas de entrega (RF 7.1). SIN endpoint: siempre mock; FastAPI valida los ids. */
   listTimeSlots(date: string): Promise<TimeSlot[]>;
 }
@@ -70,6 +86,19 @@ export interface OrdersApi {
   listOrders(): Promise<CustomerOrder[]>;
   /** GET /orders/:id — null si no existe o es de otro usuario */
   getOrder(id: string): Promise<CustomerOrder | null>;
+}
+
+export interface PaymentsApi {
+  /** GET /payments/config — si los pagos en línea están configurados. */
+  getConfig(): Promise<PaymentConfig>;
+  /** POST /payments — URL del Web Checkout de Wompi para un pedido o alquiler pendiente. */
+  start(target: { orderId?: string; rentalId?: string }): Promise<PaymentStart>;
+  /** POST /payments/verify — el backend consulta la transacción a la pasarela. */
+  verify(transactionId: string): Promise<PaymentResult>;
+  /** GET /payments/simulator/:reference — pasarela simulada (null si no aplica o no es del usuario). */
+  getSimulation(reference: string): Promise<PaymentSimulation | null>;
+  /** POST /payments/simulator/:reference — aprobar o rechazar en la pasarela simulada; devuelve la transacción. */
+  simulate(reference: string, decision: "approved" | "declined"): Promise<{ transactionId: string }>;
 }
 
 export interface ContentApi {
@@ -109,6 +138,7 @@ export interface ApiClient {
   rentals: RentalsApi;
   cart: CartApi;
   orders: OrdersApi;
+  payments: PaymentsApi;
   content: ContentApi;
   auth: AuthApi;
 }

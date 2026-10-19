@@ -4,6 +4,7 @@ import { ProductImage } from "@/components/shared/product-image";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { formatCOP, formatDate, formatDateTime, shortId } from "@/lib/format";
 import type { CustomerOrder } from "@/types";
+import { PaymentSection } from "@/features/payments/components/payment-section";
 import { customerOrderStatus, paymentMethodLabels, timeSlotLabels } from "../lib/labels";
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
@@ -71,13 +72,14 @@ export function OrderDetail({ order }: { order: CustomerOrder }) {
               <Field label="Franja">{timeSlotLabels[order.timeSlot] ?? order.timeSlot}</Field>
             </dl>
           </section>
-          <section aria-labelledby="pago" className="rounded-2xl border border-border bg-card p-5">
-            <h2 id="pago" className="font-display-tight text-lg">Pago</h2>
-            <dl className="mt-3 grid gap-3 text-sm">
-              <Field label="Método elegido">{paymentMethodLabels[order.paymentMethod]}</Field>
-              <Field label="Estado del pago">Sin procesar: el pago en línea aún no está disponible.</Field>
-            </dl>
-          </section>
+          <PaymentSection
+            awaitingPayment={order.status === "pending"}
+            expiresAt={order.paymentExpiresAt}
+            payment={order.payment}
+            invoice={order.invoice}
+            target={{ orderId: order.id }}
+            closedNote={order.paymentMethod ? `Método elegido: ${paymentMethodLabels[order.paymentMethod]} (sin pago en línea)` : undefined}
+          />
           <section aria-labelledby="contacto" className="rounded-2xl border border-border bg-card p-5">
             <h2 id="contacto" className="font-display-tight text-lg">Contacto</h2>
             <dl className="mt-3 grid gap-3 text-sm">

@@ -19,7 +19,13 @@ export function StatusBadge({ tone = "neutral", children }: { tone?: Tone; child
   );
 }
 
-export const orderStatusTone = { pending: "warning", confirmed: "info", completed: "success", cancelled: "danger" } as const;
+export const orderStatusTone = {
+  pending: "warning",
+  paid: "info",
+  confirmed: "info",
+  completed: "success",
+  cancelled: "danger",
+} as const;
 export const rentalStatusTone = {
   pending: "warning",
   confirmed: "info",

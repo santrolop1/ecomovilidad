@@ -89,9 +89,24 @@ scripts/demo.sh stop --all && docker compose down -v && scripts/demo.sh start
 
 - Comparte la contraseña del admin **solo** por un canal privado. Los clientes de prueba pueden registrarse libremente desde la propia URL.
 
+## Pagos
+
+**Por ahora la demo usa la pasarela de pruebas de EcoMovilidad:** al pagar, el cliente llega a una página marcada como "Pasarela de pruebas" y elige **Aprobar pago** o **Rechazar pago**. No se cobra dinero real y el resto del flujo es el real (pedido o alquiler pagado, inventario, factura PDF y XML, panel). No hay que configurar nada.
+
+El sistema **está listo para recibir las llaves de Wompi**. Para pasar a Wompi en modo de pruebas (sandbox):
+
+1. Crea una cuenta en el panel de comercios de Wompi y copia las **llaves de pruebas** (en la sección para desarrolladores del panel): pública (`pub_test_…`), privada (`prv_test_…`), secreto de eventos (`test_events_…`) y secreto de integridad (`test_integrity_…`).
+2. Ponlas en `backend/.env` (está fuera de Git), con los nombres de `backend/.env.example`:
+   `WOMPI_PUBLIC_KEY`, `WOMPI_PRIVATE_KEY`, `WOMPI_EVENTS_SECRET`, `WOMPI_INTEGRITY_SECRET`.
+3. Inicia (o reinicia) la demo: `scripts/demo.sh start`. Comprueba en la consola: `curl -s 127.0.0.1:8000/api/v1/payments/config` debe decir `"enabled":true,"sandbox":true`.
+4. **URL de eventos:** en el panel de Wompi, en la configuración de eventos para desarrolladores, registra `https://<url-del-túnel>/api/webhooks/wompi`. Cambia en cada inicio de la demo; si no la actualizas, el pago se confirma igual cuando el cliente vuelve de Wompi, pero los pagos que tardan (PSE) solo se actualizan al volver a la página de resultado.
+5. Datos de prueba de Wompi: tarjeta **4242 4242 4242 4242** (aprobada) o **4111 1111 1111 1111** (rechazada), con cualquier fecha futura y CVC; Nequi **3991111111** (aprobado).
+
+Mientras no estén las llaves, se sigue usando la pasarela de pruebas. `curl -s 127.0.0.1:8000/api/v1/payments/config` muestra cuál está activa (`"provider": "simulado"` o `"wompi"`).
+
 ## Qué puede probar el profesor
 
-Inicio, catálogo, ficha de producto, sucursales con **mapa real** (OpenStreetMap), registro, login, carrito con reserva de 15 minutos, checkout, crear pedido, "Mis pedidos", cerrar sesión y volver a entrar, y el panel `/admin` (con la cuenta de administrador), incluida "Operación" (`/admin/operacion`), cuyo mapa muestra activos **simulados** en modo demostración.
+Inicio, catálogo, ficha de producto, sucursales con **mapa real** (OpenStreetMap), registro, login, carrito con reserva de 15 minutos, checkout, crear pedido y **pagarlo en la pasarela de pruebas**, factura PDF y XML, **alquilar** un vehículo (cotización, reserva y pago) y verlo en "Mis alquileres", "Mis pedidos", cerrar sesión y volver a entrar, y el panel `/admin` (con la cuenta de administrador), incluida "Operación" (`/admin/operacion`), cuyo mapa muestra activos **simulados** en modo demostración.
 
 Todos los datos comerciales son **de demostración** (`is_demo = true`, marcados en la interfaz). El pago **no se procesa**: los pedidos quedan "Pendiente de confirmación".
 

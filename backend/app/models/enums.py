@@ -10,16 +10,17 @@ class CartStatus(StrEnum):
 
 
 class OrderStatus(StrEnum):
-    PENDING = "pending"
-    CONFIRMED = "confirmed"
+    PENDING = "pending"  # creado; unidades reservadas a la espera del pago
+    PAID = "paid"  # pago aprobado por la pasarela; unidades descontadas y factura emitida
+    CONFIRMED = "confirmed"  # histórico: pedidos confirmados a mano antes de los pagos
     CANCELLED = "cancelled"
     COMPLETED = "completed"
 
 
 class RentalStatus(StrEnum):
-    PENDING = "pending"
-    CONFIRMED = "confirmed"
-    ACTIVE = "active"
+    PENDING = "pending"  # unidad apartada a la espera del pago
+    CONFIRMED = "confirmed"  # pagado
+    ACTIVE = "active"  # entregado al cliente
     COMPLETED = "completed"
     CANCELLED = "cancelled"
 
@@ -38,6 +39,28 @@ class PaymentMethod(StrEnum):
 class ConsentPurpose(StrEnum):
     REGISTRATION = "registro"
     ORDER = "pedido"
+    RENTAL = "alquiler"
+
+
+class PaymentStatus(StrEnum):
+    """Mismos estados que una transacción de Wompi, en minúsculas."""
+
+    PENDING = "pending"
+    APPROVED = "approved"
+    DECLINED = "declined"
+    VOIDED = "voided"
+    ERROR = "error"
+
+
+class RentalUnitStatus(StrEnum):
+    OPERATIONAL = "operativo"
+    MAINTENANCE = "mantenimiento"
+    RETIRED = "retirado"
+
+
+class RentalRateUnit(StrEnum):
+    HOUR = "hora"
+    DAY = "dia"
 
 
 class BranchService(StrEnum):

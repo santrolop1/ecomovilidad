@@ -24,8 +24,18 @@ def ensure_current_policy(version: str | None) -> None:
 
 
 def record_consent(
-    db: Session, user_id: uuid.UUID, purpose: ConsentPurpose, order_id: uuid.UUID | None = None
+    db: Session,
+    user_id: uuid.UUID,
+    purpose: ConsentPurpose,
+    order_id: uuid.UUID | None = None,
+    rental_id: uuid.UUID | None = None,
 ) -> ConsentRecord:
-    record = ConsentRecord(user_id=user_id, purpose=purpose, policy_version=current_policy_version(), order_id=order_id)
+    record = ConsentRecord(
+        user_id=user_id,
+        purpose=purpose,
+        policy_version=current_policy_version(),
+        order_id=order_id,
+        rental_id=rental_id,
+    )
     db.add(record)
     return record

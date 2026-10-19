@@ -21,7 +21,7 @@ from sqlalchemy.orm import Session
 
 from app.core.security import hash_password
 from app.db.session import SessionLocal
-from app.models import Branch, Category, Inventory, Product, User
+from app.models import Branch, Category, Inventory, Product, RentalRate, RentalUnit, User
 
 SEED_FILE = Path(__file__).with_name("seed_data.json")
 
@@ -82,13 +82,56 @@ def seed(session: Session) -> dict[str, int]:
             insert(Inventory).values(inventory_rows).on_conflict_do_nothing(constraint="uq_inventory_product_branch")
         )
 
+    # Flota de alquiler (DEMO): tarifas por producto y unidades físicas por sucursal.
+    rate_rows = [
+        {"product_id": product_ids[offer["product"]], "unit": unit, "price": price}
+        for offer in data.get("rental", [])
+        for unit, price in offer["rates"].items()
+    ]
+    if rate_rows:
+        stmt = insert(RentalRate).values(rate_rows)
+        session.execute(
+            stmt.on_conflict_do_update(constraint="uq_rental_rates_product_unit", set_={"price": stmt.excluded.price})
+        )
+    unit_rows = [
+        {
+            "product_id": product_ids[offer["product"]],
+            "branch_id": branch_ids[branch],
+            "code": f"{_unit_prefix(offer['product'])}-{branch_code}-{n:02d}",
+            "is_demo": True,
+        }
+        for offer in data.get("rental", [])
+        for branch, count in offer["units"].items()
+        for branch_code in [BRANCH_CODES[branch]]
+        for n in range(1, count + 1)
+    ]
+    if unit_rows:
+        # Solo se crean las que faltan: el estado (p. ej. en mantenimiento) no se pisa.
+        session.execute(insert(RentalUnit).values(unit_rows).on_conflict_do_nothing(index_elements=["code"]))
+
     session.commit()
     return {
         "categories": len(data["categories"]),
         "branches": len(branch_rows),
         "products": len(product_rows),
         "inventory": len(inventory_rows),
+        "rental_rates": len(rate_rows),
+        "rental_units": len(unit_rows),
     }
+
+
+# Códigos legibles de unidad: <producto>-<sucursal>-<n>, p. ej. VUE1-CAB-01.
+BRANCH_CODES = {
+    "bucaramanga-cabecera": "CAB",
+    "bucaramanga-centro": "CEN",
+    "floridablanca-canaveral": "CAN",
+    "giron-centro": "GIR",
+    "piedecuesta-centro": "PIE",
+}
+
+
+def _unit_prefix(product_slug: str) -> str:
+    return "".join(part[0] for part in product_slug.split("-")).upper()
 
 
 def ensure_demo_admin(session: Session, email: str, password: str) -> None:

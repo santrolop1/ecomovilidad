@@ -12,13 +12,6 @@ export const documentTypes = [
   { value: "PAS", label: "Pasaporte" },
 ] as const;
 
-/** Métodos de pago del RF 4.1. Los datos se capturan en la pasarela, no aquí. */
-export const paymentMethods = [
-  { value: "pse", label: "PSE", description: "Débito desde tu cuenta bancaria." },
-  { value: "tarjeta", label: "Tarjeta de crédito o débito", description: "Visa, Mastercard y otras franquicias." },
-  { value: "billetera", label: "Billetera digital", description: "Paga desde tu billetera digital." },
-] as const;
-
 const MAX_ITEMS = 20;
 
 export const checkoutSchema = z
@@ -48,7 +41,6 @@ export const checkoutSchema = z
         .refine((date) => date >= todayInBogota(), "La fecha no puede ser anterior a hoy."),
       timeSlotId: z.string().min(1, "Elige una franja horaria."),
     }),
-    paymentMethod: z.enum(["pse", "tarjeta", "billetera"], { error: "Elige un método de pago." }),
     dataConsent: consentField,
     policyVersion: z.string().max(20).optional(),
   })

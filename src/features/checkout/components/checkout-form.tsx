@@ -23,9 +23,13 @@ import { useNow } from "@/hooks/use-now";
 import { useActionForm } from "@/hooks/use-action-form";
 import { formatCOP } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import type { Branch, FulfillmentMethod, PaymentMethod, TimeSlot } from "@/types";
+import type { Branch, FulfillmentMethod, PaymentConfig, TimeSlot } from "@/types";
 import { createOrder } from "../actions";
-import { checkoutSchema, documentTypes, paymentMethods, serviceAreaCities } from "../lib/schema";
+import { startPayment } from "@/features/payments/actions";
+import { PayButton } from "@/features/payments/components/pay-button";
+import { PaymentModeNotice } from "@/features/payments/components/payment-mode-notice";
+import { resolveCheckoutTarget } from "@/features/payments/lib/checkout-url";
+import { checkoutSchema, documentTypes, serviceAreaCities } from "../lib/schema";
 
 interface CheckoutFormProps {
   branches: Branch[];
@@ -33,6 +37,8 @@ interface CheckoutFormProps {
   minDate: string;
   /** Con el backend real, comprar exige una cuenta (el pedido queda asociado al usuario). */
   requiresAccount: boolean;
+  /** Para avisar si los pagos son de prueba (pasarela simulada o Wompi sandbox). */
+  paymentConfig?: PaymentConfig | null;
 }
 
 function Fieldset({ title, children }: { title: string; children: ReactNode }) {
@@ -60,20 +66,30 @@ function ChoiceCard({ value, id, title, description }: { value: string; id: stri
   );
 }
 
-export function CheckoutForm({ branches, timeSlots, minDate, requiresAccount }: CheckoutFormProps) {
+export function CheckoutForm({ branches, timeSlots, minDate, requiresAccount, paymentConfig = null }: CheckoutFormProps) {
   const { cart, isReady, isRemote, itemCount, subtotal, total, completeOrder, refresh } = useCart();
   const { user } = useSession();
   const [city, setCity] = useState("");
   const [method, setMethod] = useState<FulfillmentMethod>("domicilio");
   const [branchId, setBranchId] = useState("");
   const [timeSlotId, setTimeSlotId] = useState("");
-  const [payment, setPayment] = useState<PaymentMethod | "">("");
+  // Tras crear el pedido se abre la pasarela; si no se puede, el cliente paga desde aquí o desde Mis pedidos.
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [redirecting, setRedirecting] = useState(false);
   const [documentType, setDocumentType] = useState("CC");
   const form = useActionForm(checkoutSchema, createOrder, {
-    onSuccess(order) {
+    async onSuccess(order) {
       completeOrder();
-      // Con Wompi, el backend devolverá la URL de la pasarela de pago.
-      if (order.paymentRedirectUrl) window.location.assign(order.paymentRedirectUrl);
+      if (!isRemote) return; // sin backend no hay pagos en línea
+      setRedirecting(true);
+      const result = await startPayment({ orderId: order.id });
+      const target = result.ok ? resolveCheckoutTarget(result.data.checkoutUrl) : null;
+      if (target) {
+        window.location.assign(target);
+        return;
+      }
+      setRedirecting(false);
+      setPaymentError(result.ok ? "No pudimos abrir la pasarela de pagos." : result.message);
     },
   });
   const errors = form.fieldErrors;
@@ -97,16 +113,32 @@ export function CheckoutForm({ branches, timeSlots, minDate, requiresAccount }: 
   const pickupBranches = branches.filter((branch) => branch.services.includes("recogida"));
 
   if (form.data) {
+    if (redirecting) {
+      return (
+        <div role="status" className="mx-auto max-w-xl rounded-3xl border border-border bg-card p-8 text-center">
+          <Lock className="mx-auto size-10 text-volt-strong" aria-hidden="true" />
+          <h2 className="font-display-tight mt-4 text-2xl">Te llevamos a la pasarela de pago…</h2>
+          <p className="mt-3 text-muted-foreground">Pedido #{form.data.id.slice(0, 8).toUpperCase()}, total {formatCOP(form.data.total)}.</p>
+        </div>
+      );
+    }
     return (
       <div role="status" className="mx-auto max-w-xl rounded-3xl border border-border bg-card p-8 text-center">
         <CircleCheck className="mx-auto size-12 text-volt-strong" aria-hidden="true" />
         <h2 className="font-display-tight mt-4 text-2xl">Pedido #{form.data.id.slice(0, 8).toUpperCase()} creado</h2>
         <p className="mt-3 text-muted-foreground">
-          Total {formatCOP(form.data.total)}. Quedó pendiente de confirmación; el pago en línea aún no está disponible.
+          Total {formatCOP(form.data.total)}. Está pendiente de pago: apartamos las unidades por un tiempo limitado.
         </p>
+        {!isRemote && <p className="mt-2 text-sm text-muted-foreground">Los pagos en línea requieren el backend (modo de demostración).</p>}
+        {paymentError && (
+          <p role="alert" className="mt-3 text-sm text-destructive">
+            {paymentError}
+          </p>
+        )}
         <div className="mt-6 flex flex-wrap justify-center gap-3">
+          {isRemote && <PayButton target={{ orderId: form.data.id }} />}
           {isRemote && (
-            <Button asChild size="xl" variant="brand">
+            <Button asChild size="xl" variant="outline">
               <Link href={`/cuenta/pedidos/${form.data.id}`}>Ver mi pedido</Link>
             </Button>
           )}
@@ -188,7 +220,6 @@ export function CheckoutForm({ branches, timeSlots, minDate, requiresAccount }: 
             date: text("date"),
             timeSlotId,
           },
-          paymentMethod: payment || undefined,
           dataConsent: data.get("dataConsent") === "true",
           policyVersion: PRIVACY_POLICY_VERSION,
         }, event.currentTarget);
@@ -354,22 +385,12 @@ export function CheckoutForm({ branches, timeSlots, minDate, requiresAccount }: 
         </Fieldset>
 
         <Fieldset title="Pago">
-          <RadioGroup
-            value={payment}
-            onValueChange={(value) => setPayment(value as PaymentMethod)}
-            aria-label="Método de pago"
-            aria-invalid={Boolean(errors.paymentMethod)}
-            className="grid gap-3"
-          >
-            {paymentMethods.map((option) => (
-              <ChoiceCard key={option.value} id={`co-pay-${option.value}`} value={option.value} title={option.label} description={option.description} />
-            ))}
-          </RadioGroup>
-          {errors.paymentMethod && <p className="text-xs font-medium text-destructive">{errors.paymentMethod}</p>}
           <p className="flex items-start gap-2 text-sm text-muted-foreground">
             <Lock className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-            Completarás el pago en una pasarela segura. EcoMovilidad no recibe ni almacena los datos de tu tarjeta.
+            Al continuar, pagas en la pasarela de pagos con tarjeta, PSE, Nequi u otros medios. EcoMovilidad no recibe ni almacena
+            los datos de tu tarjeta. Si no completas el pago a tiempo, el pedido se cancela y las unidades se liberan.
           </p>
+          <PaymentModeNotice config={paymentConfig} />
         </Fieldset>
 
         <ConsentCheckbox id="co-consent" error={errors.dataConsent} />
@@ -388,7 +409,7 @@ export function CheckoutForm({ branches, timeSlots, minDate, requiresAccount }: 
             ))}
           </ul>
           <Button type="submit" size="xl" variant="brand" className="w-full" disabled={form.isPending || reservationBlocked}>
-            {form.isPending ? "Creando pedido…" : "Confirmar pedido"}
+            {form.isPending ? "Creando pedido…" : "Continuar al pago"}
           </Button>
           <p className="text-xs text-muted-foreground">
             Puedes ejercer el derecho de retracto según la Ley 1480 de 2011.{" "}

@@ -41,7 +41,7 @@ export default async function HomePage() {
     api.content.getHomeContent(),
     api.catalog.listCategories(),
     api.catalog.listFeaturedProducts(4),
-    api.rentals.listRentalVehicles(),
+    api.rentals.listOffers(),
     api.branches.listBranches(),
     api.catalog.listProducts(),
   ]);

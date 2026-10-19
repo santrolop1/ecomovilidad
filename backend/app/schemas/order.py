@@ -11,6 +11,7 @@ from app.models.enums import FulfillmentMethod, OrderStatus, PaymentMethod
 
 from .auth import PHONE_PATTERN
 from .base import ApiModel
+from .payment import InvoiceRefOut, PaymentSummaryOut
 
 
 class OrderItemIn(ApiModel):
@@ -52,7 +53,8 @@ class OrderCreateIn(ApiModel):
     items: list[OrderItemIn] = Field(min_length=1, max_length=20)
     customer: CustomerIn
     fulfillment: FulfillmentIn
-    payment_method: PaymentMethod
+    # Histórico: hoy el medio se elige en la pasarela. Se acepta por compatibilidad.
+    payment_method: PaymentMethod | None = None
     data_consent: Literal[True]
     # Versión de la política que vio el cliente (Ley 1581). Opcional; si llega debe ser la vigente.
     policy_version: str | None = Field(default=None, max_length=20)
@@ -84,7 +86,10 @@ class OrderOut(ApiModel):
     delivery_city: str | None = None
     scheduled_date: date
     time_slot: str
-    payment_method: PaymentMethod
+    payment_method: PaymentMethod | None = None
+    payment_expires_at: datetime | None = None
+    payment: PaymentSummaryOut | None = None
+    invoice: InvoiceRefOut | None = None
     contact_name: str
     contact_email: str
     contact_phone: str

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AdminPageHeader } from "@/features/admin/components/admin-page-header";
 import { OrderStatusActions } from "@/features/admin/components/order-status-actions";
+import { PaymentAttempts } from "@/features/admin/components/payment-attempts";
 import { orderStatusTone, StatusBadge } from "@/components/shared/status-badge";
 import { fulfillmentLabels, orderStatusLabels, paymentLabels } from "@/features/admin/lib/labels";
 import { adminApi } from "@/lib/api/admin";
@@ -98,7 +99,7 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/pedid
           </section>
 
           <section aria-labelledby="entrega" className="rounded-2xl border border-border bg-card p-5">
-            <h2 id="entrega" className="font-display-tight text-lg">Entrega y pago</h2>
+            <h2 id="entrega" className="font-display-tight text-lg">Entrega</h2>
             <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
               <Field label="Método">{fulfillmentLabels[order.fulfillmentMethod]}</Field>
               <Field label="Sucursal">{order.branchName}, {order.branchCity}</Field>
@@ -109,10 +110,10 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/pedid
               )}
               <Field label="Fecha">{formatDate(`${order.scheduledDate}T12:00:00-05:00`)}</Field>
               <Field label="Franja">{slotLabels[order.timeSlot] ?? order.timeSlot}</Field>
-              <Field label="Método de pago">{paymentLabels[order.paymentMethod]}</Field>
-              <Field label="Pago">Sin pasarela (pendiente)</Field>
+              {order.paymentMethod && <Field label="Método elegido (histórico)">{paymentLabels[order.paymentMethod]}</Field>}
             </dl>
           </section>
+          <PaymentAttempts payments={order.payments} invoice={order.invoice} expiresAt={order.paymentExpiresAt} />
         </div>
       </div>
     </>

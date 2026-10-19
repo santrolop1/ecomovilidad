@@ -12,12 +12,14 @@ DbSession = Annotated[Session, Depends(get_db)]
 
 
 def release_expired_reservations(db: DbSession) -> None:
-    """RF 6.2: antes de atender cualquier solicitud se liberan las reservas de
-    carrito vencidas. Así ninguna reserva vencida bloquea inventario al
-    consultar disponibilidad, modificar el carrito o crear un pedido."""
+    """Antes de atender cualquier solicitud se libera lo vencido: reservas de
+    carrito (RF 6.2) y pedidos o alquileres sin pagar a tiempo. Así nada vencido
+    bloquea inventario ni unidades de alquiler. Sin Celery ni Redis."""
+    from app.services.payments.service import expire_unpaid
     from app.services.reservations import release_expired
 
     release_expired(db)
+    expire_unpaid(db)
     db.commit()
 
 

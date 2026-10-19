@@ -6,10 +6,32 @@ import { faqMock, homeContentMock, newsMock } from "@/mocks/content";
 import { productsMock } from "@/mocks/products";
 import { rentalVehiclesMock, timeSlotsMock } from "@/mocks/rentals";
 import { servicesMock } from "@/mocks/services";
-import type { Cart, CartItem, Product } from "@/types";
+import type { Cart, CartItem, Product, RentalOffer, RentalVehicle } from "@/types";
 import type { ApiClient } from "../contracts";
 import { ApiError } from "../errors";
 import { clone, simulateLatency as wait } from "./delay";
+
+function backendRequired(feature: string): ApiError {
+  return new ApiError("SERVICE_UNAVAILABLE", `${feature} requieren el backend (API_MODE=real).`, 503);
+}
+
+function toRentalOffer(vehicle: RentalVehicle): RentalOffer {
+  return {
+    productId: vehicle.id,
+    slug: vehicle.slug,
+    name: vehicle.name,
+    category: vehicle.category,
+    shortDescription: vehicle.description,
+    imageUrl: vehicle.image.src,
+    rates: vehicle.rates.flatMap((rate) => (rate.unit === "hora" || rate.unit === "dia" ? [{ unit: rate.unit, price: rate.price }] : [])),
+    branches: vehicle.availability.flatMap(({ branchId, available }) => {
+      const branch = branchesMock.find((b) => b.id === branchId);
+      return branch
+        ? [{ branchId, branchSlug: branch.slug, branchName: branch.name, branchCity: branch.city, units: available }]
+        : [];
+    }),
+  };
+}
 
 function findProduct(productId: string): Product {
   const product = productsMock.find((p) => p.id === productId);
@@ -87,9 +109,22 @@ export function createMockApi({ latencyMs = 0 }: MockApiOptions = {}): ApiClient
       },
     },
     rentals: {
-      async listRentalVehicles() {
+      async listOffers() {
         await simulateLatency();
-        return clone(filterRentableVehicles(rentalVehiclesMock));
+        // Demostración sin backend: la oferta sale de los mocks y respeta la regla del 90 % (RF 3.2).
+        return clone(filterRentableVehicles(rentalVehiclesMock).map(toRentalOffer));
+      },
+      async quote() {
+        throw backendRequired("Las cotizaciones de alquiler");
+      },
+      async createRental() {
+        throw backendRequired("Las reservas de alquiler");
+      },
+      async listRentals() {
+        return [];
+      },
+      async getRental() {
+        return null;
       },
       async listTimeSlots() {
         await simulateLatency();
@@ -128,6 +163,23 @@ export function createMockApi({ latencyMs = 0 }: MockApiOptions = {}): ApiClient
         findLine(itemId);
         remoteCart = { ...remoteCart, items: remoteCart.items.filter((line) => line.id !== itemId), updatedAt: now() };
         return clone(remoteCart);
+      },
+    },
+    payments: {
+      async getConfig() {
+        return { enabled: false, sandbox: false, windowMinutes: 30 };
+      },
+      async start() {
+        throw backendRequired("Los pagos en línea");
+      },
+      async verify() {
+        throw backendRequired("Los pagos en línea");
+      },
+      async getSimulation() {
+        return null;
+      },
+      async simulate() {
+        throw backendRequired("Los pagos en línea");
       },
     },
     orders: {
