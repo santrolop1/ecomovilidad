@@ -1,3 +1,5 @@
+import type { InvoiceRef, PaymentSummary } from "./payment";
+
 export type PaymentMethod = "pse" | "tarjeta" | "billetera";
 
 export type FulfillmentMethod = "domicilio" | "recogida";
@@ -11,8 +13,12 @@ export type DeliveryStatus =
   | "entregado"
   | "fallido";
 
-/** pending: creado con inventario apartado; confirmed: pago aprobado (futuro). */
-export type OrderStatus = "pending" | "confirmed" | "cancelled" | "completed";
+/**
+ * pending: unidades apartadas a la espera del pago; paid: pago aprobado por la
+ * pasarela (inventario descontado y factura emitida); completed: entregado o
+ * recogido. `confirmed` es histórico (confirmación manual anterior a los pagos).
+ */
+export type OrderStatus = "pending" | "paid" | "confirmed" | "cancelled" | "completed";
 
 export interface CustomerInfo {
   fullName: string;
@@ -35,7 +41,6 @@ export interface CreateOrderInput {
   items: { productId: string; quantity: number }[];
   customer: CustomerInfo;
   fulfillment: FulfillmentInfo;
-  paymentMethod: PaymentMethod;
   dataConsent: true;
   policyVersion?: string;
 }
@@ -47,8 +52,6 @@ export interface Order {
   shippingCost: number;
   total: number;
   createdAt: string;
-  /** URL de pago de la pasarela (Wompi). Pendiente: pagos no integrados. */
-  paymentRedirectUrl?: string;
 }
 
 export interface OrderLine {
@@ -72,7 +75,12 @@ export interface CustomerOrder extends Order {
   deliveryCity?: string;
   scheduledDate: string;
   timeSlot: string;
-  paymentMethod: PaymentMethod;
+  /** Histórico: medio elegido antes de los pagos en línea. */
+  paymentMethod?: PaymentMethod;
+  /** Plazo para pagar (solo mientras está pendiente). */
+  paymentExpiresAt?: string;
+  payment?: PaymentSummary;
+  invoice?: InvoiceRef;
   contactName: string;
   contactEmail: string;
   contactPhone: string;

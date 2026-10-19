@@ -39,11 +39,12 @@ def stock_by_branch(db: Session) -> dict[uuid.UUID, tuple[int, int, int]]:
 
 
 def sold_units(db: Session) -> dict[tuple[uuid.UUID, uuid.UUID], int]:
-    """Unidades vendidas (pedidos completados) por (producto, sucursal)."""
+    """Unidades vendidas por (producto, sucursal): las que ya salieron del
+    inventario (pedido pagado o completado)."""
     stmt = (
         select(OrderItem.product_id, Order.branch_id, func.sum(OrderItem.quantity))
         .join(Order, Order.id == OrderItem.order_id)
-        .where(Order.status == OrderStatus.COMPLETED)
+        .where(or_(Order.status == OrderStatus.COMPLETED, Order.stock_settled_at.is_not(None)))
         .group_by(OrderItem.product_id, Order.branch_id)
     )
     return {(pid, bid): int(q) for pid, bid, q in db.execute(stmt)}

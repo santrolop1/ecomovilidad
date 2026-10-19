@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import uuid
-from datetime import date
+from datetime import date, datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import BigInteger, CheckConstraint, Date, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import BigInteger, CheckConstraint, Date, DateTime, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, Timestamps, UUIDPrimaryKey
@@ -25,7 +25,9 @@ class Order(UUIDPrimaryKey, Timestamps, Base):
     __table_args__ = (
         CheckConstraint(f"status IN {sql_in(OrderStatus)}", name="valid_status"),
         CheckConstraint(f"fulfillment_method IN {sql_in(FulfillmentMethod)}", name="valid_fulfillment"),
-        CheckConstraint(f"payment_method IN {sql_in(PaymentMethod)}", name="valid_payment_method"),
+        CheckConstraint(
+            f"payment_method IS NULL OR payment_method IN {sql_in(PaymentMethod)}", name="valid_payment_method"
+        ),
         CheckConstraint("subtotal >= 0 AND shipping_cost >= 0", name="amounts_non_negative"),
         CheckConstraint("total = subtotal + shipping_cost", name="total_consistent"),
         CheckConstraint(
@@ -48,7 +50,13 @@ class Order(UUIDPrimaryKey, Timestamps, Base):
     delivery_city: Mapped[str | None] = mapped_column(String(40))
     scheduled_date: Mapped[date] = mapped_column(Date)
     time_slot: Mapped[str] = mapped_column(String(20))
-    payment_method: Mapped[str] = mapped_column(String(20))
+    # Histórico: medio elegido en el checkout antes de los pagos en línea. Hoy el
+    # cliente elige el medio en la pasarela y queda en `payments.payment_method_type`.
+    payment_method: Mapped[str | None] = mapped_column(String(20))
+    # Plazo para pagar; vencido sin pago, el pedido se cancela y libera el inventario.
+    payment_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Momento en que las unidades salieron del inventario (al aprobarse el pago).
+    stock_settled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     contact_name: Mapped[str] = mapped_column(String(160))
     contact_email: Mapped[str] = mapped_column(String(254))

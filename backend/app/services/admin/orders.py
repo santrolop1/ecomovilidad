@@ -9,8 +9,10 @@ from app.repositories import admin as repo
 from app.schemas.admin import AdminOrderDetailOut, AdminOrderItemOut, AdminOrderSummaryOut, OrderUserOut, Page
 from app.services.errors import NotFoundError
 from app.services.orders import ALLOWED_TRANSITIONS
+from app.services.payments.queries import PaymentInfo, payment_info
 
 from .common import PAGE_SIZE
+from .payments import payments_for
 
 
 def order_summary(order: Order, item_count: int) -> AdminOrderSummaryOut:
@@ -59,6 +61,9 @@ def get_order(db: Session, order_id: uuid.UUID) -> AdminOrderDetailOut:
         subtotal=order.subtotal,
         shipping_cost=order.shipping_cost,
         payment_method=order.payment_method,
+        payment_expires_at=order.payment_expires_at if order.status == OrderStatus.PENDING else None,
+        payments=payments_for(db, order_id=order.id),
+        invoice=payment_info(db, order_ids=[order.id]).get(order.id, PaymentInfo(None, None)).invoice,
         delivery_address=order.delivery_address,
         delivery_city=order.delivery_city,
         time_slot=order.time_slot,

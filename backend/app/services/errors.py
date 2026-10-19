@@ -22,3 +22,13 @@ class UnauthorizedError(ServiceError):
 
 class TooManyRequestsError(ServiceError):
     status_code = 429
+
+
+class ServiceUnavailableError(ServiceError):
+    status_code = 503
+
+
+class BadGatewayError(ServiceError):
+    """La pasarela de pagos respondió con error o no respondió."""
+
+    status_code = 502

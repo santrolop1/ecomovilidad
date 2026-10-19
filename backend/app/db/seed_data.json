@@ -1143,5 +1143,67 @@
         }
       ]
     }
+  ],
+  "rental": [
+    {
+      "product": "voltra-urbana-e1",
+      "rates": {
+        "hora": 15000,
+        "dia": 65000
+      },
+      "units": {
+        "bucaramanga-cabecera": 3,
+        "bucaramanga-centro": 2,
+        "floridablanca-canaveral": 3,
+        "giron-centro": 2
+      }
+    },
+    {
+      "product": "voltra-s2-urbana",
+      "rates": {
+        "hora": 12000,
+        "dia": 55000
+      },
+      "units": {
+        "bucaramanga-cabecera": 3,
+        "bucaramanga-centro": 3,
+        "floridablanca-canaveral": 3,
+        "giron-centro": 2,
+        "piedecuesta-centro": 2
+      }
+    },
+    {
+      "product": "condor-x-terreno",
+      "rates": {
+        "hora": 18000,
+        "dia": 80000
+      },
+      "units": {
+        "floridablanca-canaveral": 2
+      }
+    },
+    {
+      "product": "patinova-city-80",
+      "rates": {
+        "hora": 8000,
+        "dia": 30000
+      },
+      "units": {
+        "bucaramanga-cabecera": 2,
+        "floridablanca-canaveral": 2,
+        "giron-centro": 1
+      }
+    },
+    {
+      "product": "nimbo-explorer-4k",
+      "rates": {
+        "dia": 180000
+      },
+      "units": {
+        "bucaramanga-cabecera": 1,
+        "floridablanca-canaveral": 1,
+        "piedecuesta-centro": 1
+      }
+    }
   ]
 }

@@ -1,21 +1,23 @@
-"""Pedidos con control de inventario transaccional.
+"""Pedidos con control de inventario transaccional y pago en línea.
 
 - Crear (`pending`): las unidades pasan de disponibles a reservadas en UNA
-  sucursal (la elegida para recoger, o la primera con stock completo).
-- Confirmar (`confirmed`): sin cambio de inventario. Hoy lo hace un
-  administrador; con pagos lo hará la pasarela.
-- Cancelar (`cancelled`): las reservadas vuelven a estar disponibles.
-- Completar (`completed`): las reservadas salen del inventario (vendidas).
-Sin pagos reales en esta fase.
+  sucursal (la elegida para recoger, o la primera con stock completo) y se abre
+  un plazo para pagar (`payment_expires_at`).
+- Pagar (`paid`): lo aplica la pasarela (ver services/payments). Las
+  reservadas salen del inventario (vendidas) y se emite la factura.
+- Vencer sin pago o cancelar (`cancelled`): las reservadas vuelven a estar disponibles.
+- Completar (`completed`): entregado o recogido. Si ya se pagó, el inventario no cambia.
+- `confirmed` es histórico (pedidos confirmados a mano antes de los pagos).
 """
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
+from app.core.config import get_settings
 from app.models import Inventory, Order, OrderItem, User
 from app.models.enums import (
     SERVICE_AREA_CITIES,
@@ -33,6 +35,7 @@ from app.schemas.order import OrderCreateIn, OrderItemOut, OrderOut
 
 from . import consent, reservations
 from .errors import ConflictError, NotFoundError, ServiceError
+from .payments.queries import PaymentInfo, payment_info
 
 BOGOTA = ZoneInfo("America/Bogota")
 # Franjas de entrega y recogida (RF 7.1). La capacidad por franja es trabajo pendiente.
@@ -45,21 +48,25 @@ TIME_SLOTS = {
 }
 SHIPPING_COST = 0  # El SRS no define tarifas de envío.
 
+# Transiciones que puede hacer un administrador. "Pagado" solo lo pone la
+# pasarela, y un pedido pagado no se cancela aquí: requiere reembolso (CU-15).
 ALLOWED_TRANSITIONS: dict[OrderStatus, set[OrderStatus]] = {
-    OrderStatus.PENDING: {OrderStatus.CONFIRMED, OrderStatus.CANCELLED},
+    OrderStatus.PENDING: {OrderStatus.CANCELLED},
+    OrderStatus.PAID: {OrderStatus.COMPLETED},
     OrderStatus.CONFIRMED: {OrderStatus.COMPLETED, OrderStatus.CANCELLED},
     OrderStatus.CANCELLED: set(),
     OrderStatus.COMPLETED: set(),
 }
 STATUS_LABELS = {
-    OrderStatus.PENDING: "pendiente",
+    OrderStatus.PENDING: "pendiente de pago",
+    OrderStatus.PAID: "pagado",
     OrderStatus.CONFIRMED: "confirmado",
     OrderStatus.CANCELLED: "cancelado",
     OrderStatus.COMPLETED: "completado",
 }
 
 
-def to_order_out(order: Order) -> OrderOut:
+def to_order_out(order: Order, info: PaymentInfo | None = None) -> OrderOut:
     return OrderOut(
         id=order.id,
         status=order.status,
@@ -77,6 +84,9 @@ def to_order_out(order: Order) -> OrderOut:
         scheduled_date=order.scheduled_date,
         time_slot=order.time_slot,
         payment_method=order.payment_method,
+        payment_expires_at=order.payment_expires_at if order.status == OrderStatus.PENDING else None,
+        payment=info.payment if info else None,
+        invoice=info.invoice if info else None,
         contact_name=order.contact_name,
         contact_email=order.contact_email,
         contact_phone=order.contact_phone,
@@ -214,6 +224,7 @@ def create_order(db: Session, user: User, data: OrderCreateIn) -> OrderOut:
         scheduled_date=fulfillment.date,
         time_slot=fulfillment.time_slot_id,
         payment_method=data.payment_method,
+        payment_expires_at=reservations.now_utc() + timedelta(minutes=get_settings().payment_window_minutes),
         contact_name=customer.full_name,
         contact_email=customer.email.lower(),
         contact_phone=customer.phone,
@@ -234,48 +245,79 @@ def create_order(db: Session, user: User, data: OrderCreateIn) -> OrderOut:
 
 
 def list_orders(db: Session, user: User) -> list[OrderOut]:
-    return [to_order_out(o) for o in repo.list_user_orders(db, user.id)]
+    orders = repo.list_user_orders(db, user.id)
+    info = payment_info(db, order_ids=[o.id for o in orders])
+    return [to_order_out(o, info.get(o.id)) for o in orders]
 
 
 def get_order(db: Session, user: User, order_id: uuid.UUID) -> OrderOut:
     order = repo.get_user_order(db, user.id, order_id)
     if order is None:  # 404 también si es de otro usuario: no revela su existencia
         raise NotFoundError("El pedido no existe.")
-    return to_order_out(order)
+    return to_order_out(order, payment_info(db, order_ids=[order.id]).get(order.id))
 
 
-def change_status(db: Session, order_id: uuid.UUID, new_status: OrderStatus) -> None:
-    """Cambia el estado aplicando el efecto en inventario en la misma transacción."""
-    order = (
+def _locked_order_stock(db: Session, order: Order) -> dict[uuid.UUID, Inventory]:
+    """Bloquea las filas de inventario del pedido en su sucursal y verifica que
+    sigan teniendo apartadas sus unidades."""
+    rows = {
+        inv.product_id: inv
+        for inv in repo.lock_inventory(db, [i.product_id for i in order.items])
+        if inv.branch_id == order.branch_id
+    }
+    for item in order.items:
+        inv = rows.get(item.product_id)
+        if inv is None or inv.reserved_quantity < item.quantity:
+            raise ConflictError("El inventario reservado de este pedido no coincide. Revisa las existencias.")
+    return rows
+
+
+def release_order_stock(db: Session, order: Order) -> None:
+    """Reservadas → disponibles (pedido cancelado o vencido sin pago)."""
+    rows = _locked_order_stock(db, order)
+    for item in order.items:
+        rows[item.product_id].reserved_quantity -= item.quantity
+        rows[item.product_id].available_quantity += item.quantity
+
+
+def settle_order_stock(db: Session, order: Order) -> None:
+    """Reservadas → fuera del inventario (vendidas). Una sola vez por pedido."""
+    if order.stock_settled_at is not None:
+        return
+    rows = _locked_order_stock(db, order)
+    for item in order.items:
+        rows[item.product_id].reserved_quantity -= item.quantity
+        rows[item.product_id].total_quantity -= item.quantity
+    order.stock_settled_at = reservations.now_utc()
+
+
+def lock_order(db: Session, order_id: uuid.UUID) -> Order | None:
+    return (
         db.scalars(
             select(Order).where(Order.id == order_id).options(selectinload(Order.items)).with_for_update(of=Order)
         )
         .unique()
         .one_or_none()
     )
+
+
+def change_status(db: Session, order_id: uuid.UUID, new_status: OrderStatus) -> None:
+    """Cambio de estado del panel, con su efecto en inventario en la misma transacción."""
+    order = lock_order(db, order_id)
     if order is None:
         raise NotFoundError("El pedido no existe.")
     current = OrderStatus(order.status)
     if new_status == current:
         return
     if new_status not in ALLOWED_TRANSITIONS[current]:
+        if current == OrderStatus.PAID and new_status == OrderStatus.CANCELLED:
+            raise ConflictError("Un pedido pagado no se puede cancelar aquí: requiere reembolso (pendiente, CU-15).")
         raise ConflictError(f"Un pedido {STATUS_LABELS[current]} no puede pasar a {STATUS_LABELS[new_status]}.")
 
-    if new_status in (OrderStatus.CANCELLED, OrderStatus.COMPLETED):
-        rows = {
-            inv.product_id: inv
-            for inv in repo.lock_inventory(db, [i.product_id for i in order.items])
-            if inv.branch_id == order.branch_id
-        }
-        for item in order.items:
-            inv = rows.get(item.product_id)
-            if inv is None or inv.reserved_quantity < item.quantity:
-                raise ConflictError("El inventario reservado de este pedido no coincide. Revisa las existencias.")
-            inv.reserved_quantity -= item.quantity
-            if new_status == OrderStatus.CANCELLED:
-                inv.available_quantity += item.quantity  # vuelve a estar a la venta
-            else:
-                inv.total_quantity -= item.quantity  # sale físicamente del inventario
+    if new_status == OrderStatus.CANCELLED:
+        release_order_stock(db, order)
+    elif new_status == OrderStatus.COMPLETED:
+        settle_order_stock(db, order)  # no hace nada si el pago ya lo descontó
 
     order.status = new_status
     db.commit()

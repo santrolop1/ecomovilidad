@@ -8,9 +8,10 @@ from typing import Literal
 
 from pydantic import Field, field_validator, model_validator
 
-from app.models.enums import BranchService, FulfillmentMethod, OrderStatus, PaymentMethod, RentalStatus
+from app.models.enums import BranchService, FulfillmentMethod, OrderStatus, PaymentMethod, PaymentStatus, RentalStatus
 
 from .base import ApiModel
+from .payment import InvoiceRefOut
 
 SLUG_PATTERN = r"^[a-z0-9]+(?:-[a-z0-9]+)*$"
 IMAGE_PATTERN = r"^/images/[A-Za-z0-9/_.-]+\.(?:webp|jpg|jpeg|png)$"
@@ -280,10 +281,24 @@ class AdminOrderItemOut(ApiModel):
     subtotal: int
 
 
+class AdminPaymentOut(ApiModel):
+    status: PaymentStatus
+    reference: str
+    provider_transaction_id: str | None = None
+    payment_method_type: str | None = None
+    status_message: str | None = None
+    approved_at: datetime | None = None
+    requires_refund: bool
+    created_at: datetime
+
+
 class AdminOrderDetailOut(AdminOrderSummaryOut):
     subtotal: int
     shipping_cost: int
-    payment_method: PaymentMethod
+    payment_method: PaymentMethod | None = None
+    payment_expires_at: datetime | None = None
+    payments: list[AdminPaymentOut]
+    invoice: InvoiceRefOut | None = None
     delivery_address: str | None
     delivery_city: str | None
     time_slot: str
@@ -331,10 +346,26 @@ class AdminRentalOut(ApiModel):
     user_name: str
     product_name: str
     branch_name: str
+    unit_code: str | None = None
     start_at: datetime
     end_at: datetime
     price: int
     created_at: datetime
+    payments: list[AdminPaymentOut] = []
+    invoice: InvoiceRefOut | None = None
+    allowed_transitions: list[RentalStatus] = []
+
+
+class RentalStatusIn(ApiModel):
+    status: RentalStatus
+
+
+class AdminRefundAlertOut(ApiModel):
+    reference: str
+    amount: int
+    order_id: uuid.UUID | None = None
+    rental_id: uuid.UUID | None = None
+    approved_at: datetime | None = None
 
 
 # ─── Dashboard ─────────────────────────────────────────────────────────────
@@ -363,6 +394,7 @@ class DashboardOut(ApiModel):
     orders_total: int
     orders_by_status: dict[OrderStatus, int]
     revenue_confirmed: int
+    payments_requiring_refund: list[AdminRefundAlertOut] = []
     units_available: int
     units_reserved: int
     units_total: int

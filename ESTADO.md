@@ -18,11 +18,12 @@ Actualizado: 6 de octubre de 2026. Detalle completo en [DOCUMENTACION.md](DOCUME
 | Sucursales | IMPLEMENTADO | Reales y administrables. **Datos DEMO** en Bucaramanga, Floridablanca, Girón y Piedecuesta. |
 | Inventario | PARCIAL | Real: por sucursal, **reserva de 15 min al agregar al carrito (RF 6.2)** que pasa al pedido sin doble conteo, liberar al cancelar, descontar al completar, ajustes y alertas. El vencimiento se procesa en cada solicitud (o con `release-expired` por cron). Pendiente: auditoría. |
 | Carrito | IMPLEMENTADO | Persistente entre dispositivos, con contador "Reservado durante M:SS"; local (sin reserva) para visitantes; fusión al iniciar sesión. |
-| Pedidos | PARCIAL | Real: crear (bloqueado si la reserva venció), "Mis pedidos" con lista y detalle (404 para ajenos), gestionar estados en el panel. Pendiente: pagos, historial de estados, cancelación por el cliente. |
-| Alquileres | PARCIAL | Real: tabla `rentals` y consultas (cliente y panel). MOCK: oferta y tarifas de `/alquiler`. Pendiente: crear alquileres. |
+| Pedidos | IMPLEMENTADO | Real: crear, **pagar en línea (Wompi)**, inventario descontado al pagar, factura, "Mis pedidos", entregar en el panel. Pendiente: cancelación por el cliente, reembolsos, historial de estados. |
+| Alquileres | IMPLEMENTADO | Real: oferta con tarifas y flota, cotización, reserva de una unidad sin cruces (exclusión en la BD), pago, factura, "Mis alquileres", entrega/devolución y flota en el panel. Pendiente: domicilio, recargos, edición de tarifas. |
 | Admin | IMPLEMENTADO | `/admin` protegido en FastAPI (rol en BD) y en cada página. Pendiente: carga de imágenes, auditoría, roles intermedios. |
 | Ley 1581 | PARCIAL | Real: evidencia de consentimiento (usuario, fecha, versión `2026-10-06`) en registro y pedido; historial en `/cuenta`. Pendiente: texto legal revisado. |
-| Pagos | PENDIENTE | Wompi no integrado; solo se guarda el método elegido. |
+| Pagos | PARCIAL | **Listo para recibir las llaves de Wompi** (integración construida y probada). **Por ahora se usa la pasarela de pruebas** propia: pago simulado sin cobro real, con el mismo flujo (pagado, inventario, factura). Al poner las llaves en `backend/.env` pasa a Wompi solo. Sin reembolsos (CU-15). |
+| Facturación | PARCIAL | Factura PDF y XML con consecutivo al aprobarse el pago. **No es factura electrónica DIAN.** |
 | Mapa público | IMPLEMENTADO | Leaflet + OpenStreetMap en el inicio y `/sucursales`: sucursales con coordenadas de PostGIS y disponibilidad real; fallback "Mapa temporalmente no disponible". |
 | Mapa operativo (admin) | MOCK | `/admin/operacion`: sucursales reales; activos, posiciones y estados **simulados** en el navegador (MODO DEMOSTRACIÓN). Preparado para sustituir la fuente por telemetría real. |
 | GPS | PENDIENTE | Sin dispositivos ni ingesta de telemetría. |
@@ -30,7 +31,7 @@ Actualizado: 6 de octubre de 2026. Detalle completo en [DOCUMENTACION.md](DOCUME
 | Domicilios | PENDIENTE | Sin asignación, seguimiento ni estados de domicilio. |
 | QR | PENDIENTE | — |
 | Firma digital | PENDIENTE | — |
-| Mantenimiento | MOCK | Regla del 90% solo sobre la oferta mock de alquiler. |
+| Mantenimiento | PARCIAL / MOCK | Real: unidades en mantenimiento salen de la oferta de alquiler. Mock: regla del 90% solo en `API_MODE=mock`. |
 | CMS | MOCK | `src/mocks/content.ts`. |
 | Demo pública | IMPLEMENTADO (temporal) | `scripts/demo.sh`: Cloudflare Tunnel temporal hacia Next.js en el Mac; FastAPI y PostgreSQL solo en `127.0.0.1`. Ver [DEMO_PUBLICA.md](DEMO_PUBLICA.md). Sin despliegue en la nube. |
 | Contacto | PENDIENTE | En modo real responde "no disponible". |

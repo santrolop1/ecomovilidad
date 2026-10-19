@@ -29,6 +29,11 @@ services:
 
   api:
     build: ./backend
+    # Llaves de Wompi y otros secretos locales (fuera de Git). Opcional: sin el
+    # archivo, los pagos responden "no configurados". `environment` tiene prioridad.
+    env_file:
+      - path: ./backend/.env
+        required: false
     environment:
       DATABASE_URL: postgresql+psycopg://ecomovilidad:CAMBIAR@db:5432/ecomovilidad
       CORS_ORIGINS: '["http://localhost:3000"]'

@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 const items = [
   { href: "/cuenta", label: "Perfil" },
   { href: "/cuenta/pedidos", label: "Mis pedidos" },
+  { href: "/cuenta/alquileres", label: "Mis alquileres" },
 ];
 
 export function AccountNav() {

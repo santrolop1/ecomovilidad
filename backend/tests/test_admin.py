@@ -59,7 +59,7 @@ def test_dashboard(admin_client):
     assert data["branchesTotal"] == data["branchesDemo"] == 5
     assert data["unitsAvailable"] + data["unitsReserved"] <= data["unitsTotal"]
     assert data["admins"] == 1
-    assert set(data["ordersByStatus"]) == {"pending", "confirmed", "cancelled", "completed"}
+    assert set(data["ordersByStatus"]) == {"pending", "paid", "confirmed", "cancelled", "completed"}
     low = {item["sku"]: item["available"] for item in data["lowStock"]}
     assert low["PAT-RN-CP"] == 0  # sin inventario
     assert all(v <= data["lowStockThreshold"] for v in low.values())
@@ -243,18 +243,25 @@ def test_listar_buscar_y_ver_pedido(admin_client):
     detail = admin_client.get(f"{A}/orders/{order['id']}").json()
     assert detail["user"]["email"] == "admin@correo.com"
     assert detail["documentNumber"] == "1098765432"
-    assert detail["allowedTransitions"] == ["cancelled", "confirmed"]
+    # Sin pago aprobado solo se puede cancelar: "pagado" lo pone la pasarela (CU-03).
+    assert detail["allowedTransitions"] == ["cancelled"]
 
 
-def test_confirmar_y_completar_descuenta_inventario(admin_client, db):
+def test_pagar_y_completar_descuenta_inventario_una_vez(admin_client, gateway, db):
+    """CU-03: el inventario sale al aprobarse el pago; completar (entregar) no lo descuenta otra vez.
+    Antes de los pagos, un administrador confirmaba el pedido a mano: ya no es posible."""
     order, pid, bid = place_order(admin_client)
     before = stock(db, pid, bid)
     url = f"{A}/orders/{order['id']}"
-    assert (
-        admin_client.patch(url, json={"status": "confirmed"}, headers=csrf(admin_client)).json()["status"]
-        == "confirmed"
-    )
-    assert stock(db, pid, bid) == before
+    assert admin_client.patch(url, json={"status": "confirmed"}, headers=csrf(admin_client)).status_code == 409
+    assert admin_client.patch(url, json={"status": "paid"}, headers=csrf(admin_client)).status_code == 409
+
+    pay = admin_client.post("/api/v1/payments", json={"orderId": order["id"]}, headers=csrf(admin_client)).json()
+    tx = gateway.approve(pay["reference"], order["total"] * 100)
+    paid = admin_client.post("/api/v1/payments/verify", json={"transactionId": tx.id}, headers=csrf(admin_client))
+    assert paid.json()["status"] == "approved"
+    assert stock(db, pid, bid) == (before[0], before[1] - 2, before[2] - 2)
+
     done = admin_client.patch(url, json={"status": "completed"}, headers=csrf(admin_client)).json()
     assert done["status"] == "completed" and done["allowedTransitions"] == []
     assert stock(db, pid, bid) == (before[0], before[1] - 2, before[2] - 2)

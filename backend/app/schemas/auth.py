@@ -103,4 +103,5 @@ class ConsentOut(ApiModel):
     purpose: str
     policy_version: str
     order_id: uuid.UUID | None = None
+    rental_id: uuid.UUID | None = None
     accepted_at: datetime

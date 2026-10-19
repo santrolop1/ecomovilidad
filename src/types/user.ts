@@ -33,9 +33,10 @@ export interface ProfileInput {
 }
 
 export interface ConsentRecord {
-  purpose: "registro" | "pedido";
+  purpose: "registro" | "pedido" | "alquiler";
   policyVersion: string;
   orderId?: string;
+  rentalId?: string;
   acceptedAt: string;
 }
 

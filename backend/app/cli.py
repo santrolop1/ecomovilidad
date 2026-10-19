@@ -60,12 +60,14 @@ def set_password(email: str) -> int:
 
 
 def release_expired() -> int:
+    from app.services.payments.service import expire_unpaid
     from app.services.reservations import release_expired as release
 
     with SessionLocal() as db:
         removed = release(db)
+        cancelled = expire_unpaid(db)
         db.commit()
-    print(f"Reservas vencidas liberadas. Líneas de carrito retiradas: {removed}")
+    print(f"Reservas vencidas liberadas. Líneas de carrito retiradas: {removed}. Sin pagar cancelados: {cancelled}")
     return 0
 
 

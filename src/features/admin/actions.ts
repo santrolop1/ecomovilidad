@@ -4,7 +4,7 @@ import { updateTag } from "next/cache";
 import { z } from "zod";
 import { type ActionResult, runAction } from "@/lib/action-result";
 import { adminApi } from "@/lib/api/admin";
-import { orderStatuses } from "@/lib/api/admin-schemas";
+import { orderStatuses, rentalStatuses, rentalUnitStatuses } from "@/lib/api/admin-schemas";
 import { branchFormSchema, categoryFormSchema, productFormSchema, stockSchema } from "./lib/schemas";
 
 /**
@@ -94,6 +94,22 @@ export async function changeOrderStatus(id: string, status: unknown): Promise<Ac
   return runAction(z.enum(orderStatuses), status, async (value) => {
     await adminApi.updateOrderStatus(idSchema.parse(id), value);
     refreshStorefront("products", "branches");
+    return null;
+  });
+}
+
+export async function changeRentalStatus(id: string, status: unknown): Promise<ActionResult<null>> {
+  return runAction(z.enum(rentalStatuses), status, async (value) => {
+    await adminApi.updateRentalStatus(idSchema.parse(id), value);
+    refreshStorefront("rental-offers");
+    return null;
+  });
+}
+
+export async function setRentalUnitStatus(id: string, status: unknown): Promise<ActionResult<null>> {
+  return runAction(z.enum(rentalUnitStatuses), status, async (value) => {
+    await adminApi.updateRentalUnit(idSchema.parse(id), value);
+    refreshStorefront("rental-offers");
     return null;
   });
 }

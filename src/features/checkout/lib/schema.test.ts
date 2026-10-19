@@ -6,7 +6,6 @@ const valid = {
   items: [{ productId: "prd-001", quantity: 1 }],
   customer: { fullName: "Ana Pérez", email: " ANA@Correo.com ", phone: "300 123 4567", documentType: "CC", documentNumber: "1020304050" },
   fulfillment: { method: "domicilio", address: "Calle 10 # 20-30", city: "Floridablanca", date: "2999-01-01", timeSlotId: "slot-08" },
-  paymentMethod: "pse",
   dataConsent: true,
 };
 

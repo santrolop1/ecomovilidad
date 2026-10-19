@@ -55,10 +55,12 @@ class ConsentRecord(UUIDPrimaryKey, Base):
     __table_args__ = (
         CheckConstraint(f"purpose IN {sql_in(ConsentPurpose)}", name="valid_purpose"),
         CheckConstraint("purpose <> 'pedido' OR order_id IS NOT NULL", name="order_consent_has_order"),
+        CheckConstraint("purpose <> 'alquiler' OR rental_id IS NOT NULL", name="rental_consent_has_rental"),
     )
 
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"), index=True)
     purpose: Mapped[str] = mapped_column(String(20))
     policy_version: Mapped[str] = mapped_column(String(20))
     order_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("orders.id", ondelete="RESTRICT"))
+    rental_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("rentals.id", ondelete="RESTRICT"))
     accepted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

@@ -7,6 +7,8 @@ from typing import Literal
 from fastapi import APIRouter, Depends, Query
 
 from app.api.deps import AdminUser, DbSession, require_admin
+from app.api.routes.invoices import invoice_response
+from app.models import Invoice
 from app.models.enums import OrderStatus, RentalStatus
 from app.schemas.admin import (
     AdminBranchDetailOut,
@@ -30,10 +32,13 @@ from app.schemas.admin import (
     Page,
     ProductCreateIn,
     ProductUpdateIn,
+    RentalStatusIn,
     UserUpdateIn,
 )
+from app.schemas.rental import RentalUnitOut, RentalUnitStatusIn
 from app.services import orders as order_service
 from app.services.admin import branches, catalog, dashboard, inventory, orders, rentals, users
+from app.services.errors import NotFoundError
 
 router = APIRouter(prefix="/admin", tags=["administración"], dependencies=[Depends(require_admin)])
 
@@ -178,3 +183,36 @@ def update_user(user_id: uuid.UUID, data: UserUpdateIn, admin: AdminUser, db: Db
 @router.get("/rentals", response_model=Page[AdminRentalOut])
 def list_rentals(db: DbSession, page: int = PageQuery, status: RentalStatus | None = None):
     return rentals.list_rentals(db, page=page, status=status)
+
+
+@router.get("/rentals/{rental_id}", response_model=AdminRentalOut)
+def get_rental(rental_id: uuid.UUID, db: DbSession):
+    return rentals.get_rental(db, rental_id)
+
+
+@router.patch("/rentals/{rental_id}", response_model=AdminRentalOut)
+def update_rental_status(rental_id: uuid.UUID, data: RentalStatusIn, db: DbSession):
+    """Pagado → entregado → devuelto; pendiente de pago → cancelado."""
+    rentals.change_status(db, rental_id, data.status)
+    return rentals.get_rental(db, rental_id)
+
+
+@router.get("/rental-units", response_model=list[RentalUnitOut])
+def list_rental_units(db: DbSession):
+    return rentals.list_units(db)
+
+
+@router.patch("/rental-units/{unit_id}", response_model=RentalUnitOut)
+def update_rental_unit(unit_id: uuid.UUID, data: RentalUnitStatusIn, db: DbSession):
+    return rentals.set_unit_status(db, unit_id, data.status)
+
+
+# ─── Facturas ──────────────────────────────────────────────────────────────
+
+
+@router.get("/invoices/{invoice_id}/{fmt}")
+def download_invoice(invoice_id: uuid.UUID, fmt: Literal["pdf", "xml"], db: DbSession):
+    invoice = db.get(Invoice, invoice_id)
+    if invoice is None:
+        raise NotFoundError("La factura no existe.")
+    return invoice_response(invoice, fmt)

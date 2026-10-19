@@ -103,3 +103,67 @@ def admin_client(client: TestClient, db: Session) -> TestClient:
     db.execute(update(User).where(User.email == "admin@correo.com").values(is_admin=True))
     db.commit()  # en pruebas libera un SAVEPOINT; la transacción externa igual se revierte
     return client
+
+
+# ─── Pasarela de pagos de prueba ─────────────────────────────────────────────
+
+EVENTS_SECRET = "test_events_pruebas"
+
+
+class FakeGateway:
+    """Sustituye solo la red de Wompi: guarda las URLs de checkout y devuelve
+    las transacciones que la prueba registre. La firma de eventos usa la misma
+    función que la pasarela real."""
+
+    name = "wompi"
+    sandbox = True
+
+    def __init__(self) -> None:
+        self.checkouts: list[dict] = []
+        self.transactions: dict[str, object] = {}
+
+    def checkout_url(self, *, reference, amount_in_cents, redirect_url, expires_at, customer) -> str:
+        self.checkouts.append({"reference": reference, "amount": amount_in_cents, "redirect": redirect_url})
+        return f"https://checkout.wompi.co/p/?reference={reference}"
+
+    def get_transaction(self, transaction_id):
+        return self.transactions.get(transaction_id)
+
+    def verify_event(self, payload, checksum) -> bool:
+        from app.services.payments.gateway import WompiGateway
+
+        gateway = WompiGateway.__new__(WompiGateway)
+        gateway.settings = type("S", (), {"wompi_events_secret": EVENTS_SECRET})()
+        return WompiGateway.verify_event(gateway, payload, checksum)
+
+    def approve(self, reference: str, amount_in_cents: int, tx_id: str = "tx-1", status: str = "APPROVED"):
+        from app.services.payments.gateway import GatewayTransaction
+
+        tx = GatewayTransaction(tx_id, reference, status, amount_in_cents, "COP", "CARD", None)
+        self.transactions[tx_id] = tx
+        return tx
+
+
+@pytest.fixture
+def gateway(client: TestClient) -> FakeGateway:
+    from app.services.payments.gateway import get_payment_gateway
+
+    fake = FakeGateway()
+    app.dependency_overrides[get_payment_gateway] = lambda: fake
+    return fake
+
+
+def wompi_event(transaction: dict, timestamp: int = 1_760_000_000) -> tuple[dict, str]:
+    """Evento `transaction.updated` firmado como lo envía Wompi."""
+    from app.services.payments.gateway import event_checksum
+
+    payload = {
+        "event": "transaction.updated",
+        "data": {"transaction": transaction},
+        "environment": "test",
+        "signature": {"properties": ["transaction.id", "transaction.status", "transaction.amount_in_cents"]},
+        "timestamp": timestamp,
+    }
+    checksum = event_checksum(payload, EVENTS_SECRET)
+    payload["signature"]["checksum"] = checksum
+    return payload, checksum

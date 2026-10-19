@@ -26,7 +26,7 @@ export default async function ContactPage({ searchParams }: PageProps<"/contacto
   let defaultMessage: string | undefined;
 
   if (topic === "alquiler" && typeof params.vehiculo === "string") {
-    const vehicles = await api.rentals.listRentalVehicles();
+    const vehicles = await api.rentals.listOffers();
     const vehicle = vehicles.find((v) => v.slug === params.vehiculo);
     if (vehicle) defaultMessage = `Quiero alquilar: ${vehicle.name}. Fecha y duración: `;
   }
