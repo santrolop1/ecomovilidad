@@ -6,7 +6,7 @@
 | --- | --- |
 | **Producto** | Portal web, tienda en línea y panel de operación |
 | **Versión** | 0.6.0 (fase 6: pagos en línea, facturas y alquiler) |
-| **Fecha** | 19 de octubre de 2026 |
+| **Fecha** | 20 de octubre de 2026 |
 | **Estado** | En desarrollo. Funciona localmente sobre datos de **demostración**. No está desplegado en producción. |
 | **Repositorio** | `ecomovilidad/` (Next.js + FastAPI + PostgreSQL/PostGIS) |
 
