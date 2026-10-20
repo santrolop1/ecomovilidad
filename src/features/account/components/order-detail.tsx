@@ -5,6 +5,7 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { formatCOP, formatDate, formatDateTime, shortId } from "@/lib/format";
 import type { CustomerOrder } from "@/types";
 import { PaymentSection } from "@/features/payments/components/payment-section";
+import { CancelRefund } from "./cancel-refund";
 import { customerOrderStatus, paymentMethodLabels, timeSlotLabels } from "../lib/labels";
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
@@ -79,6 +80,13 @@ export function OrderDetail({ order }: { order: CustomerOrder }) {
             invoice={order.invoice}
             target={{ orderId: order.id }}
             closedNote={order.paymentMethod ? `Método elegido: ${paymentMethodLabels[order.paymentMethod]} (sin pago en línea)` : undefined}
+          />
+          <CancelRefund
+            kind="pedido"
+            id={order.id}
+            cancellable={order.status === "pending"}
+            refundable={order.status === "paid"}
+            refundRequest={order.refundRequest}
           />
           <section aria-labelledby="contacto" className="rounded-2xl border border-border bg-card p-5">
             <h2 id="contacto" className="font-display-tight text-lg">Contacto</h2>

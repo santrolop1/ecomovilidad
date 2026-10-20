@@ -22,6 +22,7 @@ import type {
   PaymentSimulation,
   PaymentStart,
   PaymentSummary,
+  RefundRequest,
   RentalOffer,
   RentalQuote,
   TimeSlot,
@@ -195,6 +196,13 @@ export const paymentSummarySchema: z.ZodType<PaymentSummary> = z.object({
   approvedAt: isoDate.optional(),
 });
 
+export const refundRequestSchema: z.ZodType<RefundRequest> = z.object({
+  status: z.enum(["abierta", "reembolsada"]),
+  reason: z.string(),
+  createdAt: isoDate,
+  resolvedAt: isoDate.optional(),
+});
+
 export const invoiceRefSchema: z.ZodType<InvoiceRef> = z.object({ id: z.string(), number: z.string(), issuedAt: isoDate });
 
 const paymentProvider = z.enum(["wompi", "simulado"]);
@@ -265,6 +273,7 @@ export const customerOrderSchema: z.ZodType<CustomerOrder> = z.object({
   paymentExpiresAt: isoDate.optional(),
   payment: paymentSummarySchema.optional(),
   invoice: invoiceRefSchema.optional(),
+  refundRequest: refundRequestSchema.optional(),
   contactName: z.string(),
   contactEmail: z.string(),
   contactPhone: z.string(),
@@ -389,5 +398,6 @@ export const customerRentalSchema: z.ZodType<CustomerRental> = z.object({
   paymentExpiresAt: isoDate.optional(),
   payment: paymentSummarySchema.optional(),
   invoice: invoiceRefSchema.optional(),
+  refundRequest: refundRequestSchema.optional(),
   createdAt: isoDate.optional(),
 });

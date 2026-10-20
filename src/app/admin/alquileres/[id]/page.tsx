@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { rentalStatusTone, StatusBadge } from "@/components/shared/status-badge";
 import { AdminPageHeader } from "@/features/admin/components/admin-page-header";
 import { PaymentAttempts } from "@/features/admin/components/payment-attempts";
+import { RefundRequestCard } from "@/features/admin/components/refund-request-card";
 import { RentalStatusActions } from "@/features/admin/components/rental-status-actions";
 import { getAdminUser } from "@/features/admin/lib/guard";
 import { rentalStatusLabels } from "@/features/admin/lib/labels";
@@ -67,7 +68,10 @@ export default async function AdminRentalPage({ params }: PageProps<"/admin/alqu
             <RentalStatusActions rentalId={rental.id} transitions={rental.allowedTransitions} />
           </section>
         </div>
-        <PaymentAttempts payments={rental.payments} invoice={rental.invoice} />
+        <div className="space-y-6">
+          {rental.refundRequest && <RefundRequestCard kind="alquiler" id={rental.id} request={rental.refundRequest} />}
+          <PaymentAttempts payments={rental.payments} invoice={rental.invoice} />
+        </div>
       </div>
     </>
   );

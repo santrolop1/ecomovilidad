@@ -10,6 +10,7 @@ from app.schemas.admin import AdminOrderDetailOut, AdminOrderItemOut, AdminOrder
 from app.services.errors import NotFoundError
 from app.services.orders import ALLOWED_TRANSITIONS
 from app.services.payments.queries import PaymentInfo, payment_info
+from app.services.refunds import latest_request, refund_out
 
 from .common import PAGE_SIZE
 from .payments import payments_for
@@ -63,6 +64,7 @@ def get_order(db: Session, order_id: uuid.UUID) -> AdminOrderDetailOut:
         payment_method=order.payment_method,
         payment_expires_at=order.payment_expires_at if order.status == OrderStatus.PENDING else None,
         payments=payments_for(db, order_id=order.id),
+        refund_request=refund_out(latest_request(db, order_id=order.id)),
         invoice=payment_info(db, order_ids=[order.id]).get(order.id, PaymentInfo(None, None)).invoice,
         delivery_address=order.delivery_address,
         delivery_city=order.delivery_city,

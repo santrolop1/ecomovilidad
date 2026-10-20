@@ -77,6 +77,29 @@ export default async function AdminDashboardPage() {
         />
       </dl>
 
+      {d.refundRequests.length > 0 && (
+        <section aria-labelledby="solicitudes" className="rounded-2xl border border-warning/50 bg-warning/5 p-5">
+          <h2 id="solicitudes" className="font-display-tight flex items-center gap-2 text-lg">
+            <AlertTriangle className="size-5 text-warning" aria-hidden="true" />
+            Solicitudes de reembolso ({d.refundRequests.length})
+          </h2>
+          <ul className="mt-3 space-y-2 text-sm">
+            {d.refundRequests.map((request) => {
+              const href = request.orderId ? `/admin/pedidos/${request.orderId}` : `/admin/alquileres/${request.rentalId}`;
+              return (
+                <li key={href} className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="min-w-0 break-all">{request.userEmail}</span>
+                  <span className="tabular font-semibold">{formatCOP(request.amount)}</span>
+                  <Link href={href} className="underline underline-offset-4">
+                    {request.orderId ? "Ver pedido" : "Ver alquiler"}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
       {d.paymentsRequiringRefund.length > 0 && (
         <section aria-labelledby="reembolsos" className="rounded-2xl border border-destructive/40 bg-destructive/5 p-5">
           <h2 id="reembolsos" className="font-display-tight flex items-center gap-2 text-lg text-destructive">

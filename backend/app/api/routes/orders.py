@@ -4,7 +4,9 @@ from fastapi import APIRouter, status
 
 from app.api.deps import CurrentUser, DbSession
 from app.schemas.order import OrderCreateIn, OrderOut
+from app.schemas.refund import RefundRequestIn, RefundRequestOut
 from app.services import orders as service
+from app.services import refunds
 
 router = APIRouter(prefix="/orders", tags=["pedidos"])
 
@@ -22,3 +24,16 @@ def list_orders(user: CurrentUser, db: DbSession):
 @router.get("/{order_id}", response_model=OrderOut, response_model_exclude_none=True)
 def get_order(order_id: uuid.UUID, user: CurrentUser, db: DbSession):
     return service.get_order(db, user, order_id)
+
+
+@router.post("/{order_id}/cancel", response_model=OrderOut, response_model_exclude_none=True)
+def cancel_order(order_id: uuid.UUID, user: CurrentUser, db: DbSession):
+    """El cliente cancela un pedido sin pagar (se libera el inventario)."""
+    refunds.cancel_order(db, user, order_id)
+    return service.get_order(db, user, order_id)
+
+
+@router.post("/{order_id}/refund-request", response_model=RefundRequestOut, status_code=status.HTTP_201_CREATED)
+def request_order_refund(order_id: uuid.UUID, data: RefundRequestIn, user: CurrentUser, db: DbSession):
+    """El cliente pide el reembolso de un pedido pagado y aún no entregado."""
+    return refunds.request_refund(db, user, data.reason, order_id=order_id)

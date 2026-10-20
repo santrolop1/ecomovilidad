@@ -5,6 +5,7 @@ from app.models import Branch, Category, Inventory, Order, Product, Rental, User
 from app.models.enums import OrderStatus, RentalStatus
 from app.repositories import admin as repo
 from app.schemas.admin import DashboardOut, LowStockOut
+from app.services.refunds import open_requests
 
 from .inventory import LOW_STOCK_THRESHOLD, inventory_totals
 from .orders import summaries
@@ -65,6 +66,7 @@ def get_dashboard(db: Session) -> DashboardOut:
         orders_by_status=orders_by_status,
         revenue_confirmed=int(revenue or 0),
         payments_requiring_refund=refund_alerts(db),
+        refund_requests=open_requests(db),
         units_available=available,
         units_reserved=reserved,
         units_total=total,

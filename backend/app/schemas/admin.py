@@ -12,6 +12,7 @@ from app.models.enums import BranchService, FulfillmentMethod, OrderStatus, Paym
 
 from .base import ApiModel
 from .payment import InvoiceRefOut
+from .refund import AdminRefundRequestOut, RefundRequestOut
 
 SLUG_PATTERN = r"^[a-z0-9]+(?:-[a-z0-9]+)*$"
 IMAGE_PATTERN = r"^/images/[A-Za-z0-9/_.-]+\.(?:webp|jpg|jpeg|png)$"
@@ -299,6 +300,7 @@ class AdminOrderDetailOut(AdminOrderSummaryOut):
     payment_expires_at: datetime | None = None
     payments: list[AdminPaymentOut]
     invoice: InvoiceRefOut | None = None
+    refund_request: RefundRequestOut | None = None
     delivery_address: str | None
     delivery_city: str | None
     time_slot: str
@@ -353,6 +355,7 @@ class AdminRentalOut(ApiModel):
     created_at: datetime
     payments: list[AdminPaymentOut] = []
     invoice: InvoiceRefOut | None = None
+    refund_request: RefundRequestOut | None = None
     allowed_transitions: list[RentalStatus] = []
 
 
@@ -395,6 +398,7 @@ class DashboardOut(ApiModel):
     orders_by_status: dict[OrderStatus, int]
     revenue_confirmed: int
     payments_requiring_refund: list[AdminRefundAlertOut] = []
+    refund_requests: list[AdminRefundRequestOut] = []
     units_available: int
     units_reserved: int
     units_total: int

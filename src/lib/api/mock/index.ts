@@ -126,6 +126,12 @@ export function createMockApi({ latencyMs = 0 }: MockApiOptions = {}): ApiClient
       async getRental() {
         return null;
       },
+      async cancelRental() {
+        throw backendRequired("Las cancelaciones");
+      },
+      async requestRentalRefund() {
+        throw backendRequired("Los reembolsos");
+      },
       async listTimeSlots() {
         await simulateLatency();
         return clone(timeSlotsMock);
@@ -183,6 +189,12 @@ export function createMockApi({ latencyMs = 0 }: MockApiOptions = {}): ApiClient
       },
     },
     orders: {
+      async cancelOrder() {
+        throw backendRequired("Las cancelaciones");
+      },
+      async requestOrderRefund() {
+        throw backendRequired("Los reembolsos");
+      },
       async createOrder(input) {
         await simulateLatency();
         const subtotal = input.items.reduce((sum, item) => sum + assertStock(item).price * item.quantity, 0);

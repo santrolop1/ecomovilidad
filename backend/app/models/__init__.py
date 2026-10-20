@@ -5,7 +5,7 @@ from .cart import Cart, CartItem
 from .catalog import Category, Product
 from .inventory import Inventory
 from .order import Order, OrderItem
-from .payment import Invoice, Payment, PaymentEvent
+from .payment import Invoice, Payment, PaymentEvent, RefundRequest
 from .rental import Rental, RentalRate, RentalUnit
 from .reservation import CartReservation
 from .security_records import ConsentRecord, LoginAttempt, PasswordResetToken
@@ -27,6 +27,7 @@ __all__ = [
     "Payment",
     "PaymentEvent",
     "Product",
+    "RefundRequest",
     "Rental",
     "RentalRate",
     "RentalUnit",

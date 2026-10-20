@@ -122,6 +122,12 @@ export const adminPaymentSchema = z.object({
 });
 
 const invoiceRef = z.object({ id, number: z.string(), issuedAt: isoDate });
+const refundRequest = z.object({
+  status: z.enum(["abierta", "reembolsada"]),
+  reason: z.string(),
+  createdAt: isoDate,
+  resolvedAt: isoDate.nullable().optional(),
+});
 
 export const adminOrderDetailSchema = adminOrderSummarySchema.extend({
   subtotal: z.number(),
@@ -130,6 +136,7 @@ export const adminOrderDetailSchema = adminOrderSummarySchema.extend({
   paymentExpiresAt: isoDate.nullable().optional(),
   payments: z.array(adminPaymentSchema),
   invoice: invoiceRef.nullable().optional(),
+  refundRequest: refundRequest.nullable().optional(),
   deliveryAddress: z.string().nullable(),
   deliveryCity: z.string().nullable(),
   timeSlot: z.string(),
@@ -183,6 +190,7 @@ export const adminRentalSchema = z.object({
   createdAt: isoDate,
   payments: z.array(adminPaymentSchema).default([]),
   invoice: invoiceRef.nullable().optional(),
+  refundRequest: refundRequest.nullable().optional(),
   allowedTransitions: z.array(rentalStatus).default([]),
 });
 
@@ -221,6 +229,16 @@ export const dashboardSchema = z.object({
         orderId: id.nullable().optional(),
         rentalId: id.nullable().optional(),
         approvedAt: isoDate.nullable().optional(),
+      }),
+    )
+    .default([]),
+  refundRequests: z
+    .array(
+      refundRequest.extend({
+        orderId: id.nullable().optional(),
+        rentalId: id.nullable().optional(),
+        userEmail: z.string(),
+        amount: z.number(),
       }),
     )
     .default([]),

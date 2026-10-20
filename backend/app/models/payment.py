@@ -119,3 +119,27 @@ class Invoice(UUIDPrimaryKey, Base):
     @property
     def full_number(self) -> str:
         return f"{self.prefix}-{self.number:06d}"
+
+
+class RefundRequest(UUIDPrimaryKey, Base):
+    """Solicitud de reembolso de un pedido o alquiler pagado (CU-15).
+
+    El reembolso del dinero se hace en la pasarela; aquí queda la trazabilidad:
+    quién lo pidió, por qué, y cuándo el panel lo registró como reembolsado.
+    """
+
+    __tablename__ = "refund_requests"
+    __table_args__ = (
+        CheckConstraint(PAYMENT_TARGET, name="one_target"),
+        CheckConstraint("status IN ('abierta', 'reembolsada')", name="valid_status"),
+        Index("uq_refund_requests_order_open", "order_id", unique=True, postgresql_where=text("status = 'abierta'")),
+        Index("uq_refund_requests_rental_open", "rental_id", unique=True, postgresql_where=text("status = 'abierta'")),
+    )
+
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"), index=True)
+    order_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("orders.id", ondelete="RESTRICT"), index=True)
+    rental_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("rentals.id", ondelete="RESTRICT"), index=True)
+    reason: Mapped[str] = mapped_column(String(500))
+    status: Mapped[str] = mapped_column(String(20), default="abierta", server_default="abierta")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

@@ -245,16 +245,26 @@ def create_order(db: Session, user: User, data: OrderCreateIn) -> OrderOut:
 
 
 def list_orders(db: Session, user: User) -> list[OrderOut]:
+    from .refunds import latest_request, refund_out
+
     orders = repo.list_user_orders(db, user.id)
     info = payment_info(db, order_ids=[o.id for o in orders])
-    return [to_order_out(o, info.get(o.id)) for o in orders]
+    return [
+        to_order_out(o, info.get(o.id)).model_copy(
+            update={"refund_request": refund_out(latest_request(db, order_id=o.id))}
+        )
+        for o in orders
+    ]
 
 
 def get_order(db: Session, user: User, order_id: uuid.UUID) -> OrderOut:
     order = repo.get_user_order(db, user.id, order_id)
     if order is None:  # 404 también si es de otro usuario: no revela su existencia
         raise NotFoundError("El pedido no existe.")
-    return to_order_out(order, payment_info(db, order_ids=[order.id]).get(order.id))
+    from .refunds import latest_request, refund_out
+
+    out = to_order_out(order, payment_info(db, order_ids=[order.id]).get(order.id))
+    return out.model_copy(update={"refund_request": refund_out(latest_request(db, order_id=order.id))})
 
 
 def _locked_order_stock(db: Session, order: Order) -> dict[uuid.UUID, Inventory]:
@@ -289,6 +299,24 @@ def settle_order_stock(db: Session, order: Order) -> None:
         rows[item.product_id].reserved_quantity -= item.quantity
         rows[item.product_id].total_quantity -= item.quantity
     order.stock_settled_at = reservations.now_utc()
+
+
+def restock_order(db: Session, order: Order) -> None:
+    """Pedido pagado que se reembolsa sin entregar: las unidades vendidas vuelven al inventario."""
+    if order.stock_settled_at is None:
+        return
+    rows = {
+        inv.product_id: inv
+        for inv in repo.lock_inventory(db, [i.product_id for i in order.items])
+        if inv.branch_id == order.branch_id
+    }
+    for item in order.items:
+        inv = rows.get(item.product_id)
+        if inv is None:
+            raise ConflictError("No encontramos el inventario de este pedido en su sucursal.")
+        inv.total_quantity += item.quantity
+        inv.available_quantity += item.quantity
+    order.stock_settled_at = None
 
 
 def lock_order(db: Session, order_id: uuid.UUID) -> Order | None:

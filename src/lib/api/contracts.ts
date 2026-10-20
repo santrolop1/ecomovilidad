@@ -21,6 +21,7 @@ import type {
   PaymentResult,
   PaymentSimulation,
   PaymentStart,
+  RefundRequest,
   RegisterInput,
   RentalOffer,
   RentalPeriodInput,
@@ -63,6 +64,10 @@ export interface RentalsApi {
   listRentals(): Promise<CustomerRental[]>;
   /** GET /rentals/:id — null si no existe o es de otro usuario. */
   getRental(id: string): Promise<CustomerRental | null>;
+  /** POST /rentals/:id/cancel — solo sin pagar (CU-15) */
+  cancelRental(id: string): Promise<CustomerRental>;
+  /** POST /rentals/:id/refund-request — pagado y sin entregar (CU-15) */
+  requestRentalRefund(id: string, reason: string): Promise<RefundRequest>;
   /** Franjas de entrega (RF 7.1). SIN endpoint: siempre mock; FastAPI valida los ids. */
   listTimeSlots(date: string): Promise<TimeSlot[]>;
 }
@@ -86,6 +91,10 @@ export interface OrdersApi {
   listOrders(): Promise<CustomerOrder[]>;
   /** GET /orders/:id — null si no existe o es de otro usuario */
   getOrder(id: string): Promise<CustomerOrder | null>;
+  /** POST /orders/:id/cancel — solo sin pagar (CU-15) */
+  cancelOrder(id: string): Promise<CustomerOrder>;
+  /** POST /orders/:id/refund-request — pagado y sin entregar (CU-15) */
+  requestOrderRefund(id: string, reason: string): Promise<RefundRequest>;
 }
 
 export interface PaymentsApi {

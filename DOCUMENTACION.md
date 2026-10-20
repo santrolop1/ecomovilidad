@@ -265,6 +265,7 @@ PostgreSQL 16 + PostGIS. Claves primarias UUID (`gen_random_uuid()`) y marcas de
 | `rental_units` | product_id, branch_id, código, estado (`operativo` / `mantenimiento` / `retirado`), is_demo | código único |
 | `payments` | user_id, order_id o rental_id, referencia única, monto en centavos, moneda, estado, transacción de Wompi, medio, mensaje, `requires_refund`, approved_at | exactamente un objetivo; máximo un pago aplicado por pedido o alquiler (índice único parcial) |
 | `payment_events` | checksum único, evento, transacción, estado, payload | idempotencia de los eventos de Wompi |
+| `refund_requests` | user_id, pedido o alquiler, motivo, estado (`abierta` / `reembolsada`), fechas | una solicitud abierta por pedido o alquiler |
 | `invoices` | número (secuencia), prefijo, payment_id, pedido o alquiler, comprador, subtotal, IVA, total, PDF, XML, fecha | total = subtotal + IVA; una por pago |
 | `password_reset_tokens` | user_id, token_hash (SHA-256), expires_at, used_at | → users (CASCADE); hash único |
 | `login_attempts` | email_hash (SHA-256 del correo), ip_address, succeeded, created_at | índices por (email_hash, fecha) e (IP, fecha); se purgan a las 24 h |
@@ -280,9 +281,10 @@ PostgreSQL 16 + PostGIS. Claves primarias UUID (`gen_random_uuid()`) y marcas de
 - `0001`: esquema inicial y extensión PostGIS.
 - `0002`: `users.is_admin` y `products.image_url` opcional.
 - `0003`: `cart_reservations`, `password_reset_tokens`, `login_attempts` y `consent_records`. Las líneas de carrito anteriores, sin reserva, se retiran en la primera limpieza.
+- `0005`: `refund_requests` (solicitudes de reembolso, CU-15).
 - `0004`: `payments`, `payment_events`, `invoices` (+ secuencia `invoice_number_seq`), `rental_rates`, `rental_units`; en `rentals` la unidad, el rango y la restricción de exclusión (extensión `btree_gist`); en `orders` el estado `paid`, el plazo de pago y el medio de pago opcional; consentimiento de alquiler. Los pedidos pendientes anteriores reciben 24 h para pagarse.
 
-Las cuatro son reversibles (probado `upgrade → downgrade → upgrade`) y `alembic check` no detecta diferencias con los modelos.
+Las cinco son reversibles (probado `upgrade → downgrade → upgrade`) y `alembic check` no detecta diferencias con los modelos.
 
 ## 10. PostGIS y mapas
 
@@ -428,6 +430,13 @@ El backend elige la pasarela con `PAYMENT_PROVIDER` (por defecto `auto`):
 Los pagos simulados quedan con `provider = simulado` y medio "Pasarela de pruebas (sin cobro real)", y la factura lo indica. La pasarela simulada **nunca funciona con `ENVIRONMENT=production`**, ni siquiera forzándola con `PAYMENT_PROVIDER=simulado` (probado). Con Wompi activo, sus endpoints responden 404.
 
 **Para pasar a Wompi:** poner las cuatro llaves en `backend/.env` (ver `backend/.env.example`), reiniciar la API y registrar la URL de eventos `https://<dominio>/api/webhooks/wompi` en el panel de Wompi. `GET /api/v1/payments/config` indica la pasarela activa (`"provider": "wompi"` o `"simulado"`).
+
+### Cancelación y reembolso (CU-15)
+
+- **Sin pagar:** el cliente cancela el pedido o alquiler desde su detalle (`POST /orders/{id}/cancel`, `POST /rentals/{id}/cancel`). Se libera lo apartado.
+- **Pagado y sin entregar:** el cliente solicita el reembolso con un motivo (`POST /orders/{id}/refund-request`, `POST /rentals/{id}/refund-request`; una solicitud abierta a la vez). La solicitud aparece en el resumen del panel y en el detalle del pedido o alquiler.
+- **Panel:** después de devolver el dinero en la pasarela, el administrador pulsa **Registrar reembolso** (`POST /admin/orders/{id}/refund`, `POST /admin/rentals/{id}/refund`). El pedido se cancela y sus unidades **vuelven al inventario** (dejan de contar como vendidas); el alquiler se cancela y la unidad queda libre. Queda la traza en `refund_requests` (quién, motivo, fechas).
+- **Pendiente:** devolución automática del dinero por la pasarela y nota crédito DIAN de la factura.
 
 ### Alquiler (CU-04)
 
@@ -689,10 +698,10 @@ Resultados obtenidos el 6 de octubre de 2026 sobre una base de datos recreada de
 
 | Suite | Resultado |
 | --- | --- |
-| Backend, pytest (PostgreSQL + PostGIS real) | **156 / 156** pruebas (fase 6) |
+| Backend, pytest (PostgreSQL + PostGIS real) | **161 / 161** pruebas (fase 6) |
 | Backend, ruff (lint y formato) | Sin errores |
 | Migraciones | `upgrade → downgrade → upgrade` correcto (0001 → 0004); `alembic check` sin diferencias |
-| Frontend, Vitest | **92 / 92** pruebas en 25 archivos (fase 6) |
+| Frontend, Vitest | **93 / 93** pruebas en 25 archivos (fase 6) |
 | Frontend, typecheck (`tsc`) | Sin errores |
 | Frontend, ESLint | Sin errores ni advertencias |
 | Build de producción, `API_MODE=mock` | Correcto |
@@ -736,6 +745,7 @@ Resultados obtenidos el 6 de octubre de 2026 sobre una base de datos recreada de
 - Responsive: inicio, `/sucursales`, `/admin/operacion`, `/login`, `/carrito`, `/checkout`, `/alquiler` y `/admin` a 360, 390, 768, 1024, 1280 y 1440 px, sin scroll horizontal y con botones de zoom de 40 px. Corregido en esta fase: a 1024 px con sesión de administrador la cabecera pública desbordaba 12 px; entre 1024 y 1279 px sus tres enlaces ("Mi cuenta", "Panel", "Salir") se muestran solo con icono (texto para lectores de pantalla y como tooltip).
 
 **Fase 6 (pagos, facturas y alquiler), pruebas automáticas:**
+- Cancelación y reembolso (5): el cliente cancela lo no pagado y libera inventario; lo pagado no se cancela, se solicita reembolso (motivo obligatorio, una solicitud abierta); el panel lo registra, cancela y devuelve las unidades al inventario; alquiler cancelado o reembolsado libera la unidad; pedido ajeno 404; solo un administrador registra reembolsos.
 - Pasarela de pruebas (6): configuración, aprobar aplica el mismo flujo (pagado, inventario, factura con `provider` simulado), decisión única, rechazo y reintento, alquiler, solo el dueño decide, inexistente con Wompi activo; y en producción sin llaves no hay pagos ni pasarela simulada aunque se fuerce.
 - Pagos con Wompi (16): firma de integridad igual al ejemplo de la documentación de Wompi; checksum de eventos según el procedimiento documentado; URL de checkout firmada y sin secretos; pago aprobado → pedido pagado, inventario descontado una vez y factura; verificar dos veces no cambia nada; PDF y XML solo para su dueño (IVA y totales correctos); rechazado y reintento; monto alterado no se aplica; pedido ajeno 404; sin llaves 503; evento firmado aplicado una sola vez aunque se repita; firma falsa 401; referencia desconocida sin efecto; vencimiento que libera inventario; pago tardío marcado para reembolso y visible en el panel; margen para pagos en proceso; facturas consecutivas.
 - Alquiler (11): oferta con tarifas y unidades reales; precio más barato entre horas y días; validaciones de horario de sucursal, anticipación, granularidad y duración; reserva de una unidad con consentimiento; sin unidades libres 409 y periodo contiguo permitido; **la base de datos rechaza alquileres cruzados en la misma unidad**; alquiler ajeno 404; pago → confirmado → entregado → devuelto; vencimiento libera la unidad; unidades en mantenimiento fuera de la oferta y no retirables con alquileres vigentes; panel solo para administradores.
@@ -748,6 +758,7 @@ Resultados obtenidos el 6 de octubre de 2026 sobre una base de datos recreada de
 - Panel: pedido con sus dos intentos y factura; alquiler entregado y devuelto; unidad a mantenimiento y de vuelta; resumen con ventas pagadas.
 - Responsive: 13 rutas nuevas o cambiadas (tienda y panel) × 6 anchos = 78 combinaciones sin desbordamiento ni errores.
 - Corregido durante las pruebas: la descripción larga de un alquiler se cortaba en el PDF (ahora la tabla ajusta el texto).
+- **CU-15 en el navegador:** alquiler sin pagar cancelado por el cliente; alquiler pagado con reembolso solicitado, visible en el resumen del panel, registrado por el administrador → cancelado y "Reembolsado" también para el cliente. Corregido: la tarjeta del panel pasaba una función a un componente de cliente (la página quedaba en "Cargando…").
 - **Pasarela de pruebas, con la API real de Docker (sin dobles de prueba):** alquiler con aviso "Modo de pruebas", página de la pasarela con concepto y total, rechazo, reintento y aprobación → factura `EMV-000003` (indica "pago simulado, sin cobro real"); compra desde el checkout a 390 px → factura `EMV-000004`; reabrir un pago ya decidido muestra "ya se procesó"; sin desbordamiento en móvil.
 
 **Errores encontrados y corregidos durante la fase 4:**
@@ -770,7 +781,7 @@ Resultados obtenidos el 6 de octubre de 2026 sobre una base de datos recreada de
 | Sucursales | IMPLEMENTADO | Reales y administrables. Datos DEMO (`is_demo`). |
 | Inventario | PARCIAL | Real: por sucursal, reserva de 15 min en el carrito (RF 6.2), reservas por pedido, ajustes y alertas. Falta la auditoría de ajustes. |
 | Carrito | IMPLEMENTADO | Persistente entre dispositivos con reserva y contador; local (sin reserva) para visitantes; fusión. |
-| Pedidos | IMPLEMENTADO | Creación, pago en línea, descuento de inventario al pagar, factura, "Mis pedidos" y gestión en el panel. Pendiente: cancelación por el cliente, reembolsos e historial de estados. |
+| Pedidos | IMPLEMENTADO | Creación, pago en línea, descuento de inventario al pagar, factura, "Mis pedidos" y gestión en el panel. Pendiente: historial de estados y devolución automática del dinero. |
 | Alquileres | IMPLEMENTADO | Flota, tarifas, cotización, reserva de una unidad sin cruces, pago, factura, "Mis alquileres" y entrega/devolución en el panel. Sin domicilio ni recargos por demora. |
 | Admin | IMPLEMENTADO | Panel funcional protegido en backend y frontend. Sin carga de imágenes ni auditoría. |
 | Ley 1581 | PARCIAL | Evidencia real (usuario, fecha, versión) en registro y pedido. Texto legal pendiente de revisión. |
@@ -866,7 +877,7 @@ Resultados obtenidos el 6 de octubre de 2026 sobre una base de datos recreada de
 
 En orden de prioridad:
 
-1. **Cerrar pagos:** configurar las llaves de Wompi (primero sandbox, luego producción) y registrar la URL de eventos; reembolsos y cancelación por el cliente (CU-15), proveedor de correo y factura electrónica DIAN.
+1. **Cerrar pagos:** configurar las llaves de Wompi (primero sandbox, luego producción) y registrar la URL de eventos; devolución automática por la pasarela, proveedor de correo, factura electrónica DIAN y nota crédito.
 2. **Ajustes de la experiencia de compra:** sucursal de la reserva visible en el checkout e historial de estados.
 3. **Datos reales:** sucursales, catálogo y fotografías propias de EcoMovilidad; retirar los datos DEMO.
 4. **Operación:**

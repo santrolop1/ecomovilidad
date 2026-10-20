@@ -1,6 +1,6 @@
 import type { ImageAsset, ProductCategorySlug } from "./catalog";
 import type { CustomerInfo } from "./order";
-import type { InvoiceRef, PaymentSummary } from "./payment";
+import type { InvoiceRef, PaymentSummary, RefundRequest } from "./payment";
 
 export type RentalDurationUnit = "hora" | "dia" | "semana";
 
@@ -107,5 +107,6 @@ export interface CustomerRental {
   paymentExpiresAt?: string;
   payment?: PaymentSummary;
   invoice?: InvoiceRef;
+  refundRequest?: RefundRequest;
   createdAt?: string;
 }

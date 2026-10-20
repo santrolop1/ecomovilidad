@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { AdminPageHeader } from "@/features/admin/components/admin-page-header";
 import { OrderStatusActions } from "@/features/admin/components/order-status-actions";
 import { PaymentAttempts } from "@/features/admin/components/payment-attempts";
+import { RefundRequestCard } from "@/features/admin/components/refund-request-card";
 import { orderStatusTone, StatusBadge } from "@/components/shared/status-badge";
 import { fulfillmentLabels, orderStatusLabels, paymentLabels } from "@/features/admin/lib/labels";
 import { adminApi } from "@/lib/api/admin";
@@ -113,6 +114,7 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/pedid
               {order.paymentMethod && <Field label="Método elegido (histórico)">{paymentLabels[order.paymentMethod]}</Field>}
             </dl>
           </section>
+          {order.refundRequest && <RefundRequestCard kind="pedido" id={order.id} request={order.refundRequest} />}
           <PaymentAttempts payments={order.payments} invoice={order.invoice} expiresAt={order.paymentExpiresAt} />
         </div>
       </div>

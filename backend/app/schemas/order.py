@@ -12,6 +12,7 @@ from app.models.enums import FulfillmentMethod, OrderStatus, PaymentMethod
 from .auth import PHONE_PATTERN
 from .base import ApiModel
 from .payment import InvoiceRefOut, PaymentSummaryOut
+from .refund import RefundRequestOut
 
 
 class OrderItemIn(ApiModel):
@@ -90,6 +91,7 @@ class OrderOut(ApiModel):
     payment_expires_at: datetime | None = None
     payment: PaymentSummaryOut | None = None
     invoice: InvoiceRefOut | None = None
+    refund_request: RefundRequestOut | None = None
     contact_name: str
     contact_email: str
     contact_phone: str
