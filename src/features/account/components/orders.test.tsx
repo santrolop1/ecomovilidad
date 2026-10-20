@@ -6,6 +6,8 @@ import { OrderDetail } from "./order-detail";
 
 // El botón de pago llama a una Server Action (solo servidor).
 vi.mock("@/features/payments/actions", () => ({ startPayment: vi.fn() }));
+vi.mock("@/features/account/actions", () => ({ cancelPurchase: vi.fn(), requestRefund: vi.fn() }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }) }));
 
 const order: CustomerOrder = {
   id: "3f2a9c1b-0000-4000-8000-000000000000",
@@ -87,6 +89,26 @@ describe("Mis pedidos", () => {
     expect(screen.getByText("PSE")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Factura PDF/ })).toHaveAttribute("href", "/api/facturas/inv-1/pdf");
     expect(screen.queryByRole("button", { name: /pagar/i })).not.toBeInTheDocument();
+    // CU-15: pagado → no se cancela, se pide reembolso.
+    expect(screen.getByRole("button", { name: "Solicitar reembolso" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Cancelar pedido/ })).not.toBeInTheDocument();
+  });
+
+  it("un pedido sin pagar se puede cancelar y uno con reembolso solicitado lo muestra", () => {
+    const { unmount } = render(<OrderDetail order={order} />);
+    expect(screen.getByRole("button", { name: "Cancelar pedido" })).toBeInTheDocument();
+    unmount();
+    render(
+      <OrderDetail
+        order={{
+          ...order,
+          status: "paid",
+          refundRequest: { status: "abierta", reason: "Me equivoqué de modelo.", createdAt: order.createdAt },
+        }}
+      />,
+    );
+    expect(screen.getByText(/EcoMovilidad lo está revisando/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Solicitar reembolso" })).not.toBeInTheDocument();
   });
 
   it("un pedido histórico sin pago en línea muestra el método que eligió", () => {

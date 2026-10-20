@@ -37,6 +37,7 @@ from app.schemas.admin import (
 )
 from app.schemas.rental import RentalUnitOut, RentalUnitStatusIn
 from app.services import orders as order_service
+from app.services import refunds
 from app.services.admin import branches, catalog, dashboard, inventory, orders, rentals, users
 from app.services.errors import NotFoundError
 
@@ -194,6 +195,20 @@ def get_rental(rental_id: uuid.UUID, db: DbSession):
 def update_rental_status(rental_id: uuid.UUID, data: RentalStatusIn, db: DbSession):
     """Pagado → entregado → devuelto; pendiente de pago → cancelado."""
     rentals.change_status(db, rental_id, data.status)
+    return rentals.get_rental(db, rental_id)
+
+
+@router.post("/orders/{order_id}/refund", response_model=AdminOrderDetailOut)
+def resolve_order_refund(order_id: uuid.UUID, db: DbSession):
+    """Registrar el reembolso (hecho en la pasarela): cancela y devuelve las unidades al inventario."""
+    refunds.resolve_refund(db, order_id=order_id)
+    return orders.get_order(db, order_id)
+
+
+@router.post("/rentals/{rental_id}/refund", response_model=AdminRentalOut)
+def resolve_rental_refund(rental_id: uuid.UUID, db: DbSession):
+    """Registrar el reembolso de un alquiler pagado: se cancela y la unidad queda libre."""
+    refunds.resolve_refund(db, rental_id=rental_id)
     return rentals.get_rental(db, rental_id)
 
 

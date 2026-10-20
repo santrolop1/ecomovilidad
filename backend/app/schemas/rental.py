@@ -9,6 +9,7 @@ from app.models.enums import RentalRateUnit, RentalStatus, RentalUnitStatus
 from .base import ApiModel
 from .order import CustomerIn
 from .payment import InvoiceRefOut, PaymentSummaryOut
+from .refund import RefundRequestOut
 
 
 class RentalRateOut(ApiModel):
@@ -75,6 +76,7 @@ class RentalOut(ApiModel):
     payment_expires_at: datetime | None = None
     payment: PaymentSummaryOut | None = None
     invoice: InvoiceRefOut | None = None
+    refund_request: RefundRequestOut | None = None
     created_at: datetime | None = None
 
 

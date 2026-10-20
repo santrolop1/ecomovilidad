@@ -281,13 +281,23 @@ def create_rental(db: Session, user: User, data: RentalCreateIn) -> RentalOut:
 
 
 def list_rentals(db: Session, user: User) -> list[RentalOut]:
+    from .refunds import latest_request, refund_out
+
     rentals = repo.list_user_rentals(db, user.id)
     info = payment_info(db, rental_ids=[r.id for r in rentals])
-    return [to_rental_out(r, info.get(r.id)) for r in rentals]
+    return [
+        to_rental_out(r, info.get(r.id)).model_copy(
+            update={"refund_request": refund_out(latest_request(db, rental_id=r.id))}
+        )
+        for r in rentals
+    ]
 
 
 def get_rental(db: Session, user: User, rental_id: uuid.UUID) -> RentalOut:
     rental = db.scalars(select(Rental).where(Rental.id == rental_id, Rental.user_id == user.id)).unique().one_or_none()
     if rental is None:  # 404 también si es de otro usuario
         raise NotFoundError("El alquiler no existe.")
-    return to_rental_out(rental, payment_info(db, rental_ids=[rental.id]).get(rental.id))
+    from .refunds import latest_request, refund_out
+
+    out = to_rental_out(rental, payment_info(db, rental_ids=[rental.id]).get(rental.id))
+    return out.model_copy(update={"refund_request": refund_out(latest_request(db, rental_id=rental.id))})

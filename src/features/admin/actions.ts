@@ -114,6 +114,15 @@ export async function setRentalUnitStatus(id: string, status: unknown): Promise<
   });
 }
 
+export async function resolveRefund(kind: "pedido" | "alquiler", id: string): Promise<ActionResult<null>> {
+  return runAction(idSchema, id, async (value) => {
+    if (kind === "pedido") await adminApi.resolveOrderRefund(value);
+    else await adminApi.resolveRentalRefund(value);
+    refreshStorefront("products", "branches", "rental-offers");
+    return null;
+  });
+}
+
 export async function setUserActive(id: string, isActive: boolean): Promise<ActionResult<null>> {
   return runAction(z.boolean(), isActive, async (value) => {
     await adminApi.setUserActive(idSchema.parse(id), value);

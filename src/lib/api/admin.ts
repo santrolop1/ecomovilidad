@@ -96,6 +96,10 @@ export const adminApi = {
   getRental: (id: string) => get(`/rentals/${encodeURIComponent(id)}`, adminRentalSchema),
   updateRentalStatus: (id: string, status: RentalStatusValue) =>
     send("PATCH", `/rentals/${encodeURIComponent(id)}`, adminRentalSchema, { status }),
+  resolveOrderRefund: (id: string) =>
+    send("POST", `/orders/${encodeURIComponent(id)}/refund`, adminOrderDetailSchema, undefined),
+  resolveRentalRefund: (id: string) =>
+    send("POST", `/rentals/${encodeURIComponent(id)}/refund`, adminRentalSchema, undefined),
   listRentalUnits: () => get("/rental-units", z.array(rentalUnitSchema)),
   updateRentalUnit: (id: string, status: RentalUnitStatusValue) =>
     send("PATCH", `/rental-units/${encodeURIComponent(id)}`, rentalUnitSchema, { status }),

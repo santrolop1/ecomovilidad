@@ -20,6 +20,7 @@ import {
   rentalOfferSchema,
   rentalQuoteSchema,
   productListSchema,
+  refundRequestSchema,
   publicProductSchema,
   sessionSchema,
   userSchema,
@@ -88,6 +89,15 @@ export function createRealApi(http: HttpClient): ApiClient {
         }),
       quote: (productId, input) =>
         http.request(endpoints.rentalQuote(productId), { method: "POST", body: input, schema: rentalQuoteSchema }),
+      cancelRental: (id) =>
+        http.request(`${endpoints.rental(id)}/cancel`, { method: "POST", schema: customerRentalSchema, auth: true }),
+      requestRentalRefund: (id, reason) =>
+        http.request(`${endpoints.rental(id)}/refund-request`, {
+          method: "POST",
+          body: { reason },
+          schema: refundRequestSchema,
+          auth: true,
+        }),
       createRental: (input) =>
         http.request(endpoints.rentals, { method: "POST", body: input, schema: customerRentalSchema, auth: true }),
       listRentals: () => http.request(endpoints.rentals, { schema: z.array(customerRentalSchema), auth: true }),
@@ -141,6 +151,15 @@ export function createRealApi(http: HttpClient): ApiClient {
       createOrder: (input) =>
         http.request(endpoints.orders, { method: "POST", body: input, schema: orderSchema, auth: true }),
       listOrders: () => http.request(endpoints.orders, { schema: z.array(customerOrderSchema), auth: true }),
+      cancelOrder: (id) =>
+        http.request(`${endpoints.order(id)}/cancel`, { method: "POST", schema: customerOrderSchema, auth: true }),
+      requestOrderRefund: (id, reason) =>
+        http.request(`${endpoints.order(id)}/refund-request`, {
+          method: "POST",
+          body: { reason },
+          schema: refundRequestSchema,
+          auth: true,
+        }),
       async getOrder(id) {
         try {
           return await http.request(endpoints.order(id), { schema: customerOrderSchema, auth: true });

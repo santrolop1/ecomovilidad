@@ -46,7 +46,7 @@ Fuente: `SRS_EcoMovilidad_v3_0` (22/sep/2026). Módulo 8 tomado del Plan de Desa
 | --- | --- | --- | --- |
 | RF-4.1 | PSE, tarjetas y billeteras digitales | **Implementado (pasarela de pruebas; Wompi listo para sus llaves)** | Wompi Web Checkout (tarjeta, PSE, Nequi y otros) para pedidos y alquileres: firma de integridad en FastAPI, verificación de la transacción con la llave privada, eventos con checksum e idempotencia, reintentos y vencimiento. 16 pruebas pytest. **Hoy** se usa la pasarela de pruebas propia (sin cobro real, mismo flujo) porque aún no hay llaves de Wompi; al configurarlas en `backend/.env` se usa Wompi sin cambiar código. |
 | RF-4.2 | Factura electrónica DIAN (PDF y XML) | **Parcial** | Factura de venta PDF y XML con consecutivo, IVA y referencia del pago, descargable por el cliente y el panel. **No es factura electrónica DIAN**: falta resolución, CUFE y proveedor tecnológico. |
-| RF-4.3 | Reembolsos con trazabilidad | **Pendiente** | Los pagos que requieren reembolso (aprobados fuera de plazo o duplicados) quedan marcados y aparecen en el panel; el reembolso se hace a mano en Wompi. |
+| RF-4.3 | Reembolsos con trazabilidad | **Parcial** | Trazabilidad real: solicitud del cliente con motivo (`refund_requests`), alerta en el panel y registro del reembolso (cancela y devuelve las unidades al inventario). Pagos aprobados fuera de plazo o duplicados marcados. Pendiente: devolución automática por la pasarela y nota crédito DIAN. |
 
 ## Módulo 5 — Domicilios con seguimiento
 
@@ -118,4 +118,4 @@ Fuente: `SRS_EcoMovilidad_v3_0` (22/sep/2026). Módulo 8 tomado del Plan de Desa
 | CU-12 | Mantenimiento preventivo | **Parcial** | Unidades de la flota en mantenimiento salen de la oferta; sin umbrales, alertas ni bitácora. |
 | CU-13 | Gestionar inventario | **Parcial** | Consulta y ajuste del total por sucursal; sin registro de entradas y salidas. |
 | CU-14 | Gestionar domicilios | **Pendiente** | — |
-| CU-15 | Reembolso / cancelación | **Parcial** | Cancelación de lo no pagado en el panel; pagos que requieren reembolso marcados; sin reembolso por la pasarela ni solicitud del cliente. |
+| CU-15 | Reembolso / cancelación | **Implementado (reembolso manual)** | El cliente cancela lo no pagado o solicita el reembolso de lo pagado; el panel valida y registra (cancela y devuelve inventario). La devolución del dinero se hace en la pasarela; falta la nota crédito DIAN. |

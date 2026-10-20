@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { ProductImage } from "@/components/shared/product-image";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { PaymentSection } from "@/features/payments/components/payment-section";
+import { CancelRefund } from "./cancel-refund";
 import { formatCOP, formatDateTime, shortId } from "@/lib/format";
 import type { CustomerRental } from "@/types";
 import { customerRentalStatus } from "../lib/labels";
@@ -60,6 +61,15 @@ export function RentalDetail({ rental }: { rental: CustomerRental }) {
           payment={rental.payment}
           invoice={rental.invoice}
           target={{ rentalId: rental.id }}
+        />
+      </div>
+      <div className="lg:max-w-[340px] lg:ml-auto">
+        <CancelRefund
+          kind="alquiler"
+          id={rental.id}
+          cancellable={rental.status === "pending"}
+          refundable={rental.status === "confirmed"}
+          refundRequest={rental.refundRequest}
         />
       </div>
     </div>

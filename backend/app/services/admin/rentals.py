@@ -11,6 +11,7 @@ from app.schemas.admin import AdminRentalOut, Page
 from app.schemas.rental import RentalUnitOut
 from app.services.errors import ConflictError, NotFoundError
 from app.services.payments.queries import payment_info
+from app.services.refunds import latest_request, refund_out
 from app.services.reservations import now_utc
 
 from .common import PAGE_SIZE
@@ -48,6 +49,7 @@ def _to_out(db: Session, rental: Rental, user: User, *, detail: bool) -> AdminRe
         price=rental.price,
         created_at=rental.created_at,
         payments=payments_for(db, rental_id=rental.id) if detail else [],
+        refund_request=refund_out(latest_request(db, rental_id=rental.id)) if detail else None,
         invoice=info.invoice if info else None,
         allowed_transitions=sorted(ALLOWED_TRANSITIONS[RentalStatus(rental.status)]),
     )

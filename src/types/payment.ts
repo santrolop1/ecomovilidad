@@ -10,6 +10,14 @@ export interface PaymentSummary {
   approvedAt?: string;
 }
 
+/** Solicitud de reembolso de un pedido o alquiler pagado (CU-15). */
+export interface RefundRequest {
+  status: "abierta" | "reembolsada";
+  reason: string;
+  createdAt: string;
+  resolvedAt?: string;
+}
+
 export interface InvoiceRef {
   id: string;
   /** Prefijo y consecutivo, p. ej. EMV-000012. */

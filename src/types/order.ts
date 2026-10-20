@@ -1,4 +1,4 @@
-import type { InvoiceRef, PaymentSummary } from "./payment";
+import type { InvoiceRef, PaymentSummary, RefundRequest } from "./payment";
 
 export type PaymentMethod = "pse" | "tarjeta" | "billetera";
 
@@ -81,6 +81,7 @@ export interface CustomerOrder extends Order {
   paymentExpiresAt?: string;
   payment?: PaymentSummary;
   invoice?: InvoiceRef;
+  refundRequest?: RefundRequest;
   contactName: string;
   contactEmail: string;
   contactPhone: string;
