@@ -130,14 +130,14 @@ class FakeGateway:
         return self.transactions.get(transaction_id)
 
     def verify_event(self, payload, checksum) -> bool:
-        from app.services.payments.gateway import WompiGateway
+        from app.modules.pagos.gateway import WompiGateway
 
         gateway = WompiGateway.__new__(WompiGateway)
         gateway.settings = type("S", (), {"wompi_events_secret": EVENTS_SECRET})()
         return WompiGateway.verify_event(gateway, payload, checksum)
 
     def approve(self, reference: str, amount_in_cents: int, tx_id: str = "tx-1", status: str = "APPROVED"):
-        from app.services.payments.gateway import GatewayTransaction
+        from app.modules.pagos.gateway import GatewayTransaction
 
         tx = GatewayTransaction(tx_id, reference, status, amount_in_cents, "COP", "CARD", None)
         self.transactions[tx_id] = tx
@@ -146,7 +146,7 @@ class FakeGateway:
 
 @pytest.fixture
 def gateway(client: TestClient) -> FakeGateway:
-    from app.services.payments.gateway import get_payment_gateway
+    from app.modules.pagos.gateway import get_payment_gateway
 
     fake = FakeGateway()
     app.dependency_overrides[get_payment_gateway] = lambda: fake
@@ -155,7 +155,7 @@ def gateway(client: TestClient) -> FakeGateway:
 
 def wompi_event(transaction: dict, timestamp: int = 1_760_000_000) -> tuple[dict, str]:
     """Evento `transaction.updated` firmado como lo envía Wompi."""
-    from app.services.payments.gateway import event_checksum
+    from app.modules.pagos.gateway import event_checksum
 
     payload = {
         "event": "transaction.updated",

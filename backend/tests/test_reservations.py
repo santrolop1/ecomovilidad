@@ -7,12 +7,12 @@ from datetime import UTC, date, datetime, timedelta
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.orm import Session
 
+from app.core.errors import ConflictError
 from app.core.security import hash_password
 from app.models import Branch, Cart, CartItem, CartReservation, Category, Inventory, Product, User
-from app.schemas.cart import AddCartItemIn
-from app.services import cart as cart_service
-from app.services.errors import ConflictError
-from app.services.reservations import release_expired
+from app.modules.carrito import service as cart_service
+from app.modules.carrito.schemas import AddCartItemIn
+from app.modules.inventario.reservations import release_expired
 
 from .conftest import add_to_cart, csrf
 
@@ -125,7 +125,7 @@ def test_el_carrito_informa_los_productos_vencidos(auth_client, db):
     expire_all_reservations(db)
     cart_id = db.scalar(select(Cart.id).where(Cart.status == "active"))
     # Simula que la limpieza global aún no corrió: el carrito la hace y lo informa.
-    from app.services import reservations
+    from app.modules.inventario import reservations
 
     cart = db.get(Cart, cart_id)
     names = reservations.purge_cart(db, cart)

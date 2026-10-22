@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.core.security import CSRF_HEADER, SESSION_COOKIE, tokens_match
 from app.db.session import get_db
 from app.models import User, UserSession
-from app.services import auth as auth_service
+from app.modules.autenticacion import service as auth_service
 
 DbSession = Annotated[Session, Depends(get_db)]
 
@@ -15,8 +15,8 @@ def release_expired_reservations(db: DbSession) -> None:
     """Antes de atender cualquier solicitud se libera lo vencido: reservas de
     carrito (RF 6.2) y pedidos o alquileres sin pagar a tiempo. Así nada vencido
     bloquea inventario ni unidades de alquiler. Sin Celery ni Redis."""
-    from app.services.payments.service import expire_unpaid
-    from app.services.reservations import release_expired
+    from app.modules.inventario.reservations import release_expired
+    from app.modules.pagos.service import expire_unpaid
 
     release_expired(db)
     expire_unpaid(db)

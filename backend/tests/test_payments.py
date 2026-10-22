@@ -9,8 +9,8 @@ from sqlalchemy import select, update
 
 from app.core.config import Settings
 from app.models import Invoice, Order, Payment
-from app.services.payments.gateway import WompiGateway, event_checksum, integrity_signature
-from app.services.payments.invoices import split_vat
+from app.modules.pagos.gateway import WompiGateway, event_checksum, integrity_signature
+from app.modules.pagos.invoices import split_vat
 
 from .conftest import EVENTS_SECRET, csrf, register, wompi_event
 from .test_admin import place_order, stock
@@ -58,7 +58,7 @@ def test_url_de_checkout_firmada_y_sin_secretos():
         wompi_events_secret="test_events_x",
         wompi_integrity_secret="test_integrity_secreto",
     )
-    from app.services.payments.gateway import CheckoutCustomer
+    from app.modules.pagos.gateway import CheckoutCustomer
 
     expires = datetime(2026, 10, 20, 15, 30, tzinfo=UTC)
     url = WompiGateway(settings).checkout_url(

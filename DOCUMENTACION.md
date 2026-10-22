@@ -215,25 +215,51 @@ Las secciones sin backend (CMS, oferta de alquiler, franjas) siguen usando el mo
 
 **Tecnologías:** FastAPI 0.142, SQLAlchemy 2.1 (síncrono), psycopg 3, Alembic 1.20, GeoAlchemy2, Pydantic 2, argon2-cffi y Python 3.13 (gestionado con `uv`).
 
+El backend es **un solo servicio FastAPI** (monolito modular) con **una carpeta por servicio** del sistema, que corresponde a los "Servicio de…" de los diagramas de secuencia:
+
 ```
 backend/app/
-  main.py          aplicación, CORS, manejo de errores de negocio
-  core/            configuración, seguridad (argon2, tokens)
-  db/              base, sesión, seed + seed_data.json (DEMO)
-  models/          tablas y enums
-  schemas/         entrada/salida Pydantic (JSON en camelCase)
-  repositories/    consultas
-  core/email.py    adaptador de correo (desarrollo: log)
-  services/        reglas de negocio (catálogo, carrito, reservas, pedidos, auth,
-                   login_guard, consent, admin/)
-  api/deps.py      sesión, CSRF, require_admin y liberación de reservas vencidas
-  api/client_ip.py IP del cliente (X-Forwarded-For solo de proxies de confianza)
-  api/routes/      endpoints /api/v1
-  cli.py           make-admin / revoke-admin / release-expired
-backend/alembic/   migraciones 0001 (esquema), 0002 (rol admin, imagen opcional)
-                   y 0003 (reservas y registros de seguridad)
-backend/tests/     pytest contra PostGIS real
+  main.py               aplicación, CORS, manejo de errores de negocio
+  cli.py                make-admin / revoke-admin / set-password / release-expired
+  core/                 compartido: config, seguridad (argon2, tokens), correo, errores, ApiModel
+  db/                   base, sesión, seed + seed_data.json (DEMO)
+  models/               registro de todas las tablas (__init__) y enums compartidos
+  api/                  router /api/v1, dependencias (sesión, CSRF, admin, vencimientos), health
+  modules/
+    autenticacion/      registro, sesiones, perfil, recuperación, límite de intentos, consentimiento
+    catalogo/           productos y categorías
+    sucursales/         sucursales (PostGIS) y disponibilidad
+    inventario/         inventario por sucursal y reservas de 15 minutos
+    carrito/            carrito persistente
+    pedidos/            pedidos de compra
+    pagos/              pasarela (Wompi o la de pruebas), eventos y facturas
+    reembolsos/         cancelaciones y reembolsos
+    alquiler/           flota, tarifas, cotización y reservas de alquiler
+    admin/              panel de operación (consume los demás servicios)
+backend/alembic/        migraciones 0001 → 0005
+backend/tests/          pytest contra PostGIS real (un archivo por servicio)
 ```
+
+Dentro de cada servicio los archivos siguen el mismo patrón: `router.py` (endpoints HTTP), `service.py` (reglas de negocio), `models.py` (tablas), `schemas.py` (entrada y salida JSON) y `repository.py` (consultas). Un servicio usa a otro a través de su `service.py` o `queries.py`, nunca de su router.
+
+| Servicio (diagramas) | Backend | Frontend | Estado |
+| --- | --- | --- | --- |
+| Autenticación (CU-01) | `modules/autenticacion` | `features/auth`, `features/account` | Real |
+| Catálogo (CU-02) | `modules/catalogo` | `features/catalog` | Real |
+| Sucursales y mapas | `modules/sucursales` | `features/branches`, `components/map` | Real |
+| Inventario (CU-03, CU-13) | `modules/inventario`, `modules/admin/inventory.py` | `features/cart`, `app/admin/inventario` | Real (sin registro de entradas y salidas) |
+| Carrito | `modules/carrito` | `features/cart` | Real |
+| Pedidos (CU-03) | `modules/pedidos` | `features/checkout`, `features/account` | Real |
+| Pasarela de pagos y facturación (CU-05) | `modules/pagos` | `features/payments`, `app/api/webhooks`, `app/api/facturas` | Real (pagos de prueba, sin DIAN) |
+| Reembolsos (CU-15) | `modules/reembolsos` | `features/account`, `features/admin` | Real (devolución manual) |
+| Alquiler (CU-04) | `modules/alquiler` | `features/rentals` | Real |
+| Panel de operación | `modules/admin` | `features/admin`, `app/admin` | Real |
+| Telemetría / flota (CU-10) | — | `features/operations` | Simulado |
+| Contenidos (CU-09) | — | `features/content` | Simulado |
+| Domicilios, seguimiento y QR (CU-06, 07, 08, 14) | (agenda dentro de `pedidos`) | (agenda en `features/checkout`) | Parcial o pendiente |
+| Geofencing (CU-11) y mantenimiento (CU-12) | (estado de unidades en `alquiler` y `admin`) | `app/admin/flota` | Pendiente o parcial |
+
+**Cómo mantener la estructura:** un servicio nuevo (p. ej. domicilios) va en `backend/app/modules/<servicio>/` con los mismos archivos, su router se registra en `api/router.py`, sus tablas se importan en `models/__init__.py` y sus pruebas van en `tests/test_<servicio>.py`. En el frontend, en `src/features/<servicio>/`.
 
 **Validaciones.** Pydantic valida toda entrada: longitudes, formatos, enums y coordenadas del área metropolitana. La base de datos repite las reglas críticas con restricciones `CHECK`, `UNIQUE` y claves foráneas.
 
@@ -241,7 +267,7 @@ backend/tests/     pytest contra PostGIS real
 - Los errores de negocio responden `{"detail": "mensaje"}` con su código: 400, 401, 403, 404, 409 o 429.
 - Las violaciones de unicidad (SKU, slug) se traducen a 409 con un mensaje legible.
 
-**Pruebas.** 121 pruebas pytest contra PostgreSQL + PostGIS real (ver §19).
+**Pruebas.** 161 pruebas pytest contra PostgreSQL + PostGIS real (ver §19).
 
 ## 9. Base de datos
 
