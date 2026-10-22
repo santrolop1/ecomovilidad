@@ -8,7 +8,7 @@ from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 
 from app.models import ConsentRecord, Rental, RentalUnit, User
-from app.services.rentals import price_for
+from app.modules.alquiler.service import price_for
 
 from .conftest import csrf, register
 

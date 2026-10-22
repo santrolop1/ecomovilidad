@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 
 from app.api.router import api_router
 from app.core.config import get_settings
-from app.services.errors import ServiceError
+from app.core.errors import ServiceError
 
 settings = get_settings()
 

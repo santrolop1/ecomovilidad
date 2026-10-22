@@ -291,7 +291,7 @@ def test_registro_con_politica_desactualizada(client):
 def test_proxy_de_confianza_sin_ip_no_bloquea_a_todos(client, db, monkeypatch):
     """Los fallos de muchos usuarios que llegan desde el servidor de Next.js
     (misma IP, sin X-Forwarded-For) no deben bloquear el login de todos."""
-    from app.api import client_ip as module
+    from app.modules.autenticacion import client_ip as module
 
     # TestClient se conecta como "testclient": lo tratamos como proxy de confianza.
     monkeypatch.setattr(module, "_trusted", lambda peer: True)

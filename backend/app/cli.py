@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session
 from app.core.security import hash_password
 from app.db.session import SessionLocal
 from app.models import User, UserSession
-from app.schemas.auth import Password
+from app.modules.autenticacion.schemas import Password
 
 
 def set_admin(email: str, value: bool) -> int:
@@ -60,8 +60,8 @@ def set_password(email: str) -> int:
 
 
 def release_expired() -> int:
-    from app.services.payments.service import expire_unpaid
-    from app.services.reservations import release_expired as release
+    from app.modules.inventario.reservations import release_expired as release
+    from app.modules.pagos.service import expire_unpaid
 
     with SessionLocal() as db:
         removed = release(db)

@@ -7,7 +7,7 @@ from sqlalchemy import select
 
 from app.models import Inventory, User
 from app.models.enums import SERVICE_AREA_CITIES
-from app.schemas.admin import ServiceAreaCity
+from app.modules.admin.schemas import ServiceAreaCity
 
 from .conftest import PASSWORD, add_to_cart, csrf, register
 
