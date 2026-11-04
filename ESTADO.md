@@ -1,6 +1,6 @@
 # Estado del proyecto
 
-Actualizado: 6 de octubre de 2026. Detalle completo en [DOCUMENTACION.md](DOCUMENTACION.md) §20.
+Actualizado: 4 de noviembre de 2026. Detalle completo en [DOCUMENTACION.md](DOCUMENTACION.md) §20.
 
 **Leyenda:**
 - **IMPLEMENTADO:** real de punta a punta (FastAPI + PostgreSQL) y probado.
@@ -10,9 +10,9 @@ Actualizado: 6 de octubre de 2026. Detalle completo en [DOCUMENTACION.md](DOCUME
 
 | Área | Estado | Observación |
 | --- | --- | --- |
-| Frontend | IMPLEMENTADO | 21 rutas públicas (incluye `/cuenta`, `/cuenta/pedidos`, `/recuperar`) y 14 de panel; `API_MODE=mock` o `real`; responsive verificado de 360 a 1440 px. 71 pruebas Vitest. |
-| Backend | IMPLEMENTADO | FastAPI `/api/v1`: catálogo, sucursales, cuentas, carrito, pedidos, alquileres (lectura) y administración. 121 pruebas pytest. |
-| Base de datos | IMPLEMENTADO | PostgreSQL 16 + PostGIS 3.6 en Docker; 15 tablas; migraciones 0001, 0002 y 0003 reversibles; seed DEMO idempotente. |
+| Frontend | IMPLEMENTADO | 26 páginas públicas y 17 de panel; `API_MODE=mock` o `real`; responsive verificado de 360 a 1440 px. 93 pruebas Vitest. |
+| Backend | IMPLEMENTADO | FastAPI `/api/v1`: catálogo, sucursales, cuentas, carrito, pedidos, pagos, facturas, alquileres, reembolsos y administración, en una carpeta por servicio (`backend/app/modules/`). 161 pruebas pytest. |
+| Base de datos | IMPLEMENTADO | PostgreSQL 16 + PostGIS 3.6 en Docker; 21 tablas; migraciones 0001 a 0005; seed DEMO idempotente. |
 | Auth | PARCIAL | Real: registro, login, logout, sesiones revocables, httpOnly, CSRF, rol `is_admin`, perfil, cambio y recuperación de contraseña (token hash, 30 min, un uso), límite de intentos (5/cuenta, 30/IP fiable, 15 min). Pendiente: proveedor de correo real (en desarrollo el enlace va al log de la API), roles intermedios. |
 | Catálogo | IMPLEMENTADO | Real y administrable desde el panel. Productos y marcas DEMO; fotos reales referenciales (Wikimedia Commons). |
 | Sucursales | IMPLEMENTADO | Reales y administrables. **Datos DEMO** en Bucaramanga, Floridablanca, Girón y Piedecuesta. |
@@ -22,7 +22,7 @@ Actualizado: 6 de octubre de 2026. Detalle completo en [DOCUMENTACION.md](DOCUME
 | Alquileres | IMPLEMENTADO | Real: oferta con tarifas y flota, cotización, reserva de una unidad sin cruces (exclusión en la BD), pago, factura, "Mis alquileres", entrega/devolución y flota en el panel. Pendiente: domicilio, recargos, edición de tarifas. |
 | Admin | IMPLEMENTADO | `/admin` protegido en FastAPI (rol en BD) y en cada página. Pendiente: carga de imágenes, auditoría, roles intermedios. |
 | Ley 1581 | PARCIAL | Real: evidencia de consentimiento (usuario, fecha, versión `2026-10-06`) en registro y pedido; historial en `/cuenta`. Pendiente: texto legal revisado. |
-| Pagos | PARCIAL | **Listo para recibir las llaves de Wompi** (integración construida y probada). **Por ahora se usa la pasarela de pruebas** propia: pago simulado sin cobro real, con el mismo flujo (pagado, inventario, factura). Al poner las llaves en `backend/.env` pasa a Wompi solo. Reembolsos: solicitud del cliente y registro en el panel; la devolución del dinero se hace en la pasarela. |
+| Pagos | PARCIAL | **Listo para recibir las llaves de Wompi** (integración construida y con pruebas automáticas; **sin probar aún con llaves reales**). **Por ahora se usa la pasarela de pruebas** propia: pago simulado sin cobro real, con el mismo flujo (pagado, inventario, factura). Al poner las llaves en `backend/.env` pasa a Wompi solo. Reembolsos: solicitud del cliente y registro en el panel; la devolución del dinero se hace en la pasarela. |
 | Facturación | PARCIAL | Factura PDF y XML con consecutivo al aprobarse el pago. **No es factura electrónica DIAN.** |
 | Mapa público | IMPLEMENTADO | Leaflet + OpenStreetMap en el inicio y `/sucursales`: sucursales con coordenadas de PostGIS y disponibilidad real; fallback "Mapa temporalmente no disponible". |
 | Mapa operativo (admin) | MOCK | `/admin/operacion`: sucursales reales; activos, posiciones y estados **simulados** en el navegador (MODO DEMOSTRACIÓN). Preparado para sustituir la fuente por telemetría real. |
@@ -41,17 +41,16 @@ Actualizado: 6 de octubre de 2026. Detalle completo en [DOCUMENTACION.md](DOCUME
 Ficticios hasta recibir datos reales de EcoMovilidad:
 - sucursales, direcciones, teléfonos y coordenadas;
 - productos, marcas y precios;
-- datos de contacto del sitio;
-- credenciales del administrador de desarrollo (`admin@ecomovilidad.dev`, solo en `docker-compose.yml`).
+- datos de contacto del sitio.
 
-## Limitaciones conocidas de la fase 4
+## Limitaciones conocidas
 
 - El checkout no muestra en qué sucursal quedó la reserva; una reserva repartida entre sucursales puede no bastar para un pedido de una sola sucursal.
 - El vencimiento de reservas es perezoso (en cada solicitud a la API); sin tráfico, usar `release-expired` en un cron.
 - No hay proveedor de correo: la recuperación solo funciona de punta a punta en desarrollo.
 - El límite por IP solo se aplica cuando la IP es fiable (`TRUSTED_PROXIES`).
 - Quien vuelve después de que su reserva venció no recibe aviso.
-- Los pagos siguen pendientes: ningún pedido figura como pagado.
+- La pasarela de pruebas se activa en cualquier entorno sin `ENVIRONMENT=production`: hay que definir esa variable al desplegar.
 
 Las fotos son reales pero **referenciales** del tipo de producto (créditos en `/creditos`). Velox Carrera 110 no tiene foto ("Imagen pendiente").
 

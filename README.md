@@ -13,7 +13,7 @@ API_MODE=real API_BASE_URL=http://localhost:8000/api/v1 npm run dev
 # Tienda: http://localhost:3000   Panel: http://localhost:3000/admin
 ```
 
-Administrador de **desarrollo** (solo local, definido en `docker-compose.yml`): `admin@ecomovilidad.dev` / `ELIMINADA`. La demo pública reemplaza esta contraseña por la de `.env.demo`.
+Administrador de **desarrollo**: regístrate en la tienda y ejecuta `docker compose exec api python -m app.cli make-admin tu@correo.com`. La demo pública usa la contraseña aleatoria de `.env.demo`.
 
 El enlace de recuperación de contraseña se ve en `docker compose logs api` (no hay proveedor de correo).
 
