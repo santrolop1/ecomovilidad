@@ -43,9 +43,9 @@ services:
       # Redes desde las que llega el servidor de Next.js (host/Colima/Docker).
       # Sin X-Forwarded-For, su IP no se usa para el límite por IP (solo el límite por cuenta).
       TRUSTED_PROXIES: '["10.0.0.0/8","172.16.0.0/12","192.168.0.0/16","127.0.0.1/32"]'
-      # Administrador SOLO para desarrollo local. Nunca usar estas credenciales en producción.
-      DEMO_ADMIN_EMAIL: admin@ecomovilidad.dev
-      DEMO_ADMIN_PASSWORD: ELIMINADA
+      # Opcional: crea un administrador al cargar el seed si se definen en un .env local (fuera de Git).
+      DEMO_ADMIN_EMAIL: ${DEMO_ADMIN_EMAIL:-}
+      DEMO_ADMIN_PASSWORD: ${DEMO_ADMIN_PASSWORD:-}
     ports:
       # Solo en 127.0.0.1: el navegador nunca llama a FastAPI; lo hace Next.js desde el servidor.
       - "127.0.0.1:8000:8000"

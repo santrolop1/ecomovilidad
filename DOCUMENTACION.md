@@ -564,13 +564,7 @@ Ruta `/admin`. Consume exclusivamente el API real `/api/v1/admin` y no tiene ver
 - Las categorías nuevas se gestionan en el panel, pero la tienda pública solo muestra las cuatro del SRS (RF 6.1); los productos de otras categorías se omiten en la tienda.
 - No hay roles intermedios (operador, domiciliario) ni registro de auditoría.
 
-**Credenciales de DESARROLLO** (definidas solo en `docker-compose.yml` para el entorno local; **no son credenciales de producción**):
-
-| Correo | Contraseña |
-| --- | --- |
-| `admin@ecomovilidad.dev` | `ELIMINADA` |
-
-En otros entornos no se debe definir `DEMO_ADMIN_*`: el primer administrador se crea registrando la cuenta y ejecutando `make-admin` en el servidor.
+**Primer administrador:** se crea registrando la cuenta y ejecutando `make-admin` en el servidor. En desarrollo también se pueden definir `DEMO_ADMIN_EMAIL` y `DEMO_ADMIN_PASSWORD` en un `.env` local (fuera de Git); nunca en otros entornos.
 
 ## 16. API
 
