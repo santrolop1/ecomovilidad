@@ -134,6 +134,19 @@ export const newsFormSchema = z.object({
   isPublished: z.boolean(),
 });
 
+export const unitUsageSchema = z.object({
+  amount: z.coerce.number({ error: "Escribe un número." }).positive("Debe ser mayor que cero.").max(100_000),
+  note: z.string().trim().max(300, "Máximo 300 caracteres.").optional(),
+});
+
+export const unitThresholdSchema = z.coerce
+  .number({ error: "Escribe un número." })
+  .int("Sin decimales.")
+  .min(1, "Mínimo 1.")
+  .max(1_000_000);
+
+export const maintenanceNoteSchema = z.string().trim().min(3, "Escribe qué se hizo.").max(300, "Máximo 300 caracteres.");
+
 export const courierFormSchema = z.object({
   name: z.string().trim().min(3, "Escribe el nombre.").max(120),
   phone: z.string().trim().regex(/^\+?[\d\s()-]{7,20}$/, "Teléfono no válido."),

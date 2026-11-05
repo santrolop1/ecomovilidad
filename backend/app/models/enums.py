@@ -87,6 +87,19 @@ class RentalUnitStatus(StrEnum):
     RETIRED = "retirado"
 
 
+class UsageUnit(StrEnum):
+    KM = "km"
+    HOURS = "horas"  # horas de vuelo de los drones
+
+
+class MaintenanceLogKind(StrEnum):
+    USAGE = "uso"
+    AUTO_BLOCK = "bloqueo"  # llegó al 90 % del umbral (RF 3.2)
+    STARTED = "inicio"
+    FINISHED = "fin"
+    THRESHOLD = "umbral"
+
+
 class RentalRateUnit(StrEnum):
     HOUR = "hora"
     DAY = "dia"

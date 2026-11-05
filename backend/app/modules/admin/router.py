@@ -37,7 +37,15 @@ from app.modules.admin.schemas import (
     RentalStatusIn,
     UserUpdateIn,
 )
-from app.modules.alquiler.schemas import RentalUnitOut, RentalUnitStatusIn
+from app.modules.alquiler import maintenance
+from app.modules.alquiler.schemas import (
+    MaintenanceFinishIn,
+    MaintenanceLogOut,
+    RentalUnitOut,
+    RentalUnitStatusIn,
+    UnitThresholdIn,
+    UnitUsageIn,
+)
 from app.modules.contenidos import service as content_service
 from app.modules.contenidos.schemas import AdminContentOut, BannerIn, NewsItemIn, ValuePropositionIn
 from app.modules.domicilios import service as delivery_service
@@ -395,8 +403,36 @@ def list_rental_units(db: DbSession):
 
 
 @router.patch("/rental-units/{unit_id}", response_model=RentalUnitOut)
-def update_rental_unit(unit_id: uuid.UUID, data: RentalUnitStatusIn, db: DbSession):
-    return rentals.set_unit_status(db, unit_id, data.status)
+def update_rental_unit(unit_id: uuid.UUID, data: RentalUnitStatusIn, user: AdminUser, db: DbSession):
+    return rentals.set_unit_status(db, unit_id, data.status, user.id)
+
+
+@router.get("/rental-units/{unit_id}", response_model=RentalUnitOut)
+def get_rental_unit(unit_id: uuid.UUID, db: DbSession):
+    return rentals.get_unit(db, unit_id)
+
+
+@router.get("/rental-units/{unit_id}/maintenance-log", response_model=list[MaintenanceLogOut])
+def get_maintenance_log(unit_id: uuid.UUID, db: DbSession):
+    return maintenance.list_log(db, unit_id)
+
+
+@router.post("/rental-units/{unit_id}/usage", response_model=RentalUnitOut)
+def record_unit_usage(unit_id: uuid.UUID, data: UnitUsageIn, user: AdminUser, db: DbSession):
+    maintenance.record_usage(db, unit_id, data.amount, data.note, user.id)
+    return rentals.get_unit(db, unit_id)
+
+
+@router.put("/rental-units/{unit_id}/threshold", response_model=RentalUnitOut)
+def set_unit_threshold(unit_id: uuid.UUID, data: UnitThresholdIn, user: AdminUser, db: DbSession):
+    maintenance.set_threshold(db, unit_id, data.service_threshold, user.id)
+    return rentals.get_unit(db, unit_id)
+
+
+@router.post("/rental-units/{unit_id}/maintenance/finish", response_model=RentalUnitOut)
+def finish_unit_maintenance(unit_id: uuid.UUID, data: MaintenanceFinishIn, user: AdminUser, db: DbSession):
+    maintenance.finish_maintenance(db, unit_id, data.note, user.id)
+    return rentals.get_unit(db, unit_id)
 
 
 # ─── Facturas ──────────────────────────────────────────────────────────────

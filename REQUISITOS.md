@@ -36,9 +36,9 @@ Fuente: `SRS_EcoMovilidad_v3_0` (22/sep/2026). Módulo 8 tomado del Plan de Desa
 
 | ID | Descripción | Estado | Implementación |
 | --- | --- | --- | --- |
-| RF-3.1 | Umbrales por kilómetros u horas de vuelo | **Pendiente** | — |
-| RF-3.2 | Bloqueo automático al 90% del umbral | **Mock** | Regla `requiresReview` con pruebas en el frontend, aplicada a la oferta de alquiler mock. Sin datos de uso en la base. |
-| RF-3.3 | Bitácora inmutable de mantenimiento | **Pendiente** | — |
+| RF-3.1 | Umbrales por kilómetros u horas de vuelo | **Implementado** | Cada unidad tiene uso y umbral: drones en horas de vuelo, lo demás en km. El uso se registra a mano en el panel. |
+| RF-3.2 | Bloqueo automático al 90% del umbral | **Implementado** | Al llegar al 90 % la unidad pasa a mantenimiento y sale de la oferta; volver a operar exige registrar el mantenimiento. |
+| RF-3.3 | Bitácora inmutable de mantenimiento | **Implementado** | `maintenance_logs`: un trigger de PostgreSQL rechaza editar o borrar filas. |
 
 ## Módulo 4 — Pasarela de pagos
 
@@ -115,7 +115,7 @@ Fuente: `SRS_EcoMovilidad_v3_0` (22/sep/2026). Módulo 8 tomado del Plan de Desa
 | CU-09 | Gestionar contenidos | **Implementado** | `/admin/contenidos`: propuesta de valor, banners con vigencia y noticias, sin desplegar código. El texto principal del inicio y la ayuda siguen fijos. |
 | CU-10 | Monitorear flota en tiempo real | **Implementado** | Los dispositivos envían posiciones por API con su token (`POST /api/telemetry/positions`); `/admin/operacion` las muestra cada 3 s. Sin dispositivos registrados sigue la flota simulada, con su aviso. Probado con `scripts/simulate_gps.py`, sin aparatos físicos. |
 | CU-11 | Geofencing | **Implementado** | Zonas circulares con PostGIS, editables en el panel. Salir de todas las zonas activas abre una alerta y volver la cierra. Sin polígonos ni avisos por correo. |
-| CU-12 | Mantenimiento preventivo | **Parcial** | Unidades de la flota en mantenimiento salen de la oferta; sin umbrales, alertas ni bitácora. |
+| CU-12 | Mantenimiento preventivo | **Implementado** | Umbrales, avisos desde el 75 %, bloqueo al 90 %, cierre de mantenimiento y bitácora inmutable en `/admin/flota`. El uso se registra a mano. |
 | CU-13 | Gestionar inventario | **Implementado** | Consulta y ajuste por sucursal con motivo obligatorio; registro de entradas y salidas (`inventory_movements`) con ventas y devoluciones automáticas, en `/admin/inventario/movimientos`. |
 | CU-14 | Gestionar domicilios | **Implementado** | `modules/domicilios`: domiciliarios, asignación, estados con historial, fallo con motivo y reprogramación. El domiciliario no tiene sesión propia: el panel registra su avance. |
 | CU-15 | Reembolso / cancelación | **Implementado (reembolso manual)** | El cliente cancela lo no pagado o solicita el reembolso de lo pagado; el panel valida y registra (cancela y devuelve inventario). La devolución del dinero se hace en la pasarela; falta la nota crédito DIAN. |

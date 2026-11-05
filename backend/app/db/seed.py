@@ -22,7 +22,7 @@ from sqlalchemy.orm import Session
 from app.core.security import hash_password
 from app.db.session import SessionLocal
 from app.models import Branch, Category, Inventory, InventoryMovement, Product, RentalRate, RentalUnit, User
-from app.models.enums import MovementKind
+from app.models.enums import MovementKind, UsageUnit
 
 SEED_FILE = Path(__file__).with_name("seed_data.json")
 
@@ -104,8 +104,12 @@ def seed(session: Session) -> dict[str, int]:
         session.execute(
             stmt.on_conflict_do_update(constraint="uq_rental_rates_product_unit", set_={"price": stmt.excluded.price})
         )
+    drones = {p["slug"] for p in data["products"] if p["category"] == "drones"}
     unit_rows = [
         {
+            # Drones por horas de vuelo; lo demás por kilómetros (RF 3.1). Umbrales de demostración.
+            "usage_unit": UsageUnit.HOURS if offer["product"] in drones else UsageUnit.KM,
+            "service_threshold": 50 if offer["product"] in drones else 500,
             "product_id": product_ids[offer["product"]],
             "branch_id": branch_ids[branch],
             "code": f"{_unit_prefix(offer['product'])}-{branch_code}-{n:02d}",

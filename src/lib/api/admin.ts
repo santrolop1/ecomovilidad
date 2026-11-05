@@ -23,6 +23,7 @@ import {
   gpsDeviceSchema,
   dashboardSchema,
   inventoryMovementSchema,
+  maintenanceLogSchema,
   inventoryRowSchema,
   type OrderStatusValue,
   pageSchema,
@@ -145,6 +146,13 @@ export const adminApi = {
   resolveRentalRefund: (id: string) =>
     send("POST", `/rentals/${encodeURIComponent(id)}/refund`, adminRentalSchema, undefined),
   listRentalUnits: () => get("/rental-units", z.array(rentalUnitSchema)),
+  getRentalUnit: (id: string) => get(`/rental-units/${encodeURIComponent(id)}`, rentalUnitSchema),
+  listMaintenanceLog: (id: string) => get(`/rental-units/${encodeURIComponent(id)}/maintenance-log`, z.array(maintenanceLogSchema)),
+  recordUnitUsage: (id: string, body: unknown) => send("POST", `/rental-units/${encodeURIComponent(id)}/usage`, rentalUnitSchema, body),
+  setUnitThreshold: (id: string, serviceThreshold: number) =>
+    send("PUT", `/rental-units/${encodeURIComponent(id)}/threshold`, rentalUnitSchema, { serviceThreshold }),
+  finishUnitMaintenance: (id: string, note: string) =>
+    send("POST", `/rental-units/${encodeURIComponent(id)}/maintenance/finish`, rentalUnitSchema, { note }),
   updateRentalUnit: (id: string, status: RentalUnitStatusValue) =>
     send("PATCH", `/rental-units/${encodeURIComponent(id)}`, rentalUnitSchema, { status }),
 };

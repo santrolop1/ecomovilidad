@@ -5,11 +5,12 @@ from sqlalchemy.orm import Session
 
 from app.core.errors import ConflictError, NotFoundError
 from app.models import Rental, RentalUnit, User
-from app.models.enums import RentalStatus, RentalUnitStatus
+from app.models.enums import MaintenanceLogKind, RentalStatus, RentalUnitStatus
 from app.modules.admin import repository as repo
 from app.modules.admin.common import PAGE_SIZE
 from app.modules.admin.payments import payments_for
 from app.modules.admin.schemas import AdminRentalOut, Page
+from app.modules.alquiler import maintenance
 from app.modules.alquiler.models import HOLDING_STATUSES
 from app.modules.alquiler.schemas import RentalUnitOut
 from app.modules.inventario.reservations import now_utc
@@ -111,19 +112,28 @@ def list_units(db: Session) -> list[RentalUnitOut]:
             branch_name=u.branch.name,
             is_demo=u.is_demo,
             next_rental_start=next_start.get(u.id),
+            usage_unit=u.usage_unit,
+            usage_value=float(u.usage_value),
+            service_threshold=u.service_threshold,
+            usage_percent=int(maintenance.usage_ratio(u) * 100),
+            service_alert=maintenance.service_alert(u),
         )
         for u in units
     ]
 
 
-def set_unit_status(db: Session, unit_id: uuid.UUID, status: RentalUnitStatus) -> RentalUnitOut:
-    unit = (
-        db.scalars(select(RentalUnit).where(RentalUnit.id == unit_id).with_for_update(of=RentalUnit))
-        .unique()
-        .one_or_none()
-    )
+def get_unit(db: Session, unit_id: uuid.UUID) -> RentalUnitOut:
+    unit = next((u for u in list_units(db) if u.id == unit_id), None)
     if unit is None:
         raise NotFoundError("La unidad no existe.")
+    return unit
+
+
+def set_unit_status(db: Session, unit_id: uuid.UUID, status: RentalUnitStatus, user_id: uuid.UUID) -> RentalUnitOut:
+    unit = maintenance.lock_unit(db, unit_id)
+    previous = RentalUnitStatus(unit.status)
+    if status == RentalUnitStatus.OPERATIONAL and maintenance.usage_ratio(unit) >= maintenance.BLOCK_RATIO:
+        raise ConflictError("La unidad llegó a su límite de uso: registra el mantenimiento para que vuelva a operar.")
     if status != RentalUnitStatus.OPERATIONAL:
         pending = db.scalar(
             select(func.count(Rental.id)).where(
@@ -133,5 +143,12 @@ def set_unit_status(db: Session, unit_id: uuid.UUID, status: RentalUnitStatus) -
         if pending:
             raise ConflictError("La unidad tiene alquileres vigentes. Termínalos o cancélalos antes de retirarla.")
     unit.status = status
+    if status != previous:
+        if status == RentalUnitStatus.MAINTENANCE:
+            maintenance.log(db, unit, MaintenanceLogKind.STARTED, user_id)
+        elif previous == RentalUnitStatus.MAINTENANCE:
+            maintenance.log(
+                db, unit, MaintenanceLogKind.FINISHED, user_id, note=f"Pasa a {status.value} sin reiniciar el uso."
+            )
     db.commit()
-    return next(u for u in list_units(db) if u.id == unit.id)
+    return get_unit(db, unit.id)

@@ -352,6 +352,21 @@ export const rentalUnitSchema = z.object({
   branchName: z.string(),
   isDemo: z.boolean(),
   nextRentalStart: isoDate.nullable().optional(),
+  usageUnit: z.enum(["km", "horas"]),
+  usageValue: z.number(),
+  serviceThreshold: z.number(),
+  usagePercent: z.number(),
+  serviceAlert: z.enum(["ok", "proximo", "bloqueado"]),
+});
+
+export const maintenanceLogSchema = z.object({
+  id,
+  kind: z.enum(["uso", "bloqueo", "inicio", "fin", "umbral"]),
+  usageDelta: z.number().nullable(),
+  usageAfter: z.number(),
+  note: z.string().nullable(),
+  userName: z.string().nullable(),
+  createdAt: isoDate,
 });
 
 export const dashboardSchema = z.object({
@@ -407,6 +422,7 @@ export type RentalStatusValue = (typeof rentalStatuses)[number];
 export type AdminProduct = z.infer<typeof adminProductSchema>;
 export type AdminProductDetail = z.infer<typeof adminProductDetailSchema>;
 export type InventoryRow = z.infer<typeof inventoryRowSchema>;
+export type MaintenanceLogEntry = z.infer<typeof maintenanceLogSchema>;
 export type AdminContent = z.infer<typeof adminContentSchema>;
 export type GpsDevice = z.infer<typeof gpsDeviceSchema>;
 export type Geofence = z.infer<typeof geofenceSchema>;
