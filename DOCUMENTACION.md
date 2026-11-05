@@ -5,8 +5,8 @@
 | | |
 | --- | --- |
 | **Producto** | Portal web, tienda en línea y panel de operación |
-| **Versión** | 0.6.0 (fase 6: pagos en línea, facturas y alquiler) |
-| **Fecha** | 20 de octubre de 2026 |
+| **Versión** | 0.7.0 (fase 7: domicilios, GPS, zonas, contenidos y mantenimiento) |
+| **Fecha** | 5 de noviembre de 2026 |
 | **Estado** | En desarrollo. Funciona localmente sobre datos de **demostración**. No está desplegado en producción. |
 | **Repositorio** | `ecomovilidad/` (Next.js + FastAPI + PostgreSQL/PostGIS) |
 
@@ -33,7 +33,7 @@ Unir en una sola plataforma los dos negocios que define el SRS:
 - **Venta** de vehículos nuevos con inventario real por sucursal.
 - **Servicios** sobre una flota propia: alquiler, domicilios y mantenimiento.
 
-La versión 0.6.0 completa la compra y el alquiler como MVP: **pago en línea con Wompi** (sandbox hasta tener llaves de producción), descuento de inventario al aprobarse el pago, **factura de venta** en PDF y XML (sin validación DIAN) y **alquiler real** con flota, tarifas, disponibilidad por fechas y pago. Domicilios con seguimiento, GPS y mantenimiento siguen pendientes (ver §5 y §21).
+La versión 0.7.0 implementa los 15 casos de uso: compra y alquiler con **pago en línea** (hoy con la pasarela de pruebas; lista para recibir las llaves de Wompi), inventario con registro de movimientos, franjas con cupo real, **domicilios** con seguimiento público y validación por QR o firma, **GPS por API** con zonas y alertas (probado con un simulador, sin aparatos físicos), contenidos editables y **mantenimiento preventivo** con bitácora inmutable. La **factura de venta** en PDF y XML no tiene validación DIAN.
 
 ## 3. Usuarios
 
@@ -251,6 +251,7 @@ Dentro de cada servicio los archivos siguen el mismo patrón: `router.py` (endpo
 | Domicilios (CU-07, CU-08, CU-14) | `modules/domicilios`, `modules/admin/deliveries.py` | `features/deliveries`, `app/admin/domicilios`, `app/(sitio)/seguimiento` | Real |
 | Telemetría y zonas (CU-10, CU-11) | `modules/telemetria`, `scripts/simulate_gps.py` | `features/operations`, `app/admin/operacion` | Real; sin aparatos físicos |
 | Contenidos (CU-09) | `modules/contenidos` | `features/content`, `app/admin/contenidos` | Real |
+| Mantenimiento (CU-12) | `modules/alquiler/maintenance.py` | `app/admin/flota` | Real; el uso se registra a mano |
 | Carrito | `modules/carrito` | `features/cart` | Real |
 | Pedidos (CU-03) | `modules/pedidos` | `features/checkout`, `features/account` | Real |
 | Pasarela de pagos y facturación (CU-05) | `modules/pagos` | `features/payments`, `app/api/webhooks`, `app/api/facturas` | Real (pagos de prueba, sin DIAN) |
@@ -292,6 +293,7 @@ PostgreSQL 16 + PostGIS. Claves primarias UUID (`gen_random_uuid()`) y marcas de
 | `gps_positions` | dispositivo, latitud, longitud, batería, fecha | historial; hoy no se purga |
 | `geofences` | nombre, centro, radio, activa | zonas permitidas; ubicación PostGIS calculada |
 | `geofence_alerts` | dispositivo, posición, apertura, cierre | una abierta por dispositivo |
+| `maintenance_logs` | unidad, evento, cantidad, uso acumulado, nota, responsable | bitácora; un trigger impide editar o borrar |
 | `value_propositions`, `banners`, `news_items` | textos del inicio y de Nosotros, vigencia y publicación | editables en el panel; los enlaces de banners solo pueden ser internos |
 | `carts` | user_id, status (active / converted / abandoned) | un solo carrito activo por usuario (índice único parcial) |
 | `cart_items` | cart_id, product_id, cantidad, precio unitario | único (carrito, producto); cantidad 1–10 |
@@ -638,6 +640,9 @@ Base: `http://localhost:8000/api/v1`. Documentación interactiva en `http://loca
 | GET, POST | `/admin/branches` |
 | GET, PATCH | `/admin/branches/{id}` |
 | GET | `/admin/inventory` (`q`, `branch_id`, `low_stock`, `page`) |
+| GET | `/admin/rental-units/{id}`, `/admin/rental-units/{id}/maintenance-log` |
+| POST | `/admin/rental-units/{id}/usage`, `/admin/rental-units/{id}/maintenance/finish` |
+| PUT | `/admin/rental-units/{id}/threshold` |
 | GET | `/admin/content`; POST y PUT en `/admin/content/{value-propositions,banners,news}`; DELETE `/admin/content/{tipo}/{id}` |
 | GET | `/admin/telemetry/fleet`: posiciones, zonas y alertas para el mapa operativo |
 | GET, POST | `/admin/gps-devices`; PATCH `/admin/gps-devices/{id}`. El token solo se muestra al crear |
@@ -679,7 +684,8 @@ Las listas paginadas devuelven `{ items, total, page, pageSize }` con 20 element
 
 | Variable | Obligatoria | Descripción |
 | --- | --- | --- |
-| `DATABASE_URL` | Sí (tiene valor local por defecto) | `postgresql+psycopg://…` |
+| `POSTGRES_PASSWORD` | Sí, en el `.env` de la raíz | Clave de PostgreSQL para Docker Compose. Nunca en Git. |
+| `DATABASE_URL` | Sí | `postgresql+psycopg://…`, en `backend/.env` fuera de Docker. No tiene valor por defecto. |
 | `CORS_ORIGINS` | No | Orígenes permitidos (JSON). |
 | `COOKIE_SECURE` | **`true` en producción** | Cookies solo por HTTPS. |
 | `SESSION_TTL_HOURS` | No (168) | Duración de la sesión. |
@@ -706,8 +712,13 @@ Requisitos:
 - [uv](https://docs.astral.sh/uv/) para las pruebas del backend.
 
 ```bash
-# 1. Base de datos + API (migraciones, datos DEMO y admin de desarrollo al arrancar)
-docker compose up -d
+# 0. Solo la primera vez: claves locales, fuera de Git
+clave="$(openssl rand -hex 24)"
+echo "POSTGRES_PASSWORD=$clave" > .env
+sed "s/CAMBIAR/$clave/" backend/.env.example > backend/.env
+
+# 1. Base de datos + API (migraciones y datos DEMO al arrancar)
+docker compose up -d --build
 
 # 2. Frontend conectado al backend real
 npm install
@@ -817,45 +828,32 @@ Resultados obtenidos el 6 de octubre de 2026 sobre una base de datos recreada de
 
 ## 20. Estado actual del producto
 
+El estado por área se mantiene en [ESTADO.md](ESTADO.md) y por requisito en [REQUISITOS.md](REQUISITOS.md). En resumen, los 15 casos de uso están implementados, con estos límites:
+
 | Área | Estado | Observación |
 | --- | --- | --- |
-| Frontend | IMPLEMENTADO | 27 rutas públicas y 18 de panel; modos mock y real; responsive verificado. |
-| Backend | IMPLEMENTADO | FastAPI `/api/v1` con catálogo, cuentas, carrito con reservas, pedidos, pagos, facturas, alquiler y administración. |
-| Base de datos | IMPLEMENTADO | PostgreSQL 16 + PostGIS; 20 tablas; 4 migraciones reversibles; seed DEMO (incluye la flota de alquiler). |
-| Auth | PARCIAL | Real: sesiones, httpOnly, CSRF, rol admin, perfil, cambio y recuperación de contraseña, límite de intentos. Falta un proveedor de correo real (el enlace solo sale en el log de desarrollo) y roles intermedios. |
-| Catálogo | IMPLEMENTADO | Real y administrable. Productos y marcas DEMO; fotos referenciales. |
-| Sucursales | IMPLEMENTADO | Reales y administrables. Datos DEMO (`is_demo`). |
-| Inventario | PARCIAL | Real: por sucursal, reserva de 15 min en el carrito (RF 6.2), reservas por pedido, ajustes y alertas. Falta la auditoría de ajustes. |
-| Carrito | IMPLEMENTADO | Persistente entre dispositivos con reserva y contador; local (sin reserva) para visitantes; fusión. |
-| Pedidos | IMPLEMENTADO | Creación, pago en línea, descuento de inventario al pagar, factura, "Mis pedidos" y gestión en el panel. Pendiente: historial de estados y devolución automática del dinero. |
-| Alquileres | IMPLEMENTADO | Flota, tarifas, cotización, reserva de una unidad sin cruces, pago, factura, "Mis alquileres" y entrega/devolución en el panel. Sin domicilio ni recargos por demora. |
-| Admin | IMPLEMENTADO | Panel funcional protegido en backend y frontend. Sin carga de imágenes ni auditoría. |
-| Ley 1581 | PARCIAL | Evidencia real (usuario, fecha, versión) en registro y pedido. Texto legal pendiente de revisión. |
-| Pagos | PARCIAL | Integración con Wompi construida y probada, **lista para recibir sus llaves**. Hoy se usa la **pasarela de pruebas** propia (sin cobro real) con el mismo flujo. Sin reembolsos (CU-15). |
-| Facturación | PARCIAL | Factura de venta PDF y XML con numeración consecutiva. **No es factura electrónica DIAN.** |
-| Mapas | IMPLEMENTADO / MOCK | Público real (Leaflet + OpenStreetMap, sucursales e inventario de la BD). Operativo del panel con posiciones **simuladas** (MODO DEMOSTRACIÓN). |
-| GPS | PENDIENTE | Sin telemetría física; el mapa operativo usa una fuente simulada sustituible (`TelemetrySource`). |
-| WebSockets | PENDIENTE | — |
-| Domicilios | PENDIENTE | Sin asignación, seguimiento ni estados de domicilio. |
-| QR | PENDIENTE | — |
-| Firma digital | PENDIENTE | — |
-| Mantenimiento | PARCIAL / MOCK | Real: unidades de la flota en mantenimiento salen de la oferta. Mock: la regla del 90% solo en `API_MODE=mock`. Sin umbrales ni bitácora. |
-| CMS | MOCK | Contenido editorial en `src/mocks/content.ts`. |
+| Pagos | PARCIAL | Pasarela de pruebas; Wompi construido y sin probar con llaves reales. El reembolso del dinero es manual. |
+| Facturación | PARCIAL | PDF y XML con consecutivo. **No es factura electrónica DIAN.** |
+| GPS | PARCIAL | Ingesta real por API, probada con `scripts/simulate_gps.py`, sin aparatos físicos. |
+| Domicilios | IMPLEMENTADO | El domiciliario no tiene sesión propia: el panel registra su avance. |
+| Mantenimiento | IMPLEMENTADO | El uso se registra a mano, no sale del GPS. |
+| CMS | PARCIAL | Propuesta de valor, banners y noticias editables; el texto principal del inicio, los servicios y la ayuda son fijos. |
+| Auth | PARCIAL | Sin proveedor de correo real ni roles intermedios. |
+| Ley 1581 | PARCIAL | Evidencia real del consentimiento; texto legal sin revisión jurídica. |
 
 ## 21. Funcionalidades pendientes
 
-1. Llaves de producción de Wompi y registro de la URL de eventos en su panel.
-2. Reembolsos y cancelación por el cliente (CU-15, RF 4.3) y facturación electrónica DIAN (RF 4.2).
-3. Proveedor real de correo (recuperación de contraseña, comprobantes de pago).
-4. Mostrar en el checkout la sucursal de la reserva y reservar en la sucursal de recogida elegida.
-5. Texto legal definitivo de la política de datos (revisión jurídica).
-6. Historial y auditoría de cambios (estados de pedido, ajustes de stock, acciones del panel).
-7. Carga de imágenes de producto desde el panel.
-8. Domicilios: asignación, seguimiento en tiempo real, estados de domicilio, QR y firma digital (RF 5.x, 7.2, 7.3).
-9. Mantenimiento preventivo real (RF 3.x) y geocercas para drones (RF 2.2).
-10. CMS administrable y formulario de contacto conectado.
-11. Capacidad real por franja horaria.
-12. Despliegue (AWS), HTTPS/TLS 1.3, monitoreo y copias de seguridad.
+1. Cobro real: llaves de Wompi, o pago manual confirmado en el panel.
+2. Facturación electrónica DIAN (RF 4.2) y devolución automática del dinero.
+3. Proveedor real de correo (recuperación de contraseña, comprobantes).
+4. Sesión o app para domiciliarios, y roles intermedios (M8-8).
+5. Aparatos GPS físicos, y uso de mantenimiento calculado desde el GPS.
+6. WebSockets en lugar de consultas por intervalos (RNF 3.6).
+7. Limpieza periódica de `gps_positions`.
+8. Escáner de QR con cámara y carga de imágenes de producto.
+9. Formulario de contacto conectado y edición del texto principal, los servicios y la ayuda.
+10. Texto legal revisado: datos personales, retracto y drones.
+11. Despliegue, HTTPS/TLS 1.3, monitoreo y copias de seguridad.
 
 ## 22. Decisiones técnicas importantes
 
@@ -923,18 +921,13 @@ Resultados obtenidos el 6 de octubre de 2026 sobre una base de datos recreada de
 
 En orden de prioridad:
 
-1. **Cerrar pagos:** configurar las llaves de Wompi (primero sandbox, luego producción) y registrar la URL de eventos; devolución automática por la pasarela, proveedor de correo, factura electrónica DIAN y nota crédito.
-2. **Ajustes de la experiencia de compra:** sucursal de la reserva visible en el checkout e historial de estados.
-3. **Datos reales:** sucursales, catálogo y fotografías propias de EcoMovilidad; retirar los datos DEMO.
-4. **Operación:**
-   - auditoría del panel;
-   - historial de pedidos;
-   - carga de imágenes;
-   - roles de operador de punto.
-5. **Alquiler:** edición de tarifas y unidades desde el panel, recargos por demora y entrega a domicilio.
-6. **Domicilios:** asignación, estados de domicilio (RF 5.3), QR y firma (RF 7.2, 7.3).
-7. **Flota en tiempo real:** dispositivos GPS, ingesta en FastAPI, streaming (WebSocket/SSE) que implemente `TelemetrySource`, mantenimiento preventivo y geocercas (Módulos 2 y 3).
-8. **Despliegue:** AWS, HTTPS/TLS 1.3, monitoreo, copias de seguridad y pruebas E2E en CI.
+1. **Despliegue:** servidor, HTTPS, configuración de producción, copias de seguridad y tarea programada de vencimientos.
+2. **Cobro real:** Wompi en sandbox y luego producción, o pago manual.
+3. **Correo:** proveedor para recuperar contraseñas y enviar comprobantes.
+4. **Datos reales:** sucursales, catálogo y fotografías; retirar los datos DEMO.
+5. **Legal y fiscal:** revisión de textos y factura electrónica DIAN.
+6. **Operación en campo:** sesión o app para domiciliarios, aparatos GPS y escáner de QR.
+7. **Calidad:** pruebas end-to-end en CI y medición de rendimiento (RNF 3.4).
 
 ---
 

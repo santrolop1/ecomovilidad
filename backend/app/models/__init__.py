@@ -1,6 +1,6 @@
 """Importa todos los modelos para registrar sus tablas en Base.metadata."""
 
-from app.modules.alquiler.models import Rental, RentalRate, RentalUnit
+from app.modules.alquiler.models import MaintenanceLog, Rental, RentalRate, RentalUnit
 from app.modules.autenticacion.models import User, UserSession
 from app.modules.autenticacion.security_records import ConsentRecord, LoginAttempt, PasswordResetToken
 from app.modules.carrito.models import Cart, CartItem
@@ -33,6 +33,7 @@ __all__ = [
     "InventoryMovement",
     "Invoice",
     "LoginAttempt",
+    "MaintenanceLog",
     "NewsItem",
     "Order",
     "OrderItem",

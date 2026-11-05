@@ -2,16 +2,30 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from sqlalchemy import BigInteger, Boolean, CheckConstraint, Computed, DateTime, ForeignKey, String, UniqueConstraint
+from sqlalchemy import (
+    BigInteger,
+    Boolean,
+    CheckConstraint,
+    Computed,
+    DateTime,
+    ForeignKey,
+    Integer,
+    Numeric,
+    String,
+    UniqueConstraint,
+    func,
+)
 from sqlalchemy.dialects.postgresql import TSTZRANGE, ExcludeConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, Timestamps, UUIDPrimaryKey
-from app.models.enums import RentalRateUnit, RentalStatus, RentalUnitStatus, sql_in
+from app.models.enums import MaintenanceLogKind, RentalRateUnit, RentalStatus, RentalUnitStatus, UsageUnit, sql_in
 
 if TYPE_CHECKING:
+    from app.modules.autenticacion.models import User
     from app.modules.catalogo.models import Product
     from app.modules.sucursales.models import Branch
 
@@ -38,7 +52,12 @@ class RentalUnit(UUIDPrimaryKey, Timestamps, Base):
     """Unidad física de la flota de alquiler (separada del inventario de venta)."""
 
     __tablename__ = "rental_units"
-    __table_args__ = (CheckConstraint(f"status IN {sql_in(RentalUnitStatus)}", name="valid_status"),)
+    __table_args__ = (
+        CheckConstraint(f"status IN {sql_in(RentalUnitStatus)}", name="valid_status"),
+        CheckConstraint(f"usage_unit IN {sql_in(UsageUnit)}", name="valid_usage_unit"),
+        CheckConstraint("usage_value >= 0", name="usage_non_negative"),
+        CheckConstraint("service_threshold > 0", name="threshold_positive"),
+    )
 
     product_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("products.id", ondelete="RESTRICT"), index=True)
     branch_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("branches.id", ondelete="RESTRICT"), index=True)
@@ -47,9 +66,30 @@ class RentalUnit(UUIDPrimaryKey, Timestamps, Base):
         String(20), default=RentalUnitStatus.OPERATIONAL, server_default=RentalUnitStatus.OPERATIONAL
     )
     is_demo: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    # Mantenimiento preventivo (RF 3.1): uso desde la última revisión y límite.
+    usage_unit: Mapped[str] = mapped_column(String(10), default=UsageUnit.KM, server_default=UsageUnit.KM)
+    usage_value: Mapped[Decimal] = mapped_column(Numeric(10, 1), default=0, server_default="0")
+    service_threshold: Mapped[int] = mapped_column(Integer, default=500, server_default="500")
 
     product: Mapped[Product] = relationship(lazy="joined")
     branch: Mapped[Branch] = relationship(lazy="joined")
+
+
+class MaintenanceLog(UUIDPrimaryKey, Base):
+    """Bitácora de mantenimiento (RF 3.3). Un trigger impide editar o borrar filas."""
+
+    __tablename__ = "maintenance_logs"
+    __table_args__ = (CheckConstraint(f"kind IN {sql_in(MaintenanceLogKind)}", name="valid_kind"),)
+
+    unit_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("rental_units.id", ondelete="RESTRICT"), index=True)
+    kind: Mapped[str] = mapped_column(String(10))
+    usage_delta: Mapped[Decimal | None] = mapped_column(Numeric(10, 1))
+    usage_after: Mapped[Decimal] = mapped_column(Numeric(10, 1))
+    note: Mapped[str | None] = mapped_column(String(300))
+    user_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    user: Mapped[User | None] = relationship()
 
 
 class Rental(UUIDPrimaryKey, Timestamps, Base):

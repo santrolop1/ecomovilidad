@@ -14,9 +14,12 @@ import {
   deliveryValidationSchema,
   geofenceFormSchema,
   gpsDeviceFormSchema,
+  maintenanceNoteSchema,
   newsFormSchema,
   productFormSchema,
   stockUpdateSchema,
+  unitThresholdSchema,
+  unitUsageSchema,
   valuePropFormSchema,
 } from "./lib/schemas";
 
@@ -161,6 +164,30 @@ export async function deleteContent(kind: "value-propositions" | "banners" | "ne
   return runAction(idSchema, id, async (value) => {
     await adminApi.deleteContent(kind, value);
     refreshStorefront("content");
+    return null;
+  });
+}
+
+export async function recordUnitUsage(id: string, input: unknown): Promise<ActionResult<null>> {
+  return runAction(unitUsageSchema, input, async (data) => {
+    await adminApi.recordUnitUsage(idSchema.parse(id), data);
+    refreshStorefront("rental-offers");
+    return null;
+  });
+}
+
+export async function setUnitThreshold(id: string, value: unknown): Promise<ActionResult<null>> {
+  return runAction(unitThresholdSchema, value, async (threshold) => {
+    await adminApi.setUnitThreshold(idSchema.parse(id), threshold);
+    refreshStorefront("rental-offers");
+    return null;
+  });
+}
+
+export async function finishUnitMaintenance(id: string, note: unknown): Promise<ActionResult<null>> {
+  return runAction(maintenanceNoteSchema, note, async (value) => {
+    await adminApi.finishUnitMaintenance(idSchema.parse(id), value);
+    refreshStorefront("rental-offers");
     return null;
   });
 }

@@ -5,7 +5,7 @@ from typing import Literal
 from pydantic import Field
 
 from app.core.api_model import ApiModel
-from app.models.enums import RentalRateUnit, RentalStatus, RentalUnitStatus
+from app.models.enums import MaintenanceLogKind, RentalRateUnit, RentalStatus, RentalUnitStatus, UsageUnit
 from app.modules.pagos.schemas import InvoiceRefOut, PaymentSummaryOut
 from app.modules.pedidos.schemas import CustomerIn
 from app.modules.reembolsos.schemas import RefundRequestOut
@@ -90,6 +90,34 @@ class RentalUnitOut(ApiModel):
     is_demo: bool
     # Próximo alquiler vigente (pagado o por pagar) de la unidad.
     next_rental_start: datetime | None = None
+    usage_unit: UsageUnit
+    usage_value: float
+    service_threshold: int
+    usage_percent: int
+    service_alert: Literal["ok", "proximo", "bloqueado"]
+
+
+class UnitUsageIn(ApiModel):
+    amount: float = Field(gt=0, le=100_000)
+    note: str | None = Field(default=None, max_length=300)
+
+
+class UnitThresholdIn(ApiModel):
+    service_threshold: int = Field(ge=1, le=1_000_000)
+
+
+class MaintenanceFinishIn(ApiModel):
+    note: str = Field(min_length=3, max_length=300)
+
+
+class MaintenanceLogOut(ApiModel):
+    id: uuid.UUID
+    kind: MaintenanceLogKind
+    usage_delta: float | None
+    usage_after: float
+    note: str | None
+    user_name: str | None
+    created_at: datetime
 
 
 class RentalUnitStatusIn(ApiModel):

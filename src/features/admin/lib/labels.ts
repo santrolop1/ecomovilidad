@@ -1,4 +1,12 @@
-import type { MovementKind, OrderStatusValue, RentalStatusValue, RentalUnitStatusValue } from "@/lib/api/admin-schemas";
+import type { MaintenanceLogEntry, MovementKind, OrderStatusValue, RentalStatusValue, RentalUnitStatusValue } from "@/lib/api/admin-schemas";
+
+export const maintenanceLogLabels: Record<MaintenanceLogEntry["kind"], string> = {
+  uso: "Uso registrado",
+  bloqueo: "Bloqueo automático",
+  inicio: "Entró a mantenimiento",
+  fin: "Salió de mantenimiento",
+  umbral: "Cambio de umbral",
+};
 
 export const movementKindLabels: Record<MovementKind, string> = {
   saldo_inicial: "Saldo inicial",
