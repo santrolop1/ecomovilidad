@@ -165,11 +165,23 @@ def test_fijar_stock_respeta_reservas_y_nunca_queda_negativo(admin_client, db):
     db.flush()
 
     url = f"{A}/products/{product['id']}/inventory/{branch_id}"
-    assert admin_client.put(url, json={"totalQuantity": 1}, headers=csrf(admin_client)).status_code == 409
-    assert admin_client.put(url, json={"totalQuantity": -3}, headers=csrf(admin_client)).status_code == 422
+    assert (
+        admin_client.put(
+            url, json={"totalQuantity": 1, "reason": "Conteo físico"}, headers=csrf(admin_client)
+        ).status_code
+        == 409
+    )
+    assert (
+        admin_client.put(
+            url, json={"totalQuantity": -3, "reason": "Conteo físico"}, headers=csrf(admin_client)
+        ).status_code
+        == 422
+    )
     row = next(
         r
-        for r in admin_client.put(url, json={"totalQuantity": 10}, headers=csrf(admin_client)).json()["inventory"]
+        for r in admin_client.put(
+            url, json={"totalQuantity": 10, "reason": "Conteo físico"}, headers=csrf(admin_client)
+        ).json()["inventory"]
         if r["branchId"] == branch_id
     )
     assert (row["total"], row["reserved"], row["available"]) == (10, 2, 8)
@@ -180,7 +192,9 @@ def test_crear_existencias_en_sucursal_nueva_para_el_producto(admin_client):
     branches = admin_client.get(f"{A}/branches").json()
     empty = next(b for b in branches if b["id"] not in {s["branchId"] for s in product["stock"]["byBranch"]})
     response = admin_client.put(
-        f"{A}/products/{product['id']}/inventory/{empty['id']}", json={"totalQuantity": 4}, headers=csrf(admin_client)
+        f"{A}/products/{product['id']}/inventory/{empty['id']}",
+        json={"totalQuantity": 4, "reason": "Primera entrada"},
+        headers=csrf(admin_client),
     )
     assert response.status_code == 200
     assert admin_client.get("/api/v1/products/aeroandes-pro-6k").json()["stock"]["available"] == 5

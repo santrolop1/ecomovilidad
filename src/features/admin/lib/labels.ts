@@ -1,4 +1,12 @@
-import type { OrderStatusValue, RentalStatusValue, RentalUnitStatusValue } from "@/lib/api/admin-schemas";
+import type { MovementKind, OrderStatusValue, RentalStatusValue, RentalUnitStatusValue } from "@/lib/api/admin-schemas";
+
+export const movementKindLabels: Record<MovementKind, string> = {
+  saldo_inicial: "Saldo inicial",
+  entrada: "Entrada",
+  salida: "Salida",
+  venta: "Venta",
+  devolucion: "Devolución",
+};
 
 export const orderStatusLabels: Record<OrderStatusValue, string> = {
   pending: "Pendiente de pago",

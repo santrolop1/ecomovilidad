@@ -116,6 +116,6 @@ Fuente: `SRS_EcoMovilidad_v3_0` (22/sep/2026). Módulo 8 tomado del Plan de Desa
 | CU-10 | Monitorear flota en tiempo real | **Mock** | `/admin/operacion` con posiciones simuladas (sin GPS). |
 | CU-11 | Geofencing | **Pendiente** | Solo la base PostGIS. |
 | CU-12 | Mantenimiento preventivo | **Parcial** | Unidades de la flota en mantenimiento salen de la oferta; sin umbrales, alertas ni bitácora. |
-| CU-13 | Gestionar inventario | **Parcial** | Consulta y ajuste del total por sucursal; sin registro de entradas y salidas. |
+| CU-13 | Gestionar inventario | **Implementado** | Consulta y ajuste por sucursal con motivo obligatorio; registro de entradas y salidas (`inventory_movements`) con ventas y devoluciones automáticas, en `/admin/inventario/movimientos`. |
 | CU-14 | Gestionar domicilios | **Pendiente** | — |
 | CU-15 | Reembolso / cancelación | **Implementado (reembolso manual)** | El cliente cancela lo no pagado o solicita el reembolso de lo pagado; el panel valida y registra (cancela y devuelve inventario). La devolución del dinero se hace en la pasarela; falta la nota crédito DIAN. |

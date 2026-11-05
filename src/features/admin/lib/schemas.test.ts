@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { toFieldErrors } from "@/lib/action-result";
-import { branchFormSchema, productFormSchema, slugify, stockSchema } from "./schemas";
+import { branchFormSchema, productFormSchema, slugify, stockSchema, stockUpdateSchema } from "./schemas";
 
 const product = {
   categoryId: "c1",
@@ -35,6 +35,14 @@ describe("formularios del panel", () => {
     expect(stockSchema.safeParse("-1").success).toBe(false);
     expect(stockSchema.safeParse("2.5").success).toBe(false);
     expect(stockSchema.parse("12")).toBe(12);
+  });
+
+  it("ajuste de stock: exige un motivo", () => {
+    expect(stockUpdateSchema.safeParse({ totalQuantity: "3", reason: " a " }).success).toBe(false);
+    expect(stockUpdateSchema.parse({ totalQuantity: "3", reason: " Conteo físico " })).toEqual({
+      totalQuantity: 3,
+      reason: "Conteo físico",
+    });
   });
 
   it("sucursal: solo municipios y coordenadas del área metropolitana", () => {

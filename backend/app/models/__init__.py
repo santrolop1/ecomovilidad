@@ -5,7 +5,7 @@ from app.modules.autenticacion.models import User, UserSession
 from app.modules.autenticacion.security_records import ConsentRecord, LoginAttempt, PasswordResetToken
 from app.modules.carrito.models import Cart, CartItem
 from app.modules.catalogo.models import Category, Product
-from app.modules.inventario.models import Inventory
+from app.modules.inventario.models import Inventory, InventoryMovement
 from app.modules.inventario.reservation_models import CartReservation
 from app.modules.pagos.models import Invoice, Payment, PaymentEvent, RefundRequest
 from app.modules.pedidos.models import Order, OrderItem
@@ -19,6 +19,7 @@ __all__ = [
     "ConsentRecord",
     "Category",
     "Inventory",
+    "InventoryMovement",
     "Invoice",
     "LoginAttempt",
     "Order",

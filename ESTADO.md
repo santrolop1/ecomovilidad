@@ -1,6 +1,6 @@
 # Estado del proyecto
 
-Actualizado: 4 de noviembre de 2026. Detalle completo en [DOCUMENTACION.md](DOCUMENTACION.md) §20.
+Actualizado: 5 de noviembre de 2026. Detalle completo en [DOCUMENTACION.md](DOCUMENTACION.md) §20.
 
 **Leyenda:**
 - **IMPLEMENTADO:** real de punta a punta (FastAPI + PostgreSQL) y probado.
@@ -10,13 +10,13 @@ Actualizado: 4 de noviembre de 2026. Detalle completo en [DOCUMENTACION.md](DOCU
 
 | Área | Estado | Observación |
 | --- | --- | --- |
-| Frontend | IMPLEMENTADO | 26 páginas públicas y 17 de panel; `API_MODE=mock` o `real`; responsive verificado de 360 a 1440 px. 93 pruebas Vitest. |
-| Backend | IMPLEMENTADO | FastAPI `/api/v1`: catálogo, sucursales, cuentas, carrito, pedidos, pagos, facturas, alquileres, reembolsos y administración, en una carpeta por servicio (`backend/app/modules/`). 161 pruebas pytest. |
-| Base de datos | IMPLEMENTADO | PostgreSQL 16 + PostGIS 3.6 en Docker; 21 tablas; migraciones 0001 a 0005; seed DEMO idempotente. |
+| Frontend | IMPLEMENTADO | 26 páginas públicas y 18 de panel; `API_MODE=mock` o `real`; responsive verificado de 360 a 1440 px. 94 pruebas Vitest. |
+| Backend | IMPLEMENTADO | FastAPI `/api/v1`: catálogo, sucursales, cuentas, carrito, pedidos, pagos, facturas, alquileres, reembolsos y administración, en una carpeta por servicio (`backend/app/modules/`). 168 pruebas pytest. |
+| Base de datos | IMPLEMENTADO | PostgreSQL 16 + PostGIS 3.6 en Docker; 22 tablas; migraciones 0001 a 0006; seed DEMO idempotente. |
 | Auth | PARCIAL | Real: registro, login, logout, sesiones revocables, httpOnly, CSRF, rol `is_admin`, perfil, cambio y recuperación de contraseña (token hash, 30 min, un uso), límite de intentos (5/cuenta, 30/IP fiable, 15 min). Pendiente: proveedor de correo real (en desarrollo el enlace va al log de la API), roles intermedios. |
 | Catálogo | IMPLEMENTADO | Real y administrable desde el panel. Productos y marcas DEMO; fotos reales referenciales (Wikimedia Commons). |
 | Sucursales | IMPLEMENTADO | Reales y administrables. **Datos DEMO** en Bucaramanga, Floridablanca, Girón y Piedecuesta. |
-| Inventario | PARCIAL | Real: por sucursal, **reserva de 15 min al agregar al carrito (RF 6.2)** que pasa al pedido sin doble conteo, liberar al cancelar, descontar al completar, ajustes y alertas. El vencimiento se procesa en cada solicitud (o con `release-expired` por cron). Pendiente: auditoría. |
+| Inventario | PARCIAL | Real: por sucursal, **reserva de 15 min al agregar al carrito (RF 6.2)** que pasa al pedido sin doble conteo, liberar al cancelar, descontar al pagar, ajustes con motivo, alertas y **registro de entradas y salidas** (`/admin/inventario/movimientos`, CU-13). El vencimiento se procesa en cada solicitud (o con `release-expired` por cron). |
 | Carrito | IMPLEMENTADO | Persistente entre dispositivos, con contador "Reservado durante M:SS"; local (sin reserva) para visitantes; fusión al iniciar sesión. |
 | Pedidos | IMPLEMENTADO | Real: crear, **pagar en línea (Wompi)**, inventario descontado al pagar, factura, "Mis pedidos", entregar en el panel. El cliente cancela lo no pagado y solicita reembolso de lo pagado; el panel lo registra (CU-15). Pendiente: historial de estados, devolución automática y nota crédito. |
 | Alquileres | IMPLEMENTADO | Real: oferta con tarifas y flota, cotización, reserva de una unidad sin cruces (exclusión en la BD), pago, factura, "Mis alquileres", entrega/devolución y flota en el panel. Pendiente: domicilio, recargos, edición de tarifas. |

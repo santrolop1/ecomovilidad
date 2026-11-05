@@ -13,6 +13,7 @@ import {
   adminUserDetailSchema,
   adminUserSchema,
   dashboardSchema,
+  inventoryMovementSchema,
   inventoryRowSchema,
   type OrderStatusValue,
   pageSchema,
@@ -61,12 +62,12 @@ export const adminApi = {
   createProduct: (body: unknown) => send("POST", "/products", adminProductDetailSchema, body),
   updateProduct: (id: string, body: unknown) =>
     send("PATCH", `/products/${encodeURIComponent(id)}`, adminProductDetailSchema, body),
-  setStock: (productId: string, branchId: string, totalQuantity: number) =>
+  setStock: (productId: string, branchId: string, body: { totalQuantity: number; reason: string }) =>
     send(
       "PUT",
       `/products/${encodeURIComponent(productId)}/inventory/${encodeURIComponent(branchId)}`,
       adminProductDetailSchema,
-      { totalQuantity },
+      body,
     ),
 
   listCategories: () => get("/categories", z.array(adminCategorySchema)),
@@ -81,6 +82,7 @@ export const adminApi = {
     send("PATCH", `/branches/${encodeURIComponent(id)}`, adminBranchDetailSchema, body),
 
   listInventory: (query: Query) => get("/inventory", pageSchema(inventoryRowSchema), query),
+  listInventoryMovements: (query: Query) => get("/inventory/movements", pageSchema(inventoryMovementSchema), query),
 
   listOrders: (query: Query) => get("/orders", pageSchema(adminOrderSummarySchema), query),
   getOrder: (id: string) => get(`/orders/${encodeURIComponent(id)}`, adminOrderDetailSchema),

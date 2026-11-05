@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.core.errors import ConflictError, NotFoundError, ServiceError
 from app.models import Branch, Category, Inventory, Product
+from app.models.enums import MovementKind
 from app.modules.admin import repository as repo
 from app.modules.admin.common import PAGE_SIZE, commit_or_conflict
 from app.modules.admin.schemas import (
@@ -20,6 +21,7 @@ from app.modules.admin.schemas import (
     ProductUpdateIn,
     SpecIn,
 )
+from app.modules.inventario.movements import record_movement
 
 
 def _product_out(product: Product, stock: tuple[int, int, int]) -> AdminProductOut:
@@ -177,9 +179,12 @@ def update_product(db: Session, product_id: uuid.UUID, data: ProductUpdateIn) ->
     return get_product(db, product.id)
 
 
-def set_stock(db: Session, product_id: uuid.UUID, branch_id: uuid.UUID, total_quantity: int) -> AdminProductDetailOut:
-    """Fija las unidades físicas de un producto en una sucursal. Las reservadas
-    por pedidos no se tocan: disponible = total − reservado (nunca negativo)."""
+def set_stock(
+    db: Session, product_id: uuid.UUID, branch_id: uuid.UUID, total_quantity: int, reason: str, user_id: uuid.UUID
+) -> AdminProductDetailOut:
+    """Fija las unidades físicas de un producto en una sucursal y registra el
+    cambio. Las reservadas por pedidos no se tocan: disponible = total − reservado
+    (nunca negativo)."""
     if db.get(Product, product_id) is None:
         raise NotFoundError("El producto no existe.")
     if db.get(Branch, branch_id) is None:
@@ -194,22 +199,26 @@ def set_stock(db: Session, product_id: uuid.UUID, branch_id: uuid.UUID, total_qu
         .one_or_none()
     )
     if inv is None:
-        db.add(
-            Inventory(
-                product_id=product_id,
-                branch_id=branch_id,
-                total_quantity=total_quantity,
-                available_quantity=total_quantity,
-                reserved_quantity=0,
-            )
+        previous = 0
+        inv = Inventory(
+            product_id=product_id,
+            branch_id=branch_id,
+            total_quantity=total_quantity,
+            available_quantity=total_quantity,
+            reserved_quantity=0,
         )
+        db.add(inv)
     else:
+        previous = inv.total_quantity
         if total_quantity < inv.reserved_quantity:
             raise ConflictError(
                 f"No puedes dejar menos de {inv.reserved_quantity} unidades: están reservadas por pedidos."
             )
         inv.total_quantity = total_quantity
         inv.available_quantity = total_quantity - inv.reserved_quantity
+    change = total_quantity - previous
+    kind = MovementKind.IN if change > 0 else MovementKind.OUT
+    record_movement(db, inv, kind, change, reason=reason, user_id=user_id)
     commit_or_conflict(db)
     return get_product(db, product_id)
 

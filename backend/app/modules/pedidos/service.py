@@ -26,12 +26,14 @@ from app.models.enums import (
     CartStatus,
     ConsentPurpose,
     FulfillmentMethod,
+    MovementKind,
     OrderStatus,
 )
 from app.modules.autenticacion import consent
 from app.modules.carrito.repository import get_active_cart
 from app.modules.catalogo.repository import get_products
 from app.modules.inventario import reservations
+from app.modules.inventario.movements import record_movement
 from app.modules.pagos.queries import PaymentInfo, payment_info
 from app.modules.pedidos import repository as repo
 from app.modules.pedidos.schemas import OrderCreateIn, OrderItemOut, OrderOut
@@ -298,6 +300,7 @@ def settle_order_stock(db: Session, order: Order) -> None:
     for item in order.items:
         rows[item.product_id].reserved_quantity -= item.quantity
         rows[item.product_id].total_quantity -= item.quantity
+        record_movement(db, rows[item.product_id], MovementKind.SALE, -item.quantity, order_id=order.id)
     order.stock_settled_at = reservations.now_utc()
 
 
@@ -316,6 +319,7 @@ def restock_order(db: Session, order: Order) -> None:
             raise ConflictError("No encontramos el inventario de este pedido en su sucursal.")
         inv.total_quantity += item.quantity
         inv.available_quantity += item.quantity
+        record_movement(db, inv, MovementKind.RETURN, item.quantity, order_id=order.id)
     order.stock_settled_at = None
 
 

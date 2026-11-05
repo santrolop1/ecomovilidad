@@ -5,7 +5,7 @@ import { z } from "zod";
 import { type ActionResult, runAction } from "@/lib/action-result";
 import { adminApi } from "@/lib/api/admin";
 import { orderStatuses, rentalStatuses, rentalUnitStatuses } from "@/lib/api/admin-schemas";
-import { branchFormSchema, categoryFormSchema, productFormSchema, stockSchema } from "./lib/schemas";
+import { branchFormSchema, categoryFormSchema, productFormSchema, stockUpdateSchema } from "./lib/schemas";
 
 /**
  * Acciones del panel. FastAPI vuelve a validar el rol de administrador y el
@@ -42,9 +42,9 @@ export async function setProductActive(id: string, isActive: boolean): Promise<A
   });
 }
 
-export async function setStock(productId: string, branchId: string, total: unknown): Promise<ActionResult<null>> {
-  return runAction(stockSchema, total, async (value) => {
-    await adminApi.setStock(idSchema.parse(productId), idSchema.parse(branchId), value);
+export async function setStock(productId: string, branchId: string, input: unknown): Promise<ActionResult<null>> {
+  return runAction(stockUpdateSchema, input, async (data) => {
+    await adminApi.setStock(idSchema.parse(productId), idSchema.parse(branchId), data);
     refreshStorefront("products", "branches");
     return null;
   });

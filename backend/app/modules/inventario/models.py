@@ -4,12 +4,13 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, UniqueConstraint, func
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, String, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, UUIDPrimaryKey
 
 if TYPE_CHECKING:
+    from app.modules.autenticacion.models import User
     from app.modules.catalogo.models import Product
     from app.modules.sucursales.models import Branch
 
@@ -41,3 +42,34 @@ class Inventory(UUIDPrimaryKey, Base):
 
     product: Mapped[Product] = relationship(back_populates="inventory")
     branch: Mapped[Branch] = relationship(back_populates="inventory", lazy="joined")
+
+
+class InventoryMovement(UUIDPrimaryKey, Base):
+    """Registro de entradas y salidas de unidades físicas (CU-13).
+
+    Solo se agregan filas; nunca se editan. La suma de `quantity` de una fila de
+    inventario es su `total_quantity`. Las reservas no aparecen: apartan unidades,
+    pero no las sacan de la sucursal.
+    """
+
+    __tablename__ = "inventory_movements"
+    __table_args__ = (
+        CheckConstraint(
+            "kind IN ('saldo_inicial', 'entrada', 'salida', 'venta', 'devolucion')",
+            name="valid_kind",
+        ),
+        CheckConstraint("quantity <> 0", name="quantity_non_zero"),
+        CheckConstraint("balance_after >= 0", name="balance_non_negative"),
+    )
+
+    inventory_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("inventory.id", ondelete="CASCADE"), index=True)
+    kind: Mapped[str] = mapped_column(String(20))
+    quantity: Mapped[int] = mapped_column(Integer)  # con signo: + entra, − sale
+    balance_after: Mapped[int] = mapped_column(Integer)
+    reason: Mapped[str | None] = mapped_column(String(200))
+    order_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("orders.id", ondelete="SET NULL"), index=True)
+    user_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
+
+    inventory: Mapped[Inventory] = relationship()
+    user: Mapped[User | None] = relationship()

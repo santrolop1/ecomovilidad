@@ -10,6 +10,7 @@ export const rentalStatuses = ["pending", "confirmed", "active", "completed", "c
 export const branchServices = ["venta", "alquiler", "mantenimiento", "recogida", "devolucion"] as const;
 export const serviceAreaCities = ["Bucaramanga", "Floridablanca", "Girón", "Piedecuesta"] as const;
 
+export const movementKinds = ["saldo_inicial", "entrada", "salida", "venta", "devolucion"] as const;
 const orderStatus = z.enum(orderStatuses);
 const rentalStatus = z.enum(rentalStatuses);
 
@@ -61,6 +62,22 @@ export const inventoryRowSchema = z.object({
   total: z.number(),
   sold: z.number(),
   updatedAt: isoDate.nullable(),
+});
+
+export const inventoryMovementSchema = z.object({
+  id,
+  productId: id,
+  productName: z.string(),
+  sku: z.string(),
+  branchName: z.string(),
+  city: z.string(),
+  kind: z.enum(movementKinds),
+  quantity: z.number(),
+  balanceAfter: z.number(),
+  reason: z.string().nullable(),
+  orderId: id.nullable(),
+  userName: z.string().nullable(),
+  createdAt: isoDate,
 });
 
 export const adminProductDetailSchema = adminProductSchema.extend({ inventory: z.array(inventoryRowSchema) });
@@ -259,6 +276,8 @@ export type RentalStatusValue = (typeof rentalStatuses)[number];
 export type AdminProduct = z.infer<typeof adminProductSchema>;
 export type AdminProductDetail = z.infer<typeof adminProductDetailSchema>;
 export type InventoryRow = z.infer<typeof inventoryRowSchema>;
+export type InventoryMovement = z.infer<typeof inventoryMovementSchema>;
+export type MovementKind = (typeof movementKinds)[number];
 export type AdminCategory = z.infer<typeof adminCategorySchema>;
 export type AdminBranch = z.infer<typeof adminBranchSchema>;
 export type AdminBranchDetail = z.infer<typeof adminBranchDetailSchema>;

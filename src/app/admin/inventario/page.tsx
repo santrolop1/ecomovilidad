@@ -67,6 +67,11 @@ export default async function AdminInventoryPage({ searchParams }: PageProps<"/a
       <AdminPageHeader
         title="Inventario"
         description="Existencias de productos activos por sucursal. Vendido = unidades de pedidos completados. Para ajustar unidades, abre el producto."
+        actions={
+          <Link href="/admin/inventario/movimientos" className="text-sm underline">
+            Ver entradas y salidas
+          </Link>
+        }
       />
       <FilterBar
         action="/admin/inventario"
