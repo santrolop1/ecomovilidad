@@ -180,6 +180,35 @@ export const geofenceAlertSchema = z.object({
   closedAt: isoDate.nullable(),
 });
 
+export const valuePropIcons = ["truck", "shield", "leaf", "wrench", "map-pin", "credit-card"] as const;
+
+export const adminContentSchema = z.object({
+  valuePropositions: z.array(
+    z.object({
+      id,
+      title: z.string(),
+      description: z.string(),
+      icon: z.enum(valuePropIcons),
+      position: z.number(),
+      isActive: z.boolean(),
+    }),
+  ),
+  banners: z.array(
+    z.object({
+      id,
+      title: z.string(),
+      description: z.string(),
+      cta: z.object({ label: z.string(), href: z.string() }),
+      startsAt: isoDate,
+      endsAt: isoDate,
+      isActive: z.boolean(),
+    }),
+  ),
+  news: z.array(
+    z.object({ id, slug: z.string(), title: z.string(), excerpt: z.string(), publishedAt: isoDate, isPublished: z.boolean() }),
+  ),
+});
+
 export const adminProductDetailSchema = adminProductSchema.extend({ inventory: z.array(inventoryRowSchema) });
 
 export const adminCategorySchema = z.object({
@@ -378,6 +407,7 @@ export type RentalStatusValue = (typeof rentalStatuses)[number];
 export type AdminProduct = z.infer<typeof adminProductSchema>;
 export type AdminProductDetail = z.infer<typeof adminProductDetailSchema>;
 export type InventoryRow = z.infer<typeof inventoryRowSchema>;
+export type AdminContent = z.infer<typeof adminContentSchema>;
 export type GpsDevice = z.infer<typeof gpsDeviceSchema>;
 export type Geofence = z.infer<typeof geofenceSchema>;
 export type GeofenceAlert = z.infer<typeof geofenceAlertSchema>;

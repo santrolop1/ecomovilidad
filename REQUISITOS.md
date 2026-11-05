@@ -20,7 +20,7 @@ Fuente: `SRS_EcoMovilidad_v3_0` (22/sep/2026). Módulo 8 tomado del Plan de Desa
 
 | ID | Descripción | Estado | Implementación |
 | --- | --- | --- | --- |
-| RF-1.1 | Administradores actualizan propuesta de valor, banners y noticias sin desplegar código | **Mock** | Contrato `ContentApi` y vigencia de banners en el frontend; el contenido sale de `src/mocks/content.ts`. Sin modelo de contenido, sin endpoints, sin panel. |
+| RF-1.1 | Administradores actualizan propuesta de valor, banners y noticias sin desplegar código | **Implementado** | `modules/contenidos`: tablas propias, API pública y edición en `/admin/contenidos`. |
 | RF-1.2 | Mapa público con la disponibilidad de inventario por sucursal en tiempo real | **Parcial** | Real: `GET /branches` con disponibilidad por categoría desde la tabla `inventory`; refresco cada 60 s (`/api/branches`, TanStack Query); `branches.location` en PostGIS. Mapa real con Leaflet + OpenStreetMap (sin API key) en el inicio y `/sucursales`, con popups de disponibilidad por categoría y fallback. Pendiente: tiempo real por eventos (hoy es consulta periódica). |
 | RF-1.3 | Metadatos dinámicos, URLs amigables y sitemap autogenerado | **Implementado** | `generateMetadata`, canonical, Open Graph y Twitter, `sitemap.ts` con los productos de la API, `robots.ts`, JSON-LD y 404 reales. |
 
@@ -112,7 +112,7 @@ Fuente: `SRS_EcoMovilidad_v3_0` (22/sep/2026). Módulo 8 tomado del Plan de Desa
 | CU-06 | Agendar entrega o recogida | **Implementado** | Fecha, franja y dirección con cupo real por sucursal (`slot_capacity`, editable en el panel). Una franja llena o ya iniciada no se ofrece ni se acepta. Sin asignación de domiciliario (ver CU-14). |
 | CU-07 | Seguimiento del domicilio | **Implementado** | Enlace público `/seguimiento/{token}` sin datos personales, con estados y fechas; se actualiza cada 15 s. Sin WebSockets. |
 | CU-08 | Validar entrega con QR o firma | **Implementado** | El cliente ve un QR y un código de 6 dígitos; el panel escribe el código o captura la firma. Entregar exige una de las dos pruebas. Sin escáner con cámara. |
-| CU-09 | Gestionar contenidos | **Mock** | Contenido en `src/mocks/content.ts`. |
+| CU-09 | Gestionar contenidos | **Implementado** | `/admin/contenidos`: propuesta de valor, banners con vigencia y noticias, sin desplegar código. El texto principal del inicio y la ayuda siguen fijos. |
 | CU-10 | Monitorear flota en tiempo real | **Implementado** | Los dispositivos envían posiciones por API con su token (`POST /api/telemetry/positions`); `/admin/operacion` las muestra cada 3 s. Sin dispositivos registrados sigue la flota simulada, con su aviso. Probado con `scripts/simulate_gps.py`, sin aparatos físicos. |
 | CU-11 | Geofencing | **Implementado** | Zonas circulares con PostGIS, editables en el panel. Salir de todas las zonas activas abre una alerta y volver la cierra. Sin polígonos ni avisos por correo. |
 | CU-12 | Mantenimiento preventivo | **Parcial** | Unidades de la flota en mantenimiento salen de la oferta; sin umbrales, alertas ni bitácora. |

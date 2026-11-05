@@ -69,7 +69,7 @@ cd backend && uv run pytest          # requiere: docker compose up -d db
 | CU-15 Cancelación y reembolso | Hecho (reembolso manual) | Devolución automática y nota crédito |
 | CU-06 Agendar entrega | Hecho | — |
 | CU-12 Mantenimiento | Parcial | Umbrales de uso, alertas, bloqueo al 90% y bitácora |
-| CU-09 Contenidos | Simulado | Editar banners, noticias y textos desde el panel |
+| CU-09 Contenidos | Hecho | Sin subir imágenes; el texto principal del inicio y las preguntas frecuentes siguen fijos |
 | CU-10 Monitoreo de flota | Hecho (sin aparatos reales) | Conectar aparatos o una app; hoy se prueba con `scripts/simulate_gps.py` |
 | CU-07 Seguimiento del domicilio | Hecho | Se actualiza cada 15 s; sin WebSockets |
 | CU-08 Validar entrega | Hecho | El código se escribe en el panel; sin escáner con cámara |

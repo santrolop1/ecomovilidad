@@ -250,6 +250,7 @@ Dentro de cada servicio los archivos siguen el mismo patrón: `router.py` (endpo
 | Inventario (CU-03, CU-13) | `modules/inventario`, `modules/admin/inventory.py` | `features/cart`, `app/admin/inventario` | Real, con registro de entradas y salidas |
 | Domicilios (CU-07, CU-08, CU-14) | `modules/domicilios`, `modules/admin/deliveries.py` | `features/deliveries`, `app/admin/domicilios`, `app/(sitio)/seguimiento` | Real |
 | Telemetría y zonas (CU-10, CU-11) | `modules/telemetria`, `scripts/simulate_gps.py` | `features/operations`, `app/admin/operacion` | Real; sin aparatos físicos |
+| Contenidos (CU-09) | `modules/contenidos` | `features/content`, `app/admin/contenidos` | Real |
 | Carrito | `modules/carrito` | `features/cart` | Real |
 | Pedidos (CU-03) | `modules/pedidos` | `features/checkout`, `features/account` | Real |
 | Pasarela de pagos y facturación (CU-05) | `modules/pagos` | `features/payments`, `app/api/webhooks`, `app/api/facturas` | Real (pagos de prueba, sin DIAN) |
@@ -291,6 +292,7 @@ PostgreSQL 16 + PostGIS. Claves primarias UUID (`gen_random_uuid()`) y marcas de
 | `gps_positions` | dispositivo, latitud, longitud, batería, fecha | historial; hoy no se purga |
 | `geofences` | nombre, centro, radio, activa | zonas permitidas; ubicación PostGIS calculada |
 | `geofence_alerts` | dispositivo, posición, apertura, cierre | una abierta por dispositivo |
+| `value_propositions`, `banners`, `news_items` | textos del inicio y de Nosotros, vigencia y publicación | editables en el panel; los enlaces de banners solo pueden ser internos |
 | `carts` | user_id, status (active / converted / abandoned) | un solo carrito activo por usuario (índice único parcial) |
 | `cart_items` | cart_id, product_id, cantidad, precio unitario | único (carrito, producto); cantidad 1–10 |
 | `cart_reservations` | cart_item_id, inventory_id, cantidad, expires_at | → cart_items (CASCADE), → inventory (RESTRICT); cantidad > 0; índice por `expires_at`. La suma de reservas de una línea es su cantidad |
@@ -607,6 +609,7 @@ Base: `http://localhost:8000/api/v1`. Documentación interactiva en `http://loca
 | PATCH, DELETE | `/cart/items/{id}` | ✔ |
 | POST, GET | `/orders` (POST exige reservas vigentes y `policyVersion`) | ✔ |
 | GET | `/orders/{id}` | ✔ (404 si es de otro usuario) |
+| GET | `/content/home`, `/content/news`: contenidos publicados (CU-09) | — |
 | POST | `/telemetry/positions`: dispositivos GPS con `Authorization: Bearer <token>` (público en `/api/telemetry/positions`) | — |
 | GET | `/tracking/{token}`: seguimiento público, sin datos personales (CU-07) | — |
 | GET | `/orders/time-slots` (`date`, `branch_id` opcional): franjas con cupo real (CU-06) | — |
@@ -635,6 +638,7 @@ Base: `http://localhost:8000/api/v1`. Documentación interactiva en `http://loca
 | GET, POST | `/admin/branches` |
 | GET, PATCH | `/admin/branches/{id}` |
 | GET | `/admin/inventory` (`q`, `branch_id`, `low_stock`, `page`) |
+| GET | `/admin/content`; POST y PUT en `/admin/content/{value-propositions,banners,news}`; DELETE `/admin/content/{tipo}/{id}` |
 | GET | `/admin/telemetry/fleet`: posiciones, zonas y alertas para el mapa operativo |
 | GET, POST | `/admin/gps-devices`; PATCH `/admin/gps-devices/{id}`. El token solo se muestra al crear |
 | GET, POST | `/admin/geofences`; PATCH `/admin/geofences/{id}`; GET `/admin/geofence-alerts` (`only_open`) |

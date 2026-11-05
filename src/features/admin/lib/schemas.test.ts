@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { toFieldErrors } from "@/lib/action-result";
-import { branchFormSchema, productFormSchema, slugify, stockSchema, stockUpdateSchema } from "./schemas";
+import { bannerFormSchema, branchFormSchema, productFormSchema, slugify, stockSchema, stockUpdateSchema } from "./schemas";
 
 const product = {
   categoryId: "c1",
@@ -35,6 +35,23 @@ describe("formularios del panel", () => {
     expect(stockSchema.safeParse("-1").success).toBe(false);
     expect(stockSchema.safeParse("2.5").success).toBe(false);
     expect(stockSchema.parse("12")).toBe(12);
+  });
+
+  it("banner: solo enlaces internos y fechas en orden", () => {
+    const banner = {
+      title: "Promo",
+      description: "Descripción",
+      ctaLabel: "Ver",
+      ctaHref: "/catalogo",
+      startsAt: "2026-11-01T08:00",
+      endsAt: "2026-11-30T18:00",
+      isActive: true,
+    };
+    expect(bannerFormSchema.parse(banner).startsAt).toBe("2026-11-01T08:00:00-05:00");
+    for (const ctaHref of ["https://malo.example", "//malo.example", "javascript:alert(1)"]) {
+      expect(bannerFormSchema.safeParse({ ...banner, ctaHref }).success).toBe(false);
+    }
+    expect(bannerFormSchema.safeParse({ ...banner, endsAt: "2026-10-01T08:00" }).success).toBe(false);
   });
 
   it("ajuste de stock: exige un motivo", () => {

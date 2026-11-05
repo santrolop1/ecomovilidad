@@ -24,6 +24,8 @@ import {
   publicProductSchema,
   sessionSchema,
   userSchema,
+  newsItemSchema,
+  remoteHomeContentSchema,
   timeSlotSchema,
   deliveryTrackingSchema,
 } from "../schemas";
@@ -32,6 +34,7 @@ import {
 const CATALOG_REVALIDATE_S = 60;
 /** La disponibilidad por sucursal cambia con cada pedido (RF 1.2). */
 const AVAILABILITY_REVALIDATE_S = 15;
+const CONTENT_REVALIDATE_S = 300;
 
 /**
  * Implementación contra FastAPI (API_MODE=real).
@@ -186,6 +189,21 @@ export function createRealApi(http: HttpClient): ApiClient {
     },
     content: {
       ...mock.content,
+      getHomeContent: async () => {
+        const [fixed, remote] = await Promise.all([
+          mock.content.getHomeContent(),
+          http.request(endpoints.contentHome, {
+            schema: remoteHomeContentSchema,
+            next: { revalidate: CONTENT_REVALIDATE_S, tags: ["content"] },
+          }),
+        ]);
+        return { hero: fixed.hero, ...remote };
+      },
+      listNews: () =>
+        http.request(endpoints.contentNews, {
+          schema: z.array(newsItemSchema),
+          next: { revalidate: CONTENT_REVALIDATE_S, tags: ["content"] },
+        }),
       async sendContactMessage() {
         throw new ApiError(
           "SERVICE_UNAVAILABLE",
