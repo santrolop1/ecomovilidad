@@ -120,6 +120,66 @@ export const adminDeliverySchema = adminDeliverySummarySchema.extend({
   canAssign: z.boolean(),
 });
 
+const assetStatus = z.enum(["disponible", "en_uso", "mantenimiento", "incidencia"]);
+const assetKind = z.enum(["bicicleta", "patineta", "dron", "domicilio"]);
+const geoPoint = z.object({ lat: z.number(), lng: z.number() });
+
+export const geofenceSchema = z.object({
+  id,
+  name: z.string(),
+  latitude: z.number(),
+  longitude: z.number(),
+  radiusM: z.number(),
+  isActive: z.boolean(),
+});
+
+export const fleetSnapshotSchema = z.object({
+  assets: z.array(
+    z.object({
+      id,
+      code: z.string(),
+      kind: assetKind,
+      status: assetStatus,
+      position: geoPoint,
+      trail: z.array(geoPoint),
+      batteryPct: z.number().nullable(),
+      hubId: id.nullable(),
+      updatedAt: isoDate,
+      stale: z.boolean(),
+      outsideZone: z.boolean(),
+    }),
+  ),
+  zones: z.array(geofenceSchema),
+  openAlerts: z.number(),
+  activeDevices: z.number(),
+  at: isoDate,
+});
+
+export const gpsDeviceSchema = z.object({
+  id,
+  code: z.string(),
+  kind: assetKind,
+  isActive: z.boolean(),
+  branchId: id.nullable(),
+  branchName: z.string().nullable(),
+  courierId: id.nullable(),
+  courierName: z.string().nullable(),
+  rentalUnitId: id.nullable(),
+  rentalUnitCode: z.string().nullable(),
+  lastSeenAt: isoDate.nullable(),
+});
+
+export const gpsDeviceCreatedSchema = gpsDeviceSchema.extend({ token: z.string() });
+
+export const geofenceAlertSchema = z.object({
+  id,
+  deviceCode: z.string(),
+  latitude: z.number(),
+  longitude: z.number(),
+  openedAt: isoDate,
+  closedAt: isoDate.nullable(),
+});
+
 export const adminProductDetailSchema = adminProductSchema.extend({ inventory: z.array(inventoryRowSchema) });
 
 export const adminCategorySchema = z.object({
@@ -318,6 +378,9 @@ export type RentalStatusValue = (typeof rentalStatuses)[number];
 export type AdminProduct = z.infer<typeof adminProductSchema>;
 export type AdminProductDetail = z.infer<typeof adminProductDetailSchema>;
 export type InventoryRow = z.infer<typeof inventoryRowSchema>;
+export type GpsDevice = z.infer<typeof gpsDeviceSchema>;
+export type Geofence = z.infer<typeof geofenceSchema>;
+export type GeofenceAlert = z.infer<typeof geofenceAlertSchema>;
 export type Courier = z.infer<typeof courierSchema>;
 export type AdminDeliverySummary = z.infer<typeof adminDeliverySummarySchema>;
 export type AdminDelivery = z.infer<typeof adminDeliverySchema>;

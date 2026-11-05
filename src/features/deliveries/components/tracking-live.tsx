@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { timeSlotLabels } from "@/features/account/lib/labels";
@@ -9,6 +10,11 @@ import type { DeliveryTracking } from "@/types";
 import { deliveryStatusLabels, deliveryStatusTone } from "../lib/labels";
 import { DeliveryTimeline } from "./delivery-timeline";
 
+const TrackingMap = dynamic(() => import("./tracking-map"), {
+  ssr: false,
+  loading: () => <div className="h-64 animate-pulse rounded-2xl bg-muted" aria-hidden="true" />,
+});
+
 const REFRESH_MS = 15_000;
 const FINAL = new Set(["entregado", "fallido"]);
 
@@ -16,6 +22,7 @@ const FINAL = new Set(["entregado", "fallido"]);
 export function TrackingLive({ token, initial }: { token: string; initial: DeliveryTracking }) {
   const [tracking, setTracking] = useState(initial);
   const [stale, setStale] = useState(false);
+  const [mapUnavailable, setMapUnavailable] = useState(false);
   const finished = FINAL.has(tracking.status);
 
   useEffect(() => {
@@ -39,6 +46,9 @@ export function TrackingLive({ token, initial }: { token: string; initial: Deliv
         <h1 className="font-display text-3xl sm:text-4xl">Tu domicilio</h1>
         <StatusBadge tone={deliveryStatusTone[tracking.status]}>{deliveryStatusLabels[tracking.status]}</StatusBadge>
       </header>
+      {tracking.position && !mapUnavailable && (
+        <TrackingMap lat={tracking.position.lat} lng={tracking.position.lng} onUnavailable={() => setMapUnavailable(true)} />
+      )}
       <section className="rounded-2xl border border-border bg-card p-5">
         <DeliveryTimeline status={tracking.status} events={tracking.events} />
       </section>

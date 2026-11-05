@@ -24,8 +24,10 @@ from app.modules.domicilios.schemas import (
     DeliveryStatusIn,
     DeliveryValidationIn,
     TrackingOut,
+    TrackingPositionOut,
 )
 from app.modules.inventario.reservations import now_utc
+from app.modules.telemetria import service as telemetry
 
 # "Entregado" no está aquí: solo se llega validando la entrega.
 TRANSITIONS: dict[DeliveryStatus, set[DeliveryStatus]] = {
@@ -95,6 +97,17 @@ def customer_view(delivery: Delivery) -> CustomerDeliveryOut:
     )
 
 
+def _public_position(db: Session, delivery: Delivery) -> TrackingPositionOut | None:
+    """La ubicación del domiciliario solo se comparte mientras lleva este pedido."""
+    if delivery.status != DeliveryStatus.IN_TRANSIT or delivery.courier_id is None:
+        return None
+    found = telemetry.courier_position(db, delivery.courier_id)
+    if found is None:
+        return None
+    latitude, longitude, updated_at = found
+    return TrackingPositionOut(lat=latitude, lng=longitude, updated_at=updated_at)
+
+
 def tracking(db: Session, token: str) -> TrackingOut:
     delivery = db.scalar(
         select(Delivery)
@@ -112,6 +125,7 @@ def tracking(db: Session, token: str) -> TrackingOut:
         scheduled_date=order.scheduled_date,
         time_slot=order.time_slot,
         delivered_at=delivery.delivered_at,
+        position=_public_position(db, delivery),
         # Las notas pueden traer datos internos: el enlace público solo muestra estados y fechas.
         events=[DeliveryEventOut(status=e.status, created_at=e.created_at) for e in delivery.events],
     )
@@ -131,9 +145,20 @@ def assign_courier(db: Session, delivery_id: uuid.UUID, courier_id: uuid.UUID, u
     courier = db.get(Courier, courier_id)
     if courier is None or not courier.is_active:
         raise ConflictError("Ese domiciliario no está disponible.")
-    delivery.courier_id = courier.id
+    delivery.courier = courier
     _add_event(delivery, DeliveryStatus.ASSIGNED, f"Asignado a {courier.name}", user_id)
     db.commit()
+
+
+def assign_nearest(db: Session, delivery_id: uuid.UUID, user_id: uuid.UUID) -> None:
+    """RF 5.1: el más cercano a la sucursal que despacha, entre los que tienen GPS reciente."""
+    delivery = db.get(Delivery, delivery_id)
+    if delivery is None:
+        raise NotFoundError("El domicilio no existe.")
+    courier_id = telemetry.nearest_courier(db, delivery.order.branch_id)
+    if courier_id is None:
+        raise ConflictError("Ningún domiciliario activo tiene GPS reciente. Asigna uno manualmente.")
+    assign_courier(db, delivery_id, courier_id, user_id)
 
 
 def change_status(db: Session, delivery_id: uuid.UUID, data: DeliveryStatusIn, user_id: uuid.UUID) -> None:
@@ -147,7 +172,7 @@ def change_status(db: Session, delivery_id: uuid.UUID, data: DeliveryStatusIn, u
     if data.status == DeliveryStatus.CREATED:
         if delivery.order.status != OrderStatus.PAID:
             raise ConflictError("Solo se reprograma el domicilio de un pedido pagado.")
-        delivery.courier_id = None
+        delivery.courier = None
         delivery.failure_reason = None
     _add_event(delivery, data.status, note, user_id)
     db.commit()

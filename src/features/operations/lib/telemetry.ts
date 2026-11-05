@@ -3,11 +3,10 @@ import type { GeoPoint } from "@/types";
 /**
  * Contrato de telemetría del mapa operativo.
  *
- * Hoy la única implementación es `createSimulatedTelemetry` (simulación en el
- * navegador, MODO DEMOSTRACIÓN). Cuando exista telemetría GPS real bastará con
- * otra implementación de `TelemetrySource` (p. ej. WebSocket o SSE desde
- * FastAPI) que emita los mismos `TelemetrySnapshot` con `origin: "gps"`; la
- * interfaz del panel no cambia.
+ * Dos implementaciones: `createLiveTelemetry` lee las posiciones reales que los
+ * dispositivos envían por API (`origin: "gps"`), y `createSimulatedTelemetry`
+ * simula la flota en el navegador (MODO DEMOSTRACIÓN) mientras no haya
+ * dispositivos registrados.
  */
 export type AssetKind = "bicicleta" | "patineta" | "dron" | "domicilio";
 export type AssetStatus = "disponible" | "en_uso" | "mantenimiento" | "incidencia";
@@ -32,18 +31,30 @@ export interface FleetAsset {
   position: GeoPoint;
   /** Últimas posiciones (más antigua primero) para dibujar el recorrido. */
   trail: GeoPoint[];
-  batteryPct: number;
-  hubId: string;
+  batteryPct: number | null;
+  hubId: string | null;
+  /** Sin reportar hace más de 5 minutos. */
+  stale?: boolean;
   /** Domicilios: punto de entrega. */
   destination?: GeoPoint;
   updatedAt: string;
 }
 
+export interface Zone {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  radiusM: number;
+}
+
 export interface TelemetrySnapshot {
   assets: FleetAsset[];
   at: string;
-  /** "simulada" mientras no exista telemetría física. */
+  /** "simulada" mientras no haya dispositivos GPS registrados. */
   origin: "simulada" | "gps";
+  zones?: Zone[];
+  openAlerts?: number;
 }
 
 export interface TelemetrySource {

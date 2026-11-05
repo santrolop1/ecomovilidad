@@ -12,7 +12,8 @@ from app.modules.pagos import invoices_router as invoices
 from app.modules.pagos import router as payments
 from app.modules.pedidos import router as orders
 from app.modules.sucursales import router as branches
+from app.modules.telemetria import router as telemetry
 
 api_router = APIRouter(prefix="/api/v1", dependencies=[Depends(release_expired_reservations)])
-for module in (health, catalog, branches, auth, cart, orders, payments, invoices, rentals, tracking, admin):
+for module in (health, catalog, branches, auth, cart, orders, payments, invoices, rentals, tracking, telemetry, admin):
     api_router.include_router(module.router)

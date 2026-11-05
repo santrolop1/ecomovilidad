@@ -81,6 +81,22 @@ export const stockSchema = z.coerce
   .min(0, "No puede ser negativo.")
   .max(100_000);
 
+const optionalId = z.string().uuid().optional().or(z.literal("").transform(() => undefined));
+
+export const gpsDeviceFormSchema = z.object({
+  code: z.string().trim().min(2, "Escribe un código.").max(30),
+  kind: z.enum(["bicicleta", "patineta", "dron", "domicilio"]),
+  branchId: optionalId,
+  courierId: optionalId,
+});
+
+export const geofenceFormSchema = z.object({
+  name: z.string().trim().min(3, "Escribe un nombre.").max(80),
+  latitude: z.coerce.number({ error: "Escribe un número." }).min(-5, "Fuera de Colombia.").max(14, "Fuera de Colombia."),
+  longitude: z.coerce.number({ error: "Escribe un número." }).min(-80, "Fuera de Colombia.").max(-66, "Fuera de Colombia."),
+  radiusM: z.coerce.number({ error: "Escribe un número." }).int("Sin decimales.").min(50, "Mínimo 50 metros.").max(100_000, "Máximo 100 km."),
+});
+
 export const courierFormSchema = z.object({
   name: z.string().trim().min(3, "Escribe el nombre.").max(120),
   phone: z.string().trim().regex(/^\+?[\d\s()-]{7,20}$/, "Teléfono no válido."),

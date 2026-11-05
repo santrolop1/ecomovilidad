@@ -82,6 +82,8 @@ function moveToward(from: GeoPoint, to: GeoPoint, meters: number): GeoPoint {
 
 /** Estado interno: el destino del viaje no forma parte del contrato público. */
 export interface SimulatedAsset extends FleetAsset {
+  batteryPct: number;
+  hubId: string;
   target?: GeoPoint;
   returning: boolean;
   /** Puesto fijo junto a su sucursal, adonde vuelve al terminar cada viaje. */

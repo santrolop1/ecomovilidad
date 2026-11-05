@@ -10,9 +10,9 @@ Actualizado: 5 de noviembre de 2026. Detalle completo en [DOCUMENTACION.md](DOCU
 
 | Área | Estado | Observación |
 | --- | --- | --- |
-| Frontend | IMPLEMENTADO | 27 páginas públicas y 21 de panel; `API_MODE=mock` o `real`; responsive verificado de 360 a 1440 px. 94 pruebas Vitest. |
-| Backend | IMPLEMENTADO | FastAPI `/api/v1`: catálogo, sucursales, cuentas, carrito, pedidos, pagos, facturas, alquileres, reembolsos y administración, en una carpeta por servicio (`backend/app/modules/`). 182 pruebas pytest. |
-| Base de datos | IMPLEMENTADO | PostgreSQL 16 + PostGIS 3.6 en Docker; 25 tablas; migraciones 0001 a 0008; seed DEMO idempotente. |
+| Frontend | IMPLEMENTADO | 27 páginas públicas y 23 de panel; `API_MODE=mock` o `real`; responsive verificado de 360 a 1440 px. 96 pruebas Vitest. |
+| Backend | IMPLEMENTADO | FastAPI `/api/v1`: catálogo, sucursales, cuentas, carrito, pedidos, pagos, facturas, alquileres, reembolsos y administración, en una carpeta por servicio (`backend/app/modules/`). 192 pruebas pytest. |
+| Base de datos | IMPLEMENTADO | PostgreSQL 16 + PostGIS 3.6 en Docker; 29 tablas; migraciones 0001 a 0009; seed DEMO idempotente. |
 | Auth | PARCIAL | Real: registro, login, logout, sesiones revocables, httpOnly, CSRF, rol `is_admin`, perfil, cambio y recuperación de contraseña (token hash, 30 min, un uso), límite de intentos (5/cuenta, 30/IP fiable, 15 min). Pendiente: proveedor de correo real (en desarrollo el enlace va al log de la API), roles intermedios. |
 | Catálogo | IMPLEMENTADO | Real y administrable desde el panel. Productos y marcas DEMO; fotos reales referenciales (Wikimedia Commons). |
 | Sucursales | IMPLEMENTADO | Reales y administrables. **Datos DEMO** en Bucaramanga, Floridablanca, Girón y Piedecuesta. |
@@ -25,9 +25,10 @@ Actualizado: 5 de noviembre de 2026. Detalle completo en [DOCUMENTACION.md](DOCU
 | Pagos | PARCIAL | **Listo para recibir las llaves de Wompi** (integración construida y con pruebas automáticas; **sin probar aún con llaves reales**). **Por ahora se usa la pasarela de pruebas** propia: pago simulado sin cobro real, con el mismo flujo (pagado, inventario, factura). Al poner las llaves en `backend/.env` pasa a Wompi solo. Reembolsos: solicitud del cliente y registro en el panel; la devolución del dinero se hace en la pasarela. |
 | Facturación | PARCIAL | Factura PDF y XML con consecutivo al aprobarse el pago. **No es factura electrónica DIAN.** |
 | Mapa público | IMPLEMENTADO | Leaflet + OpenStreetMap en el inicio y `/sucursales`: sucursales con coordenadas de PostGIS y disponibilidad real; fallback "Mapa temporalmente no disponible". |
-| Mapa operativo (admin) | MOCK | `/admin/operacion`: sucursales reales; activos, posiciones y estados **simulados** en el navegador (MODO DEMOSTRACIÓN). Preparado para sustituir la fuente por telemetría real. |
-| GPS | PENDIENTE | Sin dispositivos ni ingesta de telemetría. |
-| WebSockets | PENDIENTE | — |
+| Mapa operativo (admin) | IMPLEMENTADO | `/admin/operacion`: posiciones reales de los dispositivos registrados, recorrido, zonas y alertas. Sin dispositivos muestra la flota simulada con aviso de MODO DEMOSTRACIÓN. |
+| GPS | PARCIAL | Real: ingesta por API con token por dispositivo, historial y asignación del más cercano. Probado con `scripts/simulate_gps.py`. Pendiente: conectar aparatos físicos y limpiar el historial antiguo. |
+| WebSockets | PENDIENTE | El panel y el seguimiento consultan por intervalos (3 s y 15 s). |
+| Geofencing | IMPLEMENTADO | Zonas circulares y alertas en `/admin/operacion/zonas`. |
 | Domicilios | IMPLEMENTADO | `/admin/domicilios`: domiciliarios, asignación manual, estados con historial, fallo y reprogramación. Se crean al pagar. Pendiente: sesión propia del domiciliario. |
 | QR | IMPLEMENTADO | El cliente muestra un QR y un código de 6 dígitos; el panel escribe el código. Sin escáner con cámara. |
 | Firma digital | IMPLEMENTADO | Firma en pantalla como alternativa al QR. |

@@ -35,6 +35,12 @@ class CustomerDeliveryOut(ApiModel):
     events: list[DeliveryEventOut]
 
 
+class TrackingPositionOut(ApiModel):
+    lat: float
+    lng: float
+    updated_at: datetime
+
+
 class TrackingOut(ApiModel):
     """Enlace público: sin dirección, nombre del cliente ni código."""
 
@@ -45,6 +51,7 @@ class TrackingOut(ApiModel):
     scheduled_date: date
     time_slot: str
     delivered_at: datetime | None = None
+    position: TrackingPositionOut | None = None
     events: list[DeliveryEventOut]
 
 

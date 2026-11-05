@@ -92,6 +92,8 @@ export interface DeliveryTracking {
   scheduledDate: string;
   timeSlot: string;
   deliveredAt?: string;
+  /** Posición del domiciliario, solo mientras va en camino y con GPS. */
+  position?: { lat: number; lng: number; updatedAt: string };
   events: DeliveryEvent[];
 }
 

@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { deliveryNextLabels } from "@/features/deliveries/lib/labels";
 import type { ActionResult } from "@/lib/action-result";
 import type { AdminDelivery, Courier } from "@/lib/api/admin-schemas";
-import { assignDelivery, changeDeliveryStatus, validateDelivery } from "../actions";
+import { assignDelivery, assignNearestDelivery, changeDeliveryStatus, validateDelivery } from "../actions";
 import { SignaturePad } from "./signature-pad";
 
 const selectClass = "h-10 w-full rounded-xl border border-input bg-card px-3 text-sm";
@@ -75,6 +75,16 @@ export function DeliveryActions({ delivery, couriers }: { delivery: AdminDeliver
               Asignar
             </Button>
           </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="rounded-full"
+            disabled={isPending}
+            onClick={() => run(() => assignNearestDelivery(delivery.id), "Asignado al domiciliario más cercano.")}
+          >
+            Asignar al más cercano (GPS)
+          </Button>
           {active.length === 0 && <p className="text-xs text-muted-foreground">Primero agrega un domiciliario activo.</p>}
         </div>
       )}

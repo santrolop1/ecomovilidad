@@ -11,6 +11,8 @@ import {
   courierFormSchema,
   deliveryStatusSchema,
   deliveryValidationSchema,
+  geofenceFormSchema,
+  gpsDeviceFormSchema,
   productFormSchema,
   stockUpdateSchema,
 } from "./lib/schemas";
@@ -89,6 +91,41 @@ export async function changeDeliveryStatus(id: string, input: unknown): Promise<
 export async function validateDelivery(id: string, input: unknown): Promise<ActionResult<null>> {
   return runAction(deliveryValidationSchema, input, async (data) => {
     await adminApi.validateDelivery(idSchema.parse(id), data);
+    return null;
+  });
+}
+
+export async function assignNearestDelivery(id: string): Promise<ActionResult<null>> {
+  return runAction(idSchema, id, async (value) => {
+    await adminApi.assignNearestDelivery(value);
+    return null;
+  });
+}
+
+export async function createGpsDevice(input: unknown): Promise<ActionResult<{ token: string; code: string }>> {
+  return runAction(gpsDeviceFormSchema, input, async (data) => {
+    const device = await adminApi.createGpsDevice(data);
+    return { token: device.token, code: device.code };
+  });
+}
+
+export async function setGpsDeviceActive(id: string, isActive: boolean): Promise<ActionResult<null>> {
+  return runAction(z.boolean(), isActive, async (value) => {
+    await adminApi.updateGpsDevice(idSchema.parse(id), value);
+    return null;
+  });
+}
+
+export async function createGeofence(input: unknown): Promise<ActionResult<null>> {
+  return runAction(geofenceFormSchema, input, async (data) => {
+    await adminApi.createGeofence(data);
+    return null;
+  });
+}
+
+export async function setGeofenceActive(id: string, isActive: boolean): Promise<ActionResult<null>> {
+  return runAction(z.boolean(), isActive, async (value) => {
+    await adminApi.updateGeofence(idSchema.parse(id), value);
     return null;
   });
 }

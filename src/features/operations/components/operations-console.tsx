@@ -2,12 +2,14 @@
 
 import { Pause, Play, TriangleAlert } from "lucide-react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { MapBoundary } from "@/components/map/map-boundary";
 import { MapFallback } from "@/components/map/map-fallback";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { assetKindLabels, assetStatusColors, assetStatusCountLabels, assetStatusLabels } from "../lib/labels";
+import { createLiveTelemetry } from "../lib/live-telemetry";
 import { createSimulatedTelemetry, TIME_SCALE } from "../lib/simulated-telemetry";
 import { type AssetKind, type AssetStatus, assetKinds, assetStatuses, countByStatus, type FleetAsset, type Hub } from "../lib/telemetry";
 import { useTelemetry } from "../lib/use-telemetry";
@@ -48,7 +50,7 @@ function Indicator({ label, value, total, note, color = "var(--paper)", classNam
   );
 }
 
-function AssetDetail({ asset, hub }: { asset: FleetAsset; hub?: Hub }) {
+function AssetDetail({ asset, hub, positionLabel }: { asset: FleetAsset; hub?: Hub; positionLabel: string }) {
   return (
     <div className="rounded-xl border border-ink-3 bg-ink p-4 text-sm">
       <div className="flex items-center gap-2">
@@ -64,14 +66,14 @@ function AssetDetail({ asset, hub }: { asset: FleetAsset; hub?: Hub }) {
         </div>
         <div>
           <dt className="text-xs text-muted-foreground">Batería</dt>
-          <dd className="tabular">{Math.round(asset.batteryPct)} %</dd>
+          <dd className="tabular">{asset.batteryPct === null ? "–" : `${Math.round(asset.batteryPct)} %`}</dd>
         </div>
         <div className="col-span-2">
           <dt className="text-xs text-muted-foreground">Base</dt>
           <dd>{hub ? `${hub.name}, ${hub.city}` : "–"}</dd>
         </div>
         <div className="col-span-2">
-          <dt className="text-xs text-muted-foreground">Posición simulada</dt>
+          <dt className="text-xs text-muted-foreground">{positionLabel}</dt>
           <dd className="tabular">
             {asset.position.lat.toFixed(4)}, {asset.position.lng.toFixed(4)}
           </dd>
@@ -82,11 +84,12 @@ function AssetDetail({ asset, hub }: { asset: FleetAsset; hub?: Hub }) {
 }
 
 /**
- * Consola de "Operación en tiempo real". Las sucursales (bases) son datos reales;
- * los activos, sus posiciones y estados vienen de la telemetría SIMULADA.
+ * Consola de "Operación en tiempo real". Las sucursales (bases) son datos reales.
+ * Con dispositivos registrados, los activos son reales (`live`); si no, la flota
+ * es SIMULADA y la pantalla lo advierte.
  */
-export function OperationsConsole({ hubs }: { hubs: Hub[] }) {
-  const source = useMemo(() => createSimulatedTelemetry({ hubs }), [hubs]);
+export function OperationsConsole({ hubs, live = false }: { hubs: Hub[]; live?: boolean }) {
+  const source = useMemo(() => (live ? createLiveTelemetry() : createSimulatedTelemetry({ hubs })), [hubs, live]);
   const [paused, setPaused] = useState(false);
   const snapshot = useTelemetry(source, paused);
   // El aviso depende del origen de los datos: desaparecerá con telemetría GPS real.
@@ -100,6 +103,7 @@ export function OperationsConsole({ hubs }: { hubs: Hub[] }) {
   const visible = filter ? assets.filter((asset) => asset.status === filter) : assets;
   const selected = assets.find((asset) => asset.id === selectedId);
   const hubsById = new Map(hubs.map((hub) => [hub.id, hub]));
+  const openAlerts = snapshot?.openAlerts ?? 0;
   const mapFallback = <MapFallback className="rounded-none border-0" description="La cartografía no cargó. Los indicadores y la lista de activos siguen funcionando." />;
 
   return (
@@ -113,6 +117,13 @@ export function OperationsConsole({ hubs }: { hubs: Hub[] }) {
           <p className="text-sm font-medium">
             Posiciones, estados y batería <strong>simulados</strong> en este navegador. No hay telemetría GPS conectada.
           </p>
+        </div>
+      )}
+      {openAlerts > 0 && (
+        <div role="alert" className="flex flex-wrap items-center gap-x-3 gap-y-1 bg-destructive px-4 py-2.5 text-sm font-medium text-white sm:px-5">
+          <TriangleAlert className="size-4 shrink-0" aria-hidden="true" />
+          {openAlerts === 1 ? "1 activo está fuera de las zonas permitidas." : `${openAlerts} activos están fuera de las zonas permitidas.`}
+          <Link href="/admin/operacion/zonas" className="underline">Ver alertas</Link>
         </div>
       )}
       <header className="flex flex-col gap-3 border-b border-ink-3 bg-ink-2 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:px-5">
@@ -156,7 +167,7 @@ export function OperationsConsole({ hubs }: { hubs: Hub[] }) {
             mapFallback
           ) : (
             <MapBoundary fallback={mapFallback}>
-              <OperationsMap hubs={hubs} assets={assets} selectedId={selectedId} onSelect={setSelectedId} onUnavailable={() => setMapUnavailable(true)} />
+              <OperationsMap hubs={hubs} assets={assets} zones={snapshot?.zones} simulated={simulated} selectedId={selectedId} onSelect={setSelectedId} onUnavailable={() => setMapUnavailable(true)} />
             </MapBoundary>
           )}
           {!mapUnavailable && <div className="em-hud" aria-hidden="true" />}
@@ -221,7 +232,13 @@ export function OperationsConsole({ hubs }: { hubs: Hub[] }) {
                 </button>
               ))}
             </div>
-            {selected && <AssetDetail asset={selected} hub={hubsById.get(selected.hubId)} />}
+            {selected && (
+              <AssetDetail
+                asset={selected}
+                hub={selected.hubId ? hubsById.get(selected.hubId) : undefined}
+                positionLabel={simulated ? "Posición simulada" : selected.stale ? "Última posición (sin señal)" : "Posición GPS"}
+              />
+            )}
           </div>
           <ul className="max-h-80 min-h-0 flex-1 overflow-y-auto lg:max-h-none">
             {visible.map((asset) => (
@@ -239,12 +256,15 @@ export function OperationsConsole({ hubs }: { hubs: Hub[] }) {
                   <span className="min-w-0 flex-1">
                     <span className="block font-medium">{asset.code}</span>
                     <span className="block truncate text-xs text-muted-foreground">
-                      {assetKindLabels[asset.kind]}, {hubsById.get(asset.hubId)?.city}
+                      {assetKindLabels[asset.kind]}
+                      {asset.hubId && hubsById.get(asset.hubId) ? `, ${hubsById.get(asset.hubId)?.city}` : ""}
                     </span>
                   </span>
                   <span className="shrink-0 text-right text-xs">
                     <span className="block">{assetStatusLabels[asset.status]}</span>
-                    <span className="tabular block text-muted-foreground">{Math.round(asset.batteryPct)} %</span>
+                    <span className="tabular block text-muted-foreground">
+                      {asset.stale ? "Sin señal" : asset.batteryPct === null ? "–" : `${Math.round(asset.batteryPct)} %`}
+                    </span>
                   </span>
                 </button>
               </li>

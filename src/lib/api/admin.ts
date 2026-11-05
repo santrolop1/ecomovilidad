@@ -15,6 +15,11 @@ import {
   adminDeliverySchema,
   adminDeliverySummarySchema,
   courierSchema,
+  fleetSnapshotSchema,
+  geofenceAlertSchema,
+  geofenceSchema,
+  gpsDeviceCreatedSchema,
+  gpsDeviceSchema,
   dashboardSchema,
   inventoryMovementSchema,
   inventoryRowSchema,
@@ -97,6 +102,20 @@ export const adminApi = {
   updateDelivery: (id: string, body: unknown) => send("PATCH", `/deliveries/${encodeURIComponent(id)}`, adminDeliverySchema, body),
   validateDelivery: (id: string, body: unknown) =>
     send("POST", `/deliveries/${encodeURIComponent(id)}/validate`, adminDeliverySchema, body),
+
+  assignNearestDelivery: (id: string) =>
+    send("POST", `/deliveries/${encodeURIComponent(id)}/assign-nearest`, adminDeliverySchema, {}),
+
+  fleet: () => get("/telemetry/fleet", fleetSnapshotSchema),
+  listGpsDevices: () => get("/gps-devices", z.array(gpsDeviceSchema)),
+  createGpsDevice: (body: unknown) => send("POST", "/gps-devices", gpsDeviceCreatedSchema, body),
+  updateGpsDevice: (id: string, isActive: boolean) =>
+    send("PATCH", `/gps-devices/${encodeURIComponent(id)}`, gpsDeviceSchema, { isActive }),
+  listGeofences: () => get("/geofences", z.array(geofenceSchema)),
+  createGeofence: (body: unknown) => send("POST", "/geofences", geofenceSchema, body),
+  updateGeofence: (id: string, isActive: boolean) =>
+    send("PATCH", `/geofences/${encodeURIComponent(id)}`, geofenceSchema, { isActive }),
+  listGeofenceAlerts: () => get("/geofence-alerts", z.array(geofenceAlertSchema)),
 
   listOrders: (query: Query) => get("/orders", pageSchema(adminOrderSummarySchema), query),
   getOrder: (id: string) => get(`/orders/${encodeURIComponent(id)}`, adminOrderDetailSchema),

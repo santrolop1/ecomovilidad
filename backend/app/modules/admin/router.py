@@ -52,6 +52,18 @@ from app.modules.domicilios.schemas import (
 from app.modules.pagos.invoices_router import invoice_response
 from app.modules.pedidos import service as order_service
 from app.modules.reembolsos import service as refunds
+from app.modules.telemetria import service as telemetry_service
+from app.modules.telemetria.schemas import (
+    FleetSnapshotOut,
+    GeofenceAlertOut,
+    GeofenceCreateIn,
+    GeofenceOut,
+    GeofenceUpdateIn,
+    GpsDeviceCreatedOut,
+    GpsDeviceCreateIn,
+    GpsDeviceOut,
+    GpsDeviceUpdateIn,
+)
 
 router = APIRouter(prefix="/admin", tags=["administración"], dependencies=[Depends(require_admin)])
 
@@ -198,6 +210,12 @@ def assign_delivery(delivery_id: uuid.UUID, data: AssignCourierIn, user: AdminUs
     return deliveries.get_delivery(db, delivery_id)
 
 
+@router.post("/deliveries/{delivery_id}/assign-nearest", response_model=AdminDeliveryOut)
+def assign_nearest(delivery_id: uuid.UUID, user: AdminUser, db: DbSession):
+    delivery_service.assign_nearest(db, delivery_id, user.id)
+    return deliveries.get_delivery(db, delivery_id)
+
+
 @router.patch("/deliveries/{delivery_id}", response_model=AdminDeliveryOut)
 def update_delivery(delivery_id: uuid.UUID, data: DeliveryStatusIn, user: AdminUser, db: DbSession):
     delivery_service.change_status(db, delivery_id, data, user.id)
@@ -208,6 +226,49 @@ def update_delivery(delivery_id: uuid.UUID, data: DeliveryStatusIn, user: AdminU
 def validate_delivery(delivery_id: uuid.UUID, data: DeliveryValidationIn, user: AdminUser, db: DbSession):
     delivery_service.validate_delivery(db, delivery_id, data, user.id)
     return deliveries.get_delivery(db, delivery_id)
+
+
+# ─── Telemetría y zonas (CU-10, CU-11) ──────────────────────────────────────
+
+
+@router.get("/telemetry/fleet", response_model=FleetSnapshotOut)
+def fleet(db: DbSession):
+    return telemetry_service.fleet_snapshot(db)
+
+
+@router.get("/gps-devices", response_model=list[GpsDeviceOut])
+def list_gps_devices(db: DbSession):
+    return telemetry_service.list_devices(db)
+
+
+@router.post("/gps-devices", response_model=GpsDeviceCreatedOut, status_code=status.HTTP_201_CREATED)
+def create_gps_device(data: GpsDeviceCreateIn, db: DbSession):
+    return telemetry_service.create_device(db, data)
+
+
+@router.patch("/gps-devices/{device_id}", response_model=GpsDeviceOut)
+def update_gps_device(device_id: uuid.UUID, data: GpsDeviceUpdateIn, db: DbSession):
+    return telemetry_service.set_device_active(db, device_id, data.is_active)
+
+
+@router.get("/geofences", response_model=list[GeofenceOut])
+def list_geofences(db: DbSession):
+    return telemetry_service.list_geofences(db)
+
+
+@router.post("/geofences", response_model=GeofenceOut, status_code=status.HTTP_201_CREATED)
+def create_geofence(data: GeofenceCreateIn, db: DbSession):
+    return telemetry_service.create_geofence(db, data)
+
+
+@router.patch("/geofences/{fence_id}", response_model=GeofenceOut)
+def update_geofence(fence_id: uuid.UUID, data: GeofenceUpdateIn, db: DbSession):
+    return telemetry_service.set_geofence_active(db, fence_id, data.is_active)
+
+
+@router.get("/geofence-alerts", response_model=list[GeofenceAlertOut])
+def list_geofence_alerts(db: DbSession, only_open: bool = False):
+    return telemetry_service.list_alerts(db, only_open=only_open)
 
 
 # ─── Pedidos ───────────────────────────────────────────────────────────────

@@ -28,9 +28,9 @@ Fuente: `SRS_EcoMovilidad_v3_0` (22/sep/2026). Módulo 8 tomado del Plan de Desa
 
 | ID | Descripción | Estado | Implementación |
 | --- | --- | --- | --- |
-| RF-2.1 | Telemetría GPS de la flota con refresco ≤ 3 s | **Mock** | `/admin/operacion` muestra la flota con actualización cada 3 s, pero las posiciones son **simuladas** en el navegador (MODO DEMOSTRACIÓN). No hay dispositivos GPS, ingesta ni WebSockets. Interfaz `TelemetrySource` lista para la fuente real. |
+| RF-2.1 | Telemetría GPS de la flota con refresco ≤ 3 s | **Implementado** | Ingesta por API con token por dispositivo e historial en `gps_positions`; el panel consulta cada 3 s. Sin aparatos físicos conectados todavía. |
 | RF-2.2 | Geocercas con alertas | **Preparado** | Solo la base: PostGIS habilitado y columna `geography` con índice GiST en sucursales. No hay geocercas. |
-| RF-2.3 | Dashboard de métricas de flota | **Mock** | `/admin/operacion` calcula activos, disponibles, en uso, en mantenimiento e incidencias, pero sobre la flota **simulada**. El resumen `/admin` sigue siendo comercial. |
+| RF-2.3 | Dashboard de métricas de flota | **Implementado** | `/admin/operacion` calcula activos, disponibles, en uso, en mantenimiento e incidencias sobre los dispositivos reales; sin dispositivos, sobre la flota simulada. |
 
 ## Módulo 3 — Mantenimiento preventivo
 
@@ -52,7 +52,7 @@ Fuente: `SRS_EcoMovilidad_v3_0` (22/sep/2026). Módulo 8 tomado del Plan de Desa
 
 | ID | Descripción | Estado | Implementación |
 | --- | --- | --- | --- |
-| RF-5.1 | Asignación del domiciliario más cercano | **Pendiente** | — |
+| RF-5.1 | Asignación del domiciliario más cercano | **Implementado** | Botón en el domicilio: el más cercano a la sucursal, entre los activos con GPS de los últimos 10 minutos. Mide desde la sucursal porque no se geocodifican direcciones. |
 | RF-5.2 | Enlace de seguimiento en tiempo real | **Parcial** | Real: enlace público que se refresca cada 15 s. Pendiente: tiempo real con WebSockets. |
 | RF-5.3 | Estados Creado → Asignado → En recogida → En tránsito → Entregado / Fallido | **Implementado** | Tabla `deliveries` con transiciones validadas e historial en `delivery_events`. |
 
@@ -113,8 +113,8 @@ Fuente: `SRS_EcoMovilidad_v3_0` (22/sep/2026). Módulo 8 tomado del Plan de Desa
 | CU-07 | Seguimiento del domicilio | **Implementado** | Enlace público `/seguimiento/{token}` sin datos personales, con estados y fechas; se actualiza cada 15 s. Sin WebSockets. |
 | CU-08 | Validar entrega con QR o firma | **Implementado** | El cliente ve un QR y un código de 6 dígitos; el panel escribe el código o captura la firma. Entregar exige una de las dos pruebas. Sin escáner con cámara. |
 | CU-09 | Gestionar contenidos | **Mock** | Contenido en `src/mocks/content.ts`. |
-| CU-10 | Monitorear flota en tiempo real | **Mock** | `/admin/operacion` con posiciones simuladas (sin GPS). |
-| CU-11 | Geofencing | **Pendiente** | Solo la base PostGIS. |
+| CU-10 | Monitorear flota en tiempo real | **Implementado** | Los dispositivos envían posiciones por API con su token (`POST /api/telemetry/positions`); `/admin/operacion` las muestra cada 3 s. Sin dispositivos registrados sigue la flota simulada, con su aviso. Probado con `scripts/simulate_gps.py`, sin aparatos físicos. |
+| CU-11 | Geofencing | **Implementado** | Zonas circulares con PostGIS, editables en el panel. Salir de todas las zonas activas abre una alerta y volver la cierra. Sin polígonos ni avisos por correo. |
 | CU-12 | Mantenimiento preventivo | **Parcial** | Unidades de la flota en mantenimiento salen de la oferta; sin umbrales, alertas ni bitácora. |
 | CU-13 | Gestionar inventario | **Implementado** | Consulta y ajuste por sucursal con motivo obligatorio; registro de entradas y salidas (`inventory_movements`) con ventas y devoluciones automáticas, en `/admin/inventario/movimientos`. |
 | CU-14 | Gestionar domicilios | **Implementado** | `modules/domicilios`: domiciliarios, asignación, estados con historial, fallo con motivo y reprogramación. El domiciliario no tiene sesión propia: el panel registra su avance. |
