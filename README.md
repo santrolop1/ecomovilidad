@@ -19,6 +19,11 @@ Incluye compra en línea, alquiler de flota, facturas, reembolsos y panel de adm
 ## Inicio rápido
 
 ```bash
+# Solo la primera vez: crea las claves locales (archivos fuera de Git)
+clave="$(openssl rand -hex 24)"
+echo "POSTGRES_PASSWORD=$clave" > .env
+sed "s/CAMBIAR/$clave/" backend/.env.example > backend/.env
+
 docker compose up -d                 # PostgreSQL/PostGIS + API en http://localhost:8000
 npm install
 API_MODE=real API_BASE_URL=http://localhost:8000/api/v1 npm run dev

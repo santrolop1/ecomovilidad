@@ -28,6 +28,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
+      - name: Crear clave temporal de PostgreSQL
+        working-directory: .
+        run: |
+          password="$(openssl rand -hex 24)"
+          echo "::add-mask::$password"
+          echo "POSTGRES_PASSWORD=$password" > .env
+          echo "DATABASE_URL=postgresql+psycopg://ecomovilidad:$password@localhost:5433/ecomovilidad" >> "$GITHUB_ENV"
       - name: Levantar PostgreSQL + PostGIS
         working-directory: .
         run: docker compose up -d --wait db

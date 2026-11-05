@@ -72,7 +72,7 @@ scripts/demo.sh stop --all && docker compose down -v && scripts/demo.sh start
 
 ## Administrador de la demo
 
-- Cuenta: `admin@ecomovilidad.dev` (creada por el seed de desarrollo).
+- Cuenta: `admin@ecomovilidad.dev` (la crea `demo.sh` con los datos de `.env.demo`).
 - **Contraseña:** el primer `scripts/demo.sh start` genera una aleatoria y la guarda en **`.env.demo`** (permisos 600, ignorado por Git por la regla `.env*`). Consultarla en el Mac:
 
   ```bash
@@ -80,7 +80,7 @@ scripts/demo.sh stop --all && docker compose down -v && scripts/demo.sh start
   ```
 
 - Para elegir otra, edita `DEMO_ADMIN_PASSWORD` en `.env.demo` (10+ caracteres, letras y números) y vuelve a iniciar la demo. El script la aplica con `python -m app.cli set-password`, que la lee por stdin (no aparece en `ps` ni en el historial) y cierra las sesiones abiertas de esa cuenta.
-- La contraseña de desarrollo documentada en el README **deja de funcionar** después del primer `demo.sh start`, para que nadie con acceso a la documentación entre al panel público. Para volver a ella en local:
+- Para cambiarla en local sin iniciar la demo:
 
   ```bash
   docker compose exec -T api python -m app.cli set-password admin@ecomovilidad.dev
