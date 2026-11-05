@@ -69,7 +69,7 @@ export interface RentalsApi {
   /** POST /rentals/:id/refund-request — pagado y sin entregar (CU-15) */
   requestRentalRefund(id: string, reason: string): Promise<RefundRequest>;
   /** Franjas de entrega (RF 7.1). SIN endpoint: siempre mock; FastAPI valida los ids. */
-  listTimeSlots(date: string): Promise<TimeSlot[]>;
+  listTimeSlots(date: string, branchId?: string): Promise<TimeSlot[]>;
 }
 
 /** Carrito del usuario autenticado (RF 6.3). Los visitantes usan el carrito local. */

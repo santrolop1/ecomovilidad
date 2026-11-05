@@ -104,7 +104,7 @@ export const rentalVehiclesMock: RentalVehicle[] = [
   },
 ];
 
-/** Franjas de entrega y recogida (RF 7.1). La capacidad real vendrá del backend logístico. */
+/** Franjas de entrega y recogida para el modo mock; en modo real el cupo sale del backend (CU-06). */
 export const timeSlotsMock: TimeSlot[] = [
   { id: "slot-08", label: "8:00 a. m. – 10:00 a. m.", start: "08:00", end: "10:00", available: true },
   { id: "slot-10", label: "10:00 a. m. – 12:00 m.", start: "10:00", end: "12:00", available: true },

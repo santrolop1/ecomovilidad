@@ -68,7 +68,7 @@ Fuente: `SRS_EcoMovilidad_v3_0` (22/sep/2026). Módulo 8 tomado del Plan de Desa
 
 | ID | Descripción | Estado | Implementación |
 | --- | --- | --- | --- |
-| RF-7.1 | Agendar por franjas horarias según la capacidad del día | **Parcial** | Real: el checkout elige fecha y franja; FastAPI valida fecha y franja y las guarda en `orders`. Mock: la lista de franjas y su disponibilidad. Pendiente: capacidad por franja y solicitudes de alquiler o mantenimiento. |
+| RF-7.1 | Agendar por franjas horarias según la capacidad del día | **Implementado** | `GET /orders/time-slots` calcula el cupo por sucursal, franja y día; FastAPI lo vuelve a verificar al crear el pedido, bloqueando la franja para que dos clientes no tomen el último cupo. |
 | RF-7.2 | Validación de entrega con código QR | **Pendiente** | — |
 | RF-7.3 | Firma digital como alternativa al QR | **Pendiente** | — |
 
@@ -109,7 +109,7 @@ Fuente: `SRS_EcoMovilidad_v3_0` (22/sep/2026). Módulo 8 tomado del Plan de Desa
 | CU-03 | Comprar dispositivo | **Implementado (pago de pruebas)** | Disponibilidad, reserva de 15 min, pago con Wompi, confirmación, descuento de inventario al pagar y factura (sin validación DIAN). |
 | CU-04 | Solicitar alquiler | **Implementado** | Vehículo y fechas, verificación de disponibilidad, reserva de una unidad, pago y confirmación. |
 | CU-05 | Realizar pago | **Implementado (pago de pruebas)** | Hoy con la pasarela de pruebas propia; listo para Wompi al configurar sus llaves. Redirección a la pasarela, autenticación y pago en la pasarela, confirmación verificada y comprobante (factura PDF/XML). |
-| CU-06 | Agendar entrega o recogida | **Parcial** | Fecha, franja y dirección reales; franjas mock y sin asignación de domiciliario. |
+| CU-06 | Agendar entrega o recogida | **Implementado** | Fecha, franja y dirección con cupo real por sucursal (`slot_capacity`, editable en el panel). Una franja llena o ya iniciada no se ofrece ni se acepta. Sin asignación de domiciliario (ver CU-14). |
 | CU-07 | Seguimiento del domicilio | **Pendiente** | — |
 | CU-08 | Validar entrega con QR o firma | **Pendiente** | — |
 | CU-09 | Gestionar contenidos | **Mock** | Contenido en `src/mocks/content.ts`. |

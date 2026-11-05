@@ -70,6 +70,7 @@ export const branchFormSchema = z.object({
     )
     .max(7),
   services: z.array(z.enum(branchServices)),
+  slotCapacity: z.coerce.number({ error: "Escribe un número." }).int("Sin decimales.").min(1, "Mínimo 1.").max(200, "Máximo 200."),
   isDemo: z.boolean(),
   isActive: z.boolean(),
 });

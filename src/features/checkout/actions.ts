@@ -1,9 +1,20 @@
 "use server";
 
+import { z } from "zod";
 import { api } from "@/lib/api";
 import { type ActionResult, runAction } from "@/lib/action-result";
-import type { Order } from "@/types";
+import type { Order, TimeSlot } from "@/types";
 import { checkoutSchema } from "./lib/schema";
+
+const slotQuerySchema = z.object({
+  date: z.iso.date("Elige una fecha válida."),
+  branchId: z.uuid().optional(),
+});
+
+/** Franjas de ese día con su cupo real (CU-06). */
+export async function loadTimeSlots(input: unknown): Promise<ActionResult<TimeSlot[]>> {
+  return runAction(slotQuerySchema, input, ({ date, branchId }) => api.rentals.listTimeSlots(date, branchId));
+}
 
 /**
  * Crea la orden (POST /orders). El backend recalcula precios e inventario; el

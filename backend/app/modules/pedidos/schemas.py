@@ -60,6 +60,14 @@ class OrderCreateIn(ApiModel):
     policy_version: str | None = Field(default=None, max_length=20)
 
 
+class TimeSlotOut(ApiModel):
+    id: str
+    label: str
+    start: str
+    end: str
+    available: bool
+
+
 class OrderItemOut(ApiModel):
     product_id: uuid.UUID
     slug: str

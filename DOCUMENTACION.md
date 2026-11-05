@@ -598,6 +598,7 @@ Base: `http://localhost:8000/api/v1`. Documentación interactiva en `http://loca
 | PATCH, DELETE | `/cart/items/{id}` | ✔ |
 | POST, GET | `/orders` (POST exige reservas vigentes y `policyVersion`) | ✔ |
 | GET | `/orders/{id}` | ✔ (404 si es de otro usuario) |
+| GET | `/orders/time-slots` (`date`, `branch_id` opcional): franjas con cupo real (CU-06) | — |
 | GET | `/rental-offers` | — (oferta de alquiler) |
 | POST | `/rental-offers/{productId}/quote` | — (precio y unidades libres) |
 | POST, GET | `/rentals` | ✔ (crear y listar los propios) |

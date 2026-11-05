@@ -31,6 +31,7 @@ def _branch_out(branch: Branch, stock: tuple[int, int, int]) -> AdminBranchOut:
         longitude=float(branch.longitude),
         opening_hours=[OpeningHoursIn.model_validate(h) for h in branch.opening_hours],
         services=list(branch.services),
+        slot_capacity=branch.slot_capacity,
         is_demo=branch.is_demo,
         is_active=branch.is_active,
         available=available,

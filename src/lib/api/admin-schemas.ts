@@ -104,6 +104,7 @@ export const adminBranchSchema = z.object({
   longitude: z.number(),
   openingHours: z.array(openingHours),
   services: z.array(z.enum(branchServices)),
+  slotCapacity: z.number(),
   isDemo: z.boolean(),
   isActive: z.boolean(),
   available: z.number(),

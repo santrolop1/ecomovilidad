@@ -1,10 +1,11 @@
 import uuid
+from datetime import date
 
 from fastapi import APIRouter, status
 
 from app.api.deps import CurrentUser, DbSession
-from app.modules.pedidos import service
-from app.modules.pedidos.schemas import OrderCreateIn, OrderOut
+from app.modules.pedidos import schedule, service
+from app.modules.pedidos.schemas import OrderCreateIn, OrderOut, TimeSlotOut
 from app.modules.reembolsos import service as refunds
 from app.modules.reembolsos.schemas import RefundRequestIn, RefundRequestOut
 
@@ -19,6 +20,11 @@ def create_order(data: OrderCreateIn, user: CurrentUser, db: DbSession):
 @router.get("", response_model=list[OrderOut], response_model_exclude_none=True)
 def list_orders(user: CurrentUser, db: DbSession):
     return service.list_orders(db, user)
+
+
+@router.get("/time-slots", response_model=list[TimeSlotOut])
+def list_time_slots(db: DbSession, date: date, branch_id: uuid.UUID | None = None):
+    return schedule.list_slots(db, date, branch_id)
 
 
 @router.get("/{order_id}", response_model=OrderOut, response_model_exclude_none=True)

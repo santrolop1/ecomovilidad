@@ -36,18 +36,11 @@ from app.modules.inventario import reservations
 from app.modules.inventario.movements import record_movement
 from app.modules.pagos.queries import PaymentInfo, payment_info
 from app.modules.pedidos import repository as repo
+from app.modules.pedidos import schedule
 from app.modules.pedidos.schemas import OrderCreateIn, OrderItemOut, OrderOut
 from app.modules.sucursales.repository import get_active_branch
 
 BOGOTA = ZoneInfo("America/Bogota")
-# Franjas de entrega y recogida (RF 7.1). La capacidad por franja es trabajo pendiente.
-TIME_SLOTS = {
-    "slot-08": "08:00-10:00",
-    "slot-10": "10:00-12:00",
-    "slot-12": "12:00-14:00",
-    "slot-14": "14:00-16:00",
-    "slot-16": "16:00-18:00",
-}
 SHIPPING_COST = 0  # El SRS no define tarifas de envío.
 
 # Transiciones que puede hacer un administrador. "Pagado" solo lo pone la
@@ -112,8 +105,10 @@ def to_order_out(order: Order, info: PaymentInfo | None = None) -> OrderOut:
 def _validate_schedule(data: OrderCreateIn) -> None:
     if data.fulfillment.date < datetime.now(BOGOTA).date():
         raise ServiceError("La fecha de entrega no puede ser anterior a hoy.")
-    if data.fulfillment.time_slot_id not in TIME_SLOTS:
+    if data.fulfillment.time_slot_id not in schedule.TIME_SLOTS:
         raise ServiceError("La franja horaria no es válida.")
+    if schedule.slot_has_passed(data.fulfillment.date, data.fulfillment.time_slot_id):
+        raise ServiceError("Esa franja ya pasó. Elige otra.")
     city = data.fulfillment.city
     if data.fulfillment.method == FulfillmentMethod.DELIVERY and city not in SERVICE_AREA_CITIES:
         raise ServiceError("Solo hacemos domicilios en Bucaramanga, Floridablanca, Girón y Piedecuesta.")
@@ -124,6 +119,7 @@ def _choose_branch(
     quantities: dict[uuid.UUID, int],
     stock: dict[uuid.UUID, dict[uuid.UUID, Inventory]],
     preference: dict[uuid.UUID, int],
+    full: set[uuid.UUID],
 ) -> uuid.UUID:
     def has_all(branch_id: uuid.UUID) -> bool:
         return all(
@@ -137,6 +133,8 @@ def _choose_branch(
             raise ServiceError("Elige la sucursal de recogida.")
         if not has_all(branch_id):
             raise ConflictError("La sucursal elegida no tiene unidades suficientes. Prueba con otra sucursal.")
+        if branch_id in full:
+            raise ConflictError("Esa franja ya no tiene cupo en esta sucursal. Elige otra franja.")
         return branch_id
 
     # Domicilio: primero la sucursal donde el carrito tenía apartadas más unidades.
@@ -144,10 +142,13 @@ def _choose_branch(
     candidates = sorted(
         {b for per_branch in stock.values() for b in per_branch}, key=lambda b: (-preference.get(b, 0), str(b))
     )
-    for branch_id in candidates:
-        if has_all(branch_id):
+    with_stock = [b for b in candidates if has_all(b)]
+    if not with_stock:
+        raise ConflictError("No hay unidades suficientes en una misma sucursal para este pedido.")
+    for branch_id in with_stock:
+        if branch_id not in full:
             return branch_id
-    raise ConflictError("No hay unidades suficientes en una misma sucursal para este pedido.")
+    raise ConflictError("Esa franja ya no tiene cupo. Elige otra franja.")
 
 
 def create_order(db: Session, user: User, data: OrderCreateIn) -> OrderOut:
@@ -195,7 +196,9 @@ def create_order(db: Session, user: User, data: OrderCreateIn) -> OrderOut:
             preference[inv.branch_id] = preference.get(inv.branch_id, 0) + reservation.quantity
         item.reservations.clear()
 
-    branch_id = _choose_branch(data, quantities, stock, preference)
+    schedule.lock_slot(db, data.fulfillment.date, data.fulfillment.time_slot_id)
+    full = schedule.full_branches(db, data.fulfillment.date, data.fulfillment.time_slot_id)
+    branch_id = _choose_branch(data, quantities, stock, preference, full)
     branch = get_active_branch(db, branch_id)
     if branch is None:
         raise NotFoundError("La sucursal no existe.")

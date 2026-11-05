@@ -57,6 +57,7 @@ describe("formularios del panel", () => {
       longitude: "-73.17",
       openingHours: [{ days: "Lunes a viernes", opens: "08:00", closes: "18:00" }],
       services: ["venta"],
+      slotCapacity: 6,
       isDemo: true,
       isActive: true,
     };
