@@ -189,6 +189,16 @@ def test_en_produccion_sin_llaves_no_hay_pagos_ni_pasarela_simulada(auth_client,
         get_settings.cache_clear()
 
 
+def test_sin_definir_el_entorno_no_se_activa_la_pasarela_simulada(monkeypatch):
+    from app.core.config import Settings
+
+    for key in ("ENVIRONMENT", "PAYMENT_PROVIDER"):
+        monkeypatch.delenv(key, raising=False)
+    settings = Settings(_env_file=None, database_url="postgresql+psycopg://usuario@localhost/base")
+    assert settings.environment == "production"
+    assert settings.active_payment_provider is None
+
+
 # ─── Eventos (webhook) ──────────────────────────────────────────────────────
 
 
