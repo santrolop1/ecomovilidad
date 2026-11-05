@@ -38,6 +38,7 @@ services:
       DATABASE_URL: postgresql+psycopg://ecomovilidad:${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en .env (ver .env.example)}@db:5432/ecomovilidad
       CORS_ORIGINS: '["http://localhost:3000"]'
       COOKIE_SECURE: "false"
+      ENVIRONMENT: development
       # Base de los enlaces de recuperación; scripts/demo.sh pone la URL del túnel.
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
       # Redes desde las que llega el servidor de Next.js (host/Colima/Docker).

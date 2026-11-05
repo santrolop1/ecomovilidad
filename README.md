@@ -78,7 +78,6 @@ cd backend && uv run pytest          # requiere: docker compose up -d db
 
 **Para salir a producción también falta:**
 
-- Hacer que la pasarela de pruebas no se active si falta `ENVIRONMENT=production`.
 - Servidor con HTTPS, copias de seguridad y configuración segura (cookies, cabeceras, `/docs` cerrado).
 - Tarea programada para vencer reservas y pagos sin depender del tráfico.
 - Proveedor de correo para recuperar contraseñas.

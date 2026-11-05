@@ -16,7 +16,8 @@ class Settings(BaseSettings):
     # En producción siempre True (cookies solo por HTTPS).
     cookie_secure: bool = False
     session_ttl_hours: int = Field(default=24 * 7, ge=1, le=24 * 30)
-    environment: str = "development"
+    # Sin definir se comporta como producción: nada de pasarela simulada ni enlaces en el log.
+    environment: str = "production"
     # URL pública del frontend (enlaces en correos de recuperación).
     frontend_url: str = "http://localhost:3000"
     password_reset_ttl_minutes: int = Field(default=30, ge=5, le=24 * 60)

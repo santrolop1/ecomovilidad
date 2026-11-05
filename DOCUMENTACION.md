@@ -657,7 +657,7 @@ Las listas paginadas devuelven `{ items, total, page, pageSize }` con 20 element
 | `CORS_ORIGINS` | No | Orígenes permitidos (JSON). |
 | `COOKIE_SECURE` | **`true` en producción** | Cookies solo por HTTPS. |
 | `SESSION_TTL_HOURS` | No (168) | Duración de la sesión. |
-| `ENVIRONMENT` | No (`development`) | Fuera de `development` no se escriben enlaces de recuperación en el log. |
+| `ENVIRONMENT` | No (`production`) | Solo `development` activa la pasarela de pruebas automática y escribe enlaces de recuperación en el log. Docker Compose lo define como `development`. |
 | `FRONTEND_URL` | En producción | Base de los enlaces de recuperación. En Docker Compose se toma del entorno (`scripts/demo.sh` pone la URL del túnel). |
 | `PASSWORD_RESET_TTL_MINUTES` | No (30) | Vigencia del enlace de recuperación. |
 | `PRIVACY_POLICY_VERSION` | No (`2026-10-06`) | Versión vigente de la política; debe coincidir con `src/config/legal.ts`. |

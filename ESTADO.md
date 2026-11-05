@@ -50,7 +50,7 @@ Ficticios hasta recibir datos reales de EcoMovilidad:
 - No hay proveedor de correo: la recuperación solo funciona de punta a punta en desarrollo.
 - El límite por IP solo se aplica cuando la IP es fiable (`TRUSTED_PROXIES`).
 - Quien vuelve después de que su reserva venció no recibe aviso.
-- La pasarela de pruebas se activa en cualquier entorno sin `ENVIRONMENT=production`: hay que definir esa variable al desplegar.
+- La pasarela de pruebas solo se activa con `ENVIRONMENT=development` o `PAYMENT_PROVIDER=simulado`; sin definir, el entorno se trata como producción.
 
 Las fotos son reales pero **referenciales** del tipo de producto (créditos en `/creditos`). Velox Carrera 110 no tiene foto ("Imagen pendiente").
 
