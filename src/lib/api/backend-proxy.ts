@@ -62,3 +62,26 @@ export async function relayWompiEvent(request: Request): Promise<Response> {
     return new Response(null, { status: 502 }); // Wompi reintentará
   }
 }
+
+/** Reenvía a FastAPI la posición de un dispositivo GPS, con su token. */
+export async function relayTelemetry(request: Request): Promise<Response> {
+  if (serverEnv.apiMode !== "real" || !serverEnv.apiBaseUrl) return new Response(null, { status: 503 });
+  const body = await request.text();
+  if (body.length > 1_000) return new Response(null, { status: 413 });
+  const authorization = request.headers.get("authorization");
+  try {
+    const upstream = await fetch(`${serverEnv.apiBaseUrl.replace(/\/$/, "")}/telemetry/positions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(authorization ? { Authorization: authorization } : {}) },
+      body,
+      cache: "no-store",
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
+    return new Response(await upstream.text(), {
+      status: upstream.status,
+      headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+    });
+  } catch {
+    return new Response(null, { status: 502 });
+  }
+}

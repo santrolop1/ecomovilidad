@@ -70,11 +70,11 @@ cd backend && uv run pytest          # requiere: docker compose up -d db
 | CU-06 Agendar entrega | Hecho | — |
 | CU-12 Mantenimiento | Parcial | Umbrales de uso, alertas, bloqueo al 90% y bitácora |
 | CU-09 Contenidos | Simulado | Editar banners, noticias y textos desde el panel |
-| CU-10 Monitoreo de flota | Simulado | Recibir posiciones GPS reales por API |
-| CU-07 Seguimiento del domicilio | Hecho | Se actualiza cada 15 s; sin mapa hasta tener GPS |
+| CU-10 Monitoreo de flota | Hecho (sin aparatos reales) | Conectar aparatos o una app; hoy se prueba con `scripts/simulate_gps.py` |
+| CU-07 Seguimiento del domicilio | Hecho | Se actualiza cada 15 s; sin WebSockets |
 | CU-08 Validar entrega | Hecho | El código se escribe en el panel; sin escáner con cámara |
-| CU-11 Geofencing | Pendiente | Zonas permitidas y alertas |
-| CU-14 Gestionar domicilios | Hecho | Asignación manual; sin app ni sesión para domiciliarios |
+| CU-11 Geofencing | Hecho | Zonas circulares; sin dibujar polígonos ni avisos por correo |
+| CU-14 Gestionar domicilios | Hecho | Sin app ni sesión para domiciliarios |
 
 **Para salir a producción también falta:**
 

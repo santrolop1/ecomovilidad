@@ -11,6 +11,7 @@ from app.modules.inventario.reservation_models import CartReservation
 from app.modules.pagos.models import Invoice, Payment, PaymentEvent, RefundRequest
 from app.modules.pedidos.models import Order, OrderItem
 from app.modules.sucursales.models import Branch
+from app.modules.telemetria.models import Geofence, GeofenceAlert, GpsDevice, GpsPosition
 
 __all__ = [
     "Branch",
@@ -21,6 +22,10 @@ __all__ = [
     "Category",
     "Courier",
     "Delivery",
+    "Geofence",
+    "GeofenceAlert",
+    "GpsDevice",
+    "GpsPosition",
     "DeliveryEvent",
     "Inventory",
     "InventoryMovement",

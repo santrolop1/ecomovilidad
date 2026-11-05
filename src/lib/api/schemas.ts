@@ -275,6 +275,7 @@ export const deliveryTrackingSchema: z.ZodType<DeliveryTracking> = z.object({
   scheduledDate: z.string(),
   timeSlot: z.string(),
   deliveredAt: isoDate.optional(),
+  position: z.object({ lat: z.number(), lng: z.number(), updatedAt: isoDate }).optional(),
   events: z.array(deliveryEventSchema),
 });
 

@@ -17,6 +17,13 @@ class OrderStatus(StrEnum):
     COMPLETED = "completed"
 
 
+class AssetKind(StrEnum):
+    BIKE = "bicicleta"
+    SCOOTER = "patineta"
+    DRONE = "dron"
+    DELIVERY = "domicilio"
+
+
 class DeliveryStatus(StrEnum):
     CREATED = "creado"  # pedido pagado, sin domiciliario
     ASSIGNED = "asignado"

@@ -2,11 +2,11 @@
 
 import { divIcon, type DivIcon, type Map as LeafletMap } from "leaflet";
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { Marker, Polyline, ScaleControl, Tooltip } from "react-leaflet";
+import { Circle, Marker, Polyline, ScaleControl, Tooltip } from "react-leaflet";
 import BaseMap from "@/components/map/base-map";
 import { METRO_BOUNDS, toLatLngBounds } from "@/features/branches/lib/geo";
 import { assetKindLabels, assetStatusColors, assetStatusLabels } from "../lib/labels";
-import type { AssetKind, AssetStatus, FleetAsset, Hub } from "../lib/telemetry";
+import type { AssetKind, AssetStatus, FleetAsset, Hub, Zone } from "../lib/telemetry";
 
 // Vista inicial: las sucursales (bases) con margen, para aprovechar el área útil del mapa.
 function hubsView(hubs: Hub[]) {
@@ -43,13 +43,15 @@ const hubIcon = (hub: Hub) =>
 export interface OperationsMapProps {
   hubs: Hub[];
   assets: FleetAsset[];
+  zones?: Zone[];
+  simulated?: boolean;
   selectedId: string | null;
   onSelect: (assetId: string) => void;
   onUnavailable: () => void;
 }
 
-/** Mapa operativo: sucursales reales como bases y activos de la telemetría (hoy simulada). */
-export default function OperationsMap({ hubs, assets, selectedId, onSelect, onUnavailable }: OperationsMapProps) {
+/** Mapa operativo: sucursales reales como bases, zonas permitidas y activos de la telemetría. */
+export default function OperationsMap({ hubs, assets, zones = [], simulated = true, selectedId, onSelect, onUnavailable }: OperationsMapProps) {
   const [map, setMap] = useState<LeafletMap | null>(null);
   const selected = assets.find((asset) => asset.id === selectedId);
   const hubIcons = useMemo(() => new Map(hubs.map((hub) => [hub.id, hubIcon(hub)])), [hubs]);
@@ -67,7 +69,7 @@ export default function OperationsMap({ hubs, assets, selectedId, onSelect, onUn
       style="operations"
       bounds={view}
       maxBounds={LIMITS}
-      label="Mapa operativo de la flota (posiciones simuladas)"
+      label={simulated ? "Mapa operativo de la flota (posiciones simuladas)" : "Mapa operativo de la flota (posiciones GPS)"}
       onUnavailable={onUnavailable}
       onReady={setMap}
     >
@@ -75,6 +77,15 @@ export default function OperationsMap({ hubs, assets, selectedId, onSelect, onUn
         <Marker key={hub.id} position={[hub.location.lat, hub.location.lng]} icon={hubIcons.get(hub.id)} interactive={false} keyboard={false} />
       ))}
       <ScaleControl position="bottomright" imperial={false} />
+      {zones.map((zone) => (
+        <Circle
+          key={zone.id}
+          center={[zone.latitude, zone.longitude]}
+          radius={zone.radiusM}
+          pathOptions={{ color: "#39e58c", weight: 1.5, opacity: 0.6, fillOpacity: 0.04, dashArray: "6 6" }}
+          interactive={false}
+        />
+      ))}
       {assets.map((asset) => {
         const color = assetStatusColors[asset.status];
         return (
