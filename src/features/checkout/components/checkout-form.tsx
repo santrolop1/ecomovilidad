@@ -24,7 +24,7 @@ import { useActionForm } from "@/hooks/use-action-form";
 import { formatCOP } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { Branch, FulfillmentMethod, PaymentConfig, TimeSlot } from "@/types";
-import { createOrder } from "../actions";
+import { createOrder, loadTimeSlots } from "../actions";
 import { startPayment } from "@/features/payments/actions";
 import { PayButton } from "@/features/payments/components/pay-button";
 import { PaymentModeNotice } from "@/features/payments/components/payment-mode-notice";
@@ -66,13 +66,15 @@ function ChoiceCard({ value, id, title, description }: { value: string; id: stri
   );
 }
 
-export function CheckoutForm({ branches, timeSlots, minDate, requiresAccount, paymentConfig = null }: CheckoutFormProps) {
+export function CheckoutForm({ branches, timeSlots: initialSlots, minDate, requiresAccount, paymentConfig = null }: CheckoutFormProps) {
   const { cart, isReady, isRemote, itemCount, subtotal, total, completeOrder, refresh } = useCart();
   const { user } = useSession();
   const [city, setCity] = useState("");
   const [method, setMethod] = useState<FulfillmentMethod>("domicilio");
   const [branchId, setBranchId] = useState("");
   const [timeSlotId, setTimeSlotId] = useState("");
+  const [date, setDate] = useState(minDate);
+  const [timeSlots, setTimeSlots] = useState(initialSlots);
   // Tras crear el pedido se abre la pasarela; si no se puede, el cliente paga desde aquí o desde Mis pedidos.
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [redirecting, setRedirecting] = useState(false);
@@ -106,6 +108,20 @@ export function CheckoutForm({ branches, timeSlots, minDate, requiresAccount, pa
   useEffect(() => {
     if (form.formError) refreshRef.current();
   }, [form.formError]);
+  // CU-06: el cupo depende del día y, si recoge, de la sucursal.
+  const slotBranchId = method === "recogida" ? branchId || undefined : undefined;
+  useEffect(() => {
+    if (!date) return;
+    let current = true;
+    loadTimeSlots({ date, branchId: slotBranchId }).then((result) => {
+      if (!current || !result.ok) return;
+      setTimeSlots(result.data);
+      setTimeSlotId((selected) => (result.data.some((s) => s.id === selected && s.available) ? selected : ""));
+    });
+    return () => {
+      current = false;
+    };
+  }, [date, slotBranchId]);
   const now = useNow(1000, isRemote);
   const reservation = isRemote ? reservationState(cart, now) : null;
   const reservationBlocked = reservation !== null && reservation.kind !== "active";
@@ -347,7 +363,7 @@ export function CheckoutForm({ branches, timeSlots, minDate, requiresAccount, pa
           )}
 
           <FormField id="co-date" label="Fecha" error={errors["fulfillment.date"]} className="max-w-xs">
-            {(control) => <Input {...control} name="date" type="date" min={minDate} defaultValue={minDate} />}
+            {(control) => <Input {...control} name="date" type="date" min={minDate} defaultValue={minDate} onChange={(e) => setDate(e.target.value)} />}
           </FormField>
 
           <div className="space-y-2">

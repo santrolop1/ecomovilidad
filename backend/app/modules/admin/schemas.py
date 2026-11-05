@@ -221,6 +221,7 @@ class AdminBranchOut(ApiModel):
     longitude: float
     opening_hours: list[OpeningHoursIn]
     services: list[BranchService]
+    slot_capacity: int
     is_demo: bool
     is_active: bool
     available: int
@@ -260,6 +261,7 @@ class BranchCreateIn(_BranchCoordinates):
     longitude: float
     opening_hours: list[OpeningHoursIn] = Field(default_factory=list, max_length=7)
     services: list[BranchService] = Field(default_factory=list)
+    slot_capacity: int = Field(default=6, ge=1, le=200)
     is_demo: bool = False
     is_active: bool = True
 
@@ -275,6 +277,7 @@ class BranchUpdateIn(_BranchCoordinates):
     longitude: float | None = None
     opening_hours: list[OpeningHoursIn] | None = Field(default=None, max_length=7)
     services: list[BranchService] | None = None
+    slot_capacity: int | None = Field(default=None, ge=1, le=200)
     is_demo: bool | None = None
     is_active: bool | None = None
 

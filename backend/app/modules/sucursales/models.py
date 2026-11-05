@@ -4,7 +4,7 @@ from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 
 from geoalchemy2 import Geography
-from sqlalchemy import Boolean, CheckConstraint, Computed, Index, Numeric, String
+from sqlalchemy import Boolean, CheckConstraint, Computed, Index, Integer, Numeric, String
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -19,6 +19,7 @@ class Branch(UUIDPrimaryKey, Timestamps, Base):
     __tablename__ = "branches"
     __table_args__ = (
         CheckConstraint(f"city IN {sql_in(SERVICE_AREA_CITIES)}", name="city_in_service_area"),
+        CheckConstraint("slot_capacity > 0", name="slot_capacity_positive"),
         CheckConstraint("latitude BETWEEN -90 AND 90 AND longitude BETWEEN -180 AND 180", name="valid_coordinates"),
         CheckConstraint(f"services <@ ARRAY{list(s.value for s in BranchService)}::varchar[]", name="known_services"),
         Index("ix_branches_location", "location", postgresql_using="gist"),
@@ -45,6 +46,8 @@ class Branch(UUIDPrimaryKey, Timestamps, Base):
     opening_hours: Mapped[list[dict[str, str]]] = mapped_column(JSONB, default=list, server_default="[]")
     services: Mapped[list[str]] = mapped_column(ARRAY(String(20)), default=list, server_default="{}")
     # Marca explícita para no presentar datos inventados como reales.
+    # Pedidos que la sucursal atiende en cada franja horaria (CU-06).
+    slot_capacity: Mapped[int] = mapped_column(Integer, default=6, server_default="6")
     is_demo: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
 

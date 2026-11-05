@@ -24,6 +24,7 @@ import {
   publicProductSchema,
   sessionSchema,
   userSchema,
+  timeSlotSchema,
 } from "../schemas";
 
 /** Revalidación de lecturas públicas desde Server Components. */
@@ -109,7 +110,11 @@ export function createRealApi(http: HttpClient): ApiClient {
           throw error;
         }
       },
-      listTimeSlots: mock.rentals.listTimeSlots,
+      listTimeSlots: (date, branchId) =>
+        http.request(endpoints.timeSlots, {
+          schema: z.array(timeSlotSchema),
+          query: new URLSearchParams({ date, ...(branchId ? { branch_id: branchId } : {}) }),
+        }),
     },
     payments: {
       getConfig: () => http.request(endpoints.paymentsConfig, { schema: paymentConfigSchema }),

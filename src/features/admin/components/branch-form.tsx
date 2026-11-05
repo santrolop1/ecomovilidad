@@ -68,6 +68,7 @@ export function BranchForm({ branch }: { branch?: AdminBranchDetail }) {
             longitude: text("longitude"),
             openingHours: hours,
             services,
+            slotCapacity: text("slotCapacity"),
             isDemo,
             isActive,
           },
@@ -123,6 +124,12 @@ export function BranchForm({ branch }: { branch?: AdminBranchDetail }) {
               {(control) => <Input {...control} name="longitude" inputMode="decimal" defaultValue={branch?.longitude} placeholder="-73.1095" />}
             </FormField>
           </div>
+        </Section>
+
+        <Section title="Cupo de entregas">
+          <FormField id="b-capacity" label="Pedidos por franja horaria" error={errors.slotCapacity}>
+            {(control) => <Input {...control} name="slotCapacity" inputMode="numeric" defaultValue={branch?.slotCapacity ?? 6} className="max-w-28" />}
+          </FormField>
         </Section>
 
         <Section title="Horario">

@@ -11,8 +11,8 @@ Actualizado: 5 de noviembre de 2026. Detalle completo en [DOCUMENTACION.md](DOCU
 | Área | Estado | Observación |
 | --- | --- | --- |
 | Frontend | IMPLEMENTADO | 26 páginas públicas y 18 de panel; `API_MODE=mock` o `real`; responsive verificado de 360 a 1440 px. 94 pruebas Vitest. |
-| Backend | IMPLEMENTADO | FastAPI `/api/v1`: catálogo, sucursales, cuentas, carrito, pedidos, pagos, facturas, alquileres, reembolsos y administración, en una carpeta por servicio (`backend/app/modules/`). 168 pruebas pytest. |
-| Base de datos | IMPLEMENTADO | PostgreSQL 16 + PostGIS 3.6 en Docker; 22 tablas; migraciones 0001 a 0006; seed DEMO idempotente. |
+| Backend | IMPLEMENTADO | FastAPI `/api/v1`: catálogo, sucursales, cuentas, carrito, pedidos, pagos, facturas, alquileres, reembolsos y administración, en una carpeta por servicio (`backend/app/modules/`). 172 pruebas pytest. |
+| Base de datos | IMPLEMENTADO | PostgreSQL 16 + PostGIS 3.6 en Docker; 22 tablas; migraciones 0001 a 0007; seed DEMO idempotente. |
 | Auth | PARCIAL | Real: registro, login, logout, sesiones revocables, httpOnly, CSRF, rol `is_admin`, perfil, cambio y recuperación de contraseña (token hash, 30 min, un uso), límite de intentos (5/cuenta, 30/IP fiable, 15 min). Pendiente: proveedor de correo real (en desarrollo el enlace va al log de la API), roles intermedios. |
 | Catálogo | IMPLEMENTADO | Real y administrable desde el panel. Productos y marcas DEMO; fotos reales referenciales (Wikimedia Commons). |
 | Sucursales | IMPLEMENTADO | Reales y administrables. **Datos DEMO** en Bucaramanga, Floridablanca, Girón y Piedecuesta. |
