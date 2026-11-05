@@ -10,9 +10,7 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    database_url: PostgresDsn = Field(
-        default=PostgresDsn("postgresql+psycopg://ecomovilidad:CAMBIAR@localhost:5433/ecomovilidad")
-    )
+    database_url: PostgresDsn
     # Orígenes que pueden llamar a la API desde el navegador (el frontend de Next.js).
     cors_origins: list[str] = ["http://localhost:3000"]
     # En producción siempre True (cookies solo por HTTPS).

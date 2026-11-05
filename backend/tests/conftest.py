@@ -11,13 +11,12 @@ from sqlalchemy import Connection, create_engine
 from sqlalchemy.orm import Session
 
 from alembic import command
+from app.core.config import get_settings
 from app.db.seed import seed
 from app.db.session import get_db
 from app.main import app
 
-TEST_DATABASE_URL = os.environ.get(
-    "TEST_DATABASE_URL", "postgresql+psycopg://ecomovilidad:CAMBIAR@localhost:5433/ecomovilidad_test"
-)
+TEST_DATABASE_URL = os.environ.get("TEST_DATABASE_URL") or f"{get_settings().database_url}_test"
 
 PASSWORD = "clave-segura-2026"
 

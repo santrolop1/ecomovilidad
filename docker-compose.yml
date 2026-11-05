@@ -13,7 +13,7 @@ services:
     environment:
       POSTGRES_DB: ecomovilidad
       POSTGRES_USER: ecomovilidad
-      POSTGRES_PASSWORD: CAMBIAR
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en .env (ver .env.example)}
     ports:
       # 5433 en el host para no chocar con un PostgreSQL local en 5432.
       # Solo en 127.0.0.1: no es accesible desde la red local ni desde Internet.
@@ -35,7 +35,7 @@ services:
       - path: ./backend/.env
         required: false
     environment:
-      DATABASE_URL: postgresql+psycopg://ecomovilidad:CAMBIAR@db:5432/ecomovilidad
+      DATABASE_URL: postgresql+psycopg://ecomovilidad:${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en .env (ver .env.example)}@db:5432/ecomovilidad
       CORS_ORIGINS: '["http://localhost:3000"]'
       COOKIE_SECURE: "false"
       # Base de los enlaces de recuperación; scripts/demo.sh pone la URL del túnel.

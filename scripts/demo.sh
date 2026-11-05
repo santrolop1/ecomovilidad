@@ -92,7 +92,8 @@ start() {
   echo "$url" > "$STATE/url"
 
   log "Levantando PostgreSQL/PostGIS y FastAPI (Docker)"
-  FRONTEND_URL="$url" docker compose up -d --build --wait
+  DEMO_ADMIN_EMAIL="$DEMO_ADMIN_EMAIL" DEMO_ADMIN_PASSWORD="$DEMO_ADMIN_PASSWORD" FRONTEND_URL="$url" \
+    docker compose up -d --build --wait
   wait_for "$API_BASE_URL/health" 60 || fail "La API no respondió. Revisa: docker compose logs api"
 
   log "Aplicando la contraseña de .env.demo al administrador ($DEMO_ADMIN_EMAIL)"
