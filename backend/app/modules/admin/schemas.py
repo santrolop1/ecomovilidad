@@ -9,7 +9,15 @@ from typing import Literal
 from pydantic import Field, field_validator, model_validator
 
 from app.core.api_model import ApiModel
-from app.models.enums import BranchService, FulfillmentMethod, OrderStatus, PaymentMethod, PaymentStatus, RentalStatus
+from app.models.enums import (
+    BranchService,
+    FulfillmentMethod,
+    MovementKind,
+    OrderStatus,
+    PaymentMethod,
+    PaymentStatus,
+    RentalStatus,
+)
 from app.modules.pagos.schemas import InvoiceRefOut
 from app.modules.reembolsos.schemas import AdminRefundRequestOut, RefundRequestOut
 
@@ -142,6 +150,28 @@ class ProductUpdateIn(_ProductFields):
 
 class InventoryUpsertIn(ApiModel):
     total_quantity: int = Field(ge=0, le=100_000)
+    reason: str = Field(min_length=3, max_length=200)
+
+    @field_validator("reason", mode="before")
+    @classmethod
+    def strip_reason(cls, value: object) -> object:
+        return value.strip() if isinstance(value, str) else value
+
+
+class InventoryMovementOut(ApiModel):
+    id: uuid.UUID
+    product_id: uuid.UUID
+    product_name: str
+    sku: str
+    branch_name: str
+    city: str
+    kind: MovementKind
+    quantity: int
+    balance_after: int
+    reason: str | None
+    order_id: uuid.UUID | None
+    user_name: str | None
+    created_at: datetime
 
 
 class AdminCategoryOut(ApiModel):

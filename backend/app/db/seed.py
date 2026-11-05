@@ -21,7 +21,8 @@ from sqlalchemy.orm import Session
 
 from app.core.security import hash_password
 from app.db.session import SessionLocal
-from app.models import Branch, Category, Inventory, Product, RentalRate, RentalUnit, User
+from app.models import Branch, Category, Inventory, InventoryMovement, Product, RentalRate, RentalUnit, User
+from app.models.enums import MovementKind
 
 SEED_FILE = Path(__file__).with_name("seed_data.json")
 
@@ -78,9 +79,19 @@ def seed(session: Session) -> dict[str, int]:
         for entry in p["inventory"]
     ]
     if inventory_rows:
-        session.execute(
-            insert(Inventory).values(inventory_rows).on_conflict_do_nothing(constraint="uq_inventory_product_branch")
-        )
+        created = session.execute(
+            insert(Inventory)
+            .values(inventory_rows)
+            .on_conflict_do_nothing(constraint="uq_inventory_product_branch")
+            .returning(Inventory.id, Inventory.total_quantity)
+        ).all()
+        movements = [
+            {"inventory_id": inv_id, "kind": MovementKind.INITIAL, "quantity": total, "balance_after": total}
+            for inv_id, total in created
+            if total > 0
+        ]
+        if movements:
+            session.execute(insert(InventoryMovement).values(movements))
 
     # Flota de alquiler (DEMO): tarifas por producto y unidades físicas por sucursal.
     rate_rows = [

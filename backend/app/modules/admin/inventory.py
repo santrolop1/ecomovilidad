@@ -3,11 +3,12 @@ import uuid
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.models import Inventory, Product
+from app.models import Inventory, InventoryMovement, Product
+from app.models.enums import MovementKind
 from app.modules.admin import repository as repo
 from app.modules.admin.catalog import inventory_row
 from app.modules.admin.common import PAGE_SIZE
-from app.modules.admin.schemas import InventoryRowOut, Page
+from app.modules.admin.schemas import InventoryMovementOut, InventoryRowOut, Page
 
 LOW_STOCK_THRESHOLD = 5  # mismo umbral que "últimas unidades" en la tienda
 
@@ -21,6 +22,34 @@ def list_inventory(
     rows, total = repo.paginate(db, stmt, page, PAGE_SIZE)
     sold = repo.sold_units(db)
     return Page(items=[inventory_row(inv, sold) for inv in rows], total=total, page=page, page_size=PAGE_SIZE)
+
+
+def movement_row(movement: InventoryMovement) -> InventoryMovementOut:
+    inv = movement.inventory
+    user = movement.user
+    return InventoryMovementOut(
+        id=movement.id,
+        product_id=inv.product_id,
+        product_name=inv.product.name,
+        sku=inv.product.sku,
+        branch_name=inv.branch.name,
+        city=inv.branch.city,
+        kind=MovementKind(movement.kind),
+        quantity=movement.quantity,
+        balance_after=movement.balance_after,
+        reason=movement.reason,
+        order_id=movement.order_id,
+        user_name=f"{user.first_name} {user.last_name}" if user else None,
+        created_at=movement.created_at,
+    )
+
+
+def list_movements(
+    db: Session, *, page: int, query: str | None, branch_id: uuid.UUID | None, kind: MovementKind | None
+) -> Page[InventoryMovementOut]:
+    stmt = repo.inventory_movements_stmt(branch_id=branch_id, query=query, kind=kind)
+    rows, total = repo.paginate(db, stmt, page, PAGE_SIZE)
+    return Page(items=[movement_row(m) for m in rows], total=total, page=page, page_size=PAGE_SIZE)
 
 
 def inventory_totals(db: Session) -> tuple[int, int, int]:

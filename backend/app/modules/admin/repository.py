@@ -3,10 +3,10 @@
 import uuid
 
 from sqlalchemy import Select, String, case, cast, func, or_, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
-from app.models import Branch, Inventory, Order, OrderItem, Product, User
-from app.models.enums import OrderStatus
+from app.models import Branch, Inventory, InventoryMovement, Order, OrderItem, Product, User
+from app.models.enums import MovementKind, OrderStatus
 
 
 def paginate[T](db: Session, stmt: Select[tuple[T]], page: int, page_size: int) -> tuple[list[T], int]:
@@ -48,6 +48,27 @@ def sold_units(db: Session) -> dict[tuple[uuid.UUID, uuid.UUID], int]:
         .group_by(OrderItem.product_id, Order.branch_id)
     )
     return {(pid, bid): int(q) for pid, bid, q in db.execute(stmt)}
+
+
+def inventory_movements_stmt(
+    *, branch_id: uuid.UUID | None = None, query: str | None = None, kind: MovementKind | None = None
+) -> Select[tuple[InventoryMovement]]:
+    stmt = (
+        select(InventoryMovement)
+        .join(Inventory, Inventory.id == InventoryMovement.inventory_id)
+        .join(Product, Product.id == Inventory.product_id)
+        .options(joinedload(InventoryMovement.inventory).joinedload(Inventory.product))
+        .options(joinedload(InventoryMovement.user))
+        .order_by(InventoryMovement.created_at.desc(), InventoryMovement.id)
+    )
+    if branch_id:
+        stmt = stmt.where(Inventory.branch_id == branch_id)
+    if query:
+        like = f"%{query}%"
+        stmt = stmt.where(or_(Product.name.ilike(like), Product.sku.ilike(like)))
+    if kind:
+        stmt = stmt.where(InventoryMovement.kind == kind)
+    return stmt
 
 
 def inventory_rows_stmt(

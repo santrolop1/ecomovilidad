@@ -8,31 +8,35 @@ import { Input } from "@/components/ui/input";
 import type { InventoryRow } from "@/lib/api/admin-schemas";
 import { cn } from "@/lib/utils";
 import { setStock } from "../actions";
-import { stockSchema } from "../lib/schemas";
+import { stockUpdateSchema } from "../lib/schemas";
 
 /**
  * Ajuste de unidades físicas por sucursal. Lo reservado por pedidos no se
  * edita aquí: el backend calcula disponible = total − reservado y rechaza un
- * total menor que lo reservado (nunca hay stock negativo).
+ * total menor que lo reservado (nunca hay stock negativo). Cada cambio pide un
+ * motivo y queda en el registro de movimientos.
  */
 function StockRow({ productId, row }: { productId: string; row: InventoryRow }) {
   const router = useRouter();
   const [value, setValue] = useState(String(row.total));
+  const [reason, setReason] = useState("");
   const [error, setError] = useState<string>();
   const [isPending, startTransition] = useTransition();
   const changed = value !== String(row.total);
   const inputId = `stock-${row.branchId}`;
 
   function save() {
-    const parsed = stockSchema.safeParse(value);
+    const input = { totalQuantity: value, reason };
+    const parsed = stockUpdateSchema.safeParse(input);
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message);
       return;
     }
     startTransition(async () => {
-      const result = await setStock(productId, row.branchId, value);
+      const result = await setStock(productId, row.branchId, input);
       if (result.ok) {
         setError(undefined);
+        setReason("");
         toast.success(`Stock actualizado en ${row.branchName}.`);
         router.refresh();
       } else {
@@ -58,7 +62,7 @@ function StockRow({ productId, row }: { productId: string; row: InventoryRow }) 
         )}
       </div>
       <form
-        className="flex items-end gap-2"
+        className="flex flex-wrap items-end gap-2"
         onSubmit={(event) => {
           event.preventDefault();
           save();
@@ -78,6 +82,21 @@ function StockRow({ productId, row }: { productId: string; row: InventoryRow }) 
             className="h-10 w-28 bg-card"
           />
         </div>
+        {changed && (
+          <div className="w-full sm:w-56">
+            <label htmlFor={`${inputId}-reason`} className="mb-1 block text-xs text-muted-foreground">
+              Motivo
+            </label>
+            <Input
+              id={`${inputId}-reason`}
+              value={reason}
+              maxLength={200}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="Ej.: llegó mercancía"
+              className="h-10 bg-card"
+            />
+          </div>
+        )}
         <Button type="submit" size="lg" className="h-10 rounded-full" disabled={!changed || isPending}>
           {isPending ? "…" : "Guardar"}
         </Button>

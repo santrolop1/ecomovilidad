@@ -80,6 +80,11 @@ export const stockSchema = z.coerce
   .min(0, "No puede ser negativo.")
   .max(100_000);
 
+export const stockUpdateSchema = z.object({
+  totalQuantity: stockSchema,
+  reason: z.string().trim().min(3, "Escribe el motivo del cambio.").max(200, "Máximo 200 caracteres."),
+});
+
 /** "Bici Urbana E1" → "bici-urbana-e1" */
 export function slugify(text: string): string {
   return text

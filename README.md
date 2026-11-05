@@ -65,10 +65,10 @@ cd backend && uv run pytest          # requiere: docker compose up -d db
 | CU-03 Compra | Hecho (pago de pruebas) | Cobro real con Wompi |
 | CU-04 Alquiler | Hecho | — |
 | CU-05 Pago | Hecho (pago de pruebas) | Probar Wompi con llaves reales |
+| CU-13 Inventario | Hecho | — |
 | CU-15 Cancelación y reembolso | Hecho (reembolso manual) | Devolución automática y nota crédito |
 | CU-06 Agendar entrega | Parcial | Franjas según la capacidad real del día |
 | CU-12 Mantenimiento | Parcial | Umbrales de uso, alertas, bloqueo al 90% y bitácora |
-| CU-13 Inventario | Parcial | Registro de entradas y salidas |
 | CU-09 Contenidos | Simulado | Editar banners, noticias y textos desde el panel |
 | CU-10 Monitoreo de flota | Simulado | Recibir posiciones GPS reales por API |
 | CU-07 Seguimiento del domicilio | Pendiente | Enlace de seguimiento en tiempo real |

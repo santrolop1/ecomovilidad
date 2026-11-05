@@ -17,6 +17,14 @@ class OrderStatus(StrEnum):
     COMPLETED = "completed"
 
 
+class MovementKind(StrEnum):
+    INITIAL = "saldo_inicial"  # unidades que ya existían al empezar el registro
+    IN = "entrada"  # el panel aumenta las unidades físicas
+    OUT = "salida"  # el panel reduce las unidades físicas (daño, pérdida, traslado…)
+    SALE = "venta"  # pago aprobado: las unidades salen del inventario
+    RETURN = "devolucion"  # reembolso: las unidades vendidas vuelven
+
+
 class RentalStatus(StrEnum):
     PENDING = "pending"  # unidad apartada a la espera del pago
     CONFIRMED = "confirmed"  # pagado

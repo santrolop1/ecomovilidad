@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, Query
 from app.api.deps import AdminUser, DbSession, require_admin
 from app.core.errors import NotFoundError
 from app.models import Invoice
-from app.models.enums import OrderStatus, RentalStatus
+from app.models.enums import MovementKind, OrderStatus, RentalStatus
 from app.modules.admin import branches, catalog, dashboard, inventory, orders, rentals, users
 from app.modules.admin.schemas import (
     AdminBranchDetailOut,
@@ -27,6 +27,7 @@ from app.modules.admin.schemas import (
     CategoryIn,
     CategoryUpdateIn,
     DashboardOut,
+    InventoryMovementOut,
     InventoryRowOut,
     InventoryUpsertIn,
     OrderStatusIn,
@@ -83,8 +84,8 @@ def update_product(product_id: uuid.UUID, data: ProductUpdateIn, db: DbSession):
 
 
 @router.put("/products/{product_id}/inventory/{branch_id}", response_model=AdminProductDetailOut)
-def set_stock(product_id: uuid.UUID, branch_id: uuid.UUID, data: InventoryUpsertIn, db: DbSession):
-    return catalog.set_stock(db, product_id, branch_id, data.total_quantity)
+def set_stock(product_id: uuid.UUID, branch_id: uuid.UUID, data: InventoryUpsertIn, user: AdminUser, db: DbSession):
+    return catalog.set_stock(db, product_id, branch_id, data.total_quantity, data.reason, user.id)
 
 
 # ─── Categorías ────────────────────────────────────────────────────────────
@@ -137,6 +138,17 @@ def list_inventory(
     low_stock: bool = False,
 ):
     return inventory.list_inventory(db, page=page, query=q, branch_id=branch_id, low_stock=low_stock)
+
+
+@router.get("/inventory/movements", response_model=Page[InventoryMovementOut])
+def list_inventory_movements(
+    db: DbSession,
+    page: int = PageQuery,
+    q: str | None = SearchQuery,
+    branch_id: uuid.UUID | None = None,
+    kind: MovementKind | None = None,
+):
+    return inventory.list_movements(db, page=page, query=q, branch_id=branch_id, kind=kind)
 
 
 # ─── Pedidos ───────────────────────────────────────────────────────────────
