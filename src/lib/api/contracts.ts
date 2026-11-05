@@ -114,8 +114,9 @@ export interface PaymentsApi {
 }
 
 export interface ContentApi {
-  /** Contenido CMS (RF 1.1). SIN backend: siempre mock. */
+  /** Propuesta de valor y banners editables en el panel (RF 1.1); el hero es fijo. */
   getHomeContent(): Promise<HomeContent>;
+  /** Noticias publicadas (RF 1.1). */
   listNews(): Promise<NewsItem[]>;
   listFaqs(): Promise<FaqGroup[]>;
   listServices(): Promise<Service[]>;

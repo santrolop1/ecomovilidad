@@ -10,9 +10,9 @@ Actualizado: 5 de noviembre de 2026. Detalle completo en [DOCUMENTACION.md](DOCU
 
 | Área | Estado | Observación |
 | --- | --- | --- |
-| Frontend | IMPLEMENTADO | 27 páginas públicas y 23 de panel; `API_MODE=mock` o `real`; responsive verificado de 360 a 1440 px. 96 pruebas Vitest. |
-| Backend | IMPLEMENTADO | FastAPI `/api/v1`: catálogo, sucursales, cuentas, carrito, pedidos, pagos, facturas, alquileres, reembolsos y administración, en una carpeta por servicio (`backend/app/modules/`). 192 pruebas pytest. |
-| Base de datos | IMPLEMENTADO | PostgreSQL 16 + PostGIS 3.6 en Docker; 29 tablas; migraciones 0001 a 0009; seed DEMO idempotente. |
+| Frontend | IMPLEMENTADO | 27 páginas públicas y 24 de panel; `API_MODE=mock` o `real`; responsive verificado de 360 a 1440 px. 97 pruebas Vitest. |
+| Backend | IMPLEMENTADO | FastAPI `/api/v1`: catálogo, sucursales, cuentas, carrito, pedidos, pagos, facturas, alquileres, reembolsos y administración, en una carpeta por servicio (`backend/app/modules/`). 198 pruebas pytest. |
+| Base de datos | IMPLEMENTADO | PostgreSQL 16 + PostGIS 3.6 en Docker; 32 tablas; migraciones 0001 a 0010; seed DEMO idempotente. |
 | Auth | PARCIAL | Real: registro, login, logout, sesiones revocables, httpOnly, CSRF, rol `is_admin`, perfil, cambio y recuperación de contraseña (token hash, 30 min, un uso), límite de intentos (5/cuenta, 30/IP fiable, 15 min). Pendiente: proveedor de correo real (en desarrollo el enlace va al log de la API), roles intermedios. |
 | Catálogo | IMPLEMENTADO | Real y administrable desde el panel. Productos y marcas DEMO; fotos reales referenciales (Wikimedia Commons). |
 | Sucursales | IMPLEMENTADO | Reales y administrables. **Datos DEMO** en Bucaramanga, Floridablanca, Girón y Piedecuesta. |
@@ -33,7 +33,7 @@ Actualizado: 5 de noviembre de 2026. Detalle completo en [DOCUMENTACION.md](DOCU
 | QR | IMPLEMENTADO | El cliente muestra un QR y un código de 6 dígitos; el panel escribe el código. Sin escáner con cámara. |
 | Firma digital | IMPLEMENTADO | Firma en pantalla como alternativa al QR. |
 | Mantenimiento | PARCIAL / MOCK | Real: unidades en mantenimiento salen de la oferta de alquiler. Mock: regla del 90% solo en `API_MODE=mock`. |
-| CMS | MOCK | `src/mocks/content.ts`. |
+| CMS | PARCIAL | Real: propuesta de valor, banners y noticias en `/admin/contenidos`. Fijo: texto principal del inicio, servicios y ayuda. |
 | Demo pública | IMPLEMENTADO (temporal) | `scripts/demo.sh`: Cloudflare Tunnel temporal hacia Next.js en el Mac; FastAPI y PostgreSQL solo en `127.0.0.1`. Ver [DEMO_PUBLICA.md](DEMO_PUBLICA.md). Sin despliegue en la nube. |
 | Contacto | PENDIENTE | En modo real responde "no disponible". |
 

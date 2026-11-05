@@ -12,6 +12,7 @@ import {
   adminRentalSchema,
   adminUserDetailSchema,
   adminUserSchema,
+  adminContentSchema,
   adminDeliverySchema,
   adminDeliverySummarySchema,
   courierSchema,
@@ -59,7 +60,7 @@ function call<T>(path: string, options: Omit<RequestOptions<T>, "auth">): Promis
 }
 
 const get = <T>(path: string, schema: z.ZodType<T>, query?: Query) => call(path, { schema, query: toParams(query) });
-const send = <T>(method: "POST" | "PATCH" | "PUT", path: string, schema: z.ZodType<T>, body: unknown) =>
+const send = <T>(method: "POST" | "PATCH" | "PUT" | "DELETE", path: string, schema: z.ZodType<T>, body: unknown) =>
   call(path, { method, schema, body });
 
 export const adminApi = {
@@ -116,6 +117,14 @@ export const adminApi = {
   updateGeofence: (id: string, isActive: boolean) =>
     send("PATCH", `/geofences/${encodeURIComponent(id)}`, geofenceSchema, { isActive }),
   listGeofenceAlerts: () => get("/geofence-alerts", z.array(geofenceAlertSchema)),
+
+  getContent: () => get("/content", adminContentSchema),
+  saveContent: (kind: "value-propositions" | "banners" | "news", id: string | null, body: unknown) =>
+    id
+      ? send("PUT", `/content/${kind}/${encodeURIComponent(id)}`, adminContentSchema, body)
+      : send("POST", `/content/${kind}`, adminContentSchema, body),
+  deleteContent: (kind: "value-propositions" | "banners" | "news", id: string) =>
+    send("DELETE", `/content/${kind}/${encodeURIComponent(id)}`, adminContentSchema, undefined),
 
   listOrders: (query: Query) => get("/orders", pageSchema(adminOrderSummarySchema), query),
   getOrder: (id: string) => get(`/orders/${encodeURIComponent(id)}`, adminOrderDetailSchema),

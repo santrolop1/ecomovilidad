@@ -6,6 +6,7 @@ import { type ActionResult, runAction } from "@/lib/action-result";
 import { adminApi } from "@/lib/api/admin";
 import { orderStatuses, rentalStatuses, rentalUnitStatuses } from "@/lib/api/admin-schemas";
 import {
+  bannerFormSchema,
   branchFormSchema,
   categoryFormSchema,
   courierFormSchema,
@@ -13,8 +14,10 @@ import {
   deliveryValidationSchema,
   geofenceFormSchema,
   gpsDeviceFormSchema,
+  newsFormSchema,
   productFormSchema,
   stockUpdateSchema,
+  valuePropFormSchema,
 } from "./lib/schemas";
 
 /**
@@ -126,6 +129,38 @@ export async function createGeofence(input: unknown): Promise<ActionResult<null>
 export async function setGeofenceActive(id: string, isActive: boolean): Promise<ActionResult<null>> {
   return runAction(z.boolean(), isActive, async (value) => {
     await adminApi.updateGeofence(idSchema.parse(id), value);
+    return null;
+  });
+}
+
+export async function saveValueProp(id: string | null, input: unknown): Promise<ActionResult<null>> {
+  return runAction(valuePropFormSchema, input, async (data) => {
+    await adminApi.saveContent("value-propositions", id, data);
+    refreshStorefront("content");
+    return null;
+  });
+}
+
+export async function saveBanner(id: string | null, input: unknown): Promise<ActionResult<null>> {
+  return runAction(bannerFormSchema, input, async (data) => {
+    await adminApi.saveContent("banners", id, data);
+    refreshStorefront("content");
+    return null;
+  });
+}
+
+export async function saveNews(id: string | null, input: unknown): Promise<ActionResult<null>> {
+  return runAction(newsFormSchema, input, async (data) => {
+    await adminApi.saveContent("news", id, data);
+    refreshStorefront("content");
+    return null;
+  });
+}
+
+export async function deleteContent(kind: "value-propositions" | "banners" | "news", id: string): Promise<ActionResult<null>> {
+  return runAction(idSchema, id, async (value) => {
+    await adminApi.deleteContent(kind, value);
+    refreshStorefront("content");
     return null;
   });
 }

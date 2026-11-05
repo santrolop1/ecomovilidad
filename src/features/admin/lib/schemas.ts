@@ -97,6 +97,43 @@ export const geofenceFormSchema = z.object({
   radiusM: z.coerce.number({ error: "Escribe un número." }).int("Sin decimales.").min(50, "Mínimo 50 metros.").max(100_000, "Máximo 100 km."),
 });
 
+const bogotaDateTime = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/, "Elige fecha y hora.")
+  .transform((value) => `${value.slice(0, 16)}:00-05:00`);
+
+export const valuePropFormSchema = z.object({
+  title: z.string().trim().min(3, "Mínimo 3 caracteres.").max(80),
+  description: z.string().trim().min(3, "Escribe la descripción.").max(240),
+  icon: z.enum(["truck", "shield", "leaf", "wrench", "map-pin", "credit-card"]),
+  position: z.coerce.number({ error: "Escribe un número." }).int("Sin decimales.").min(0).max(100),
+  isActive: z.boolean(),
+});
+
+export const bannerFormSchema = z
+  .object({
+    title: z.string().trim().min(3, "Mínimo 3 caracteres.").max(80),
+    description: z.string().trim().min(3, "Escribe la descripción.").max(240),
+    ctaLabel: z.string().trim().min(2, "Escribe el texto del botón.").max(40),
+    ctaHref: z
+      .string()
+      .trim()
+      .regex(/^\/([A-Za-z0-9\-._~?=&%#][A-Za-z0-9\-._~/?=&%#]*)?$/, "Usa una ruta interna, p. ej. /catalogo.")
+      .max(200),
+    startsAt: bogotaDateTime,
+    endsAt: bogotaDateTime,
+    isActive: z.boolean(),
+  })
+  .refine((b) => b.endsAt > b.startsAt, { message: "Debe terminar después de empezar.", path: ["endsAt"] });
+
+export const newsFormSchema = z.object({
+  slug: slug.max(80),
+  title: z.string().trim().min(3, "Mínimo 3 caracteres.").max(120),
+  excerpt: z.string().trim().min(3, "Escribe el resumen.").max(300),
+  publishedAt: bogotaDateTime,
+  isPublished: z.boolean(),
+});
+
 export const courierFormSchema = z.object({
   name: z.string().trim().min(3, "Escribe el nombre.").max(120),
   phone: z.string().trim().regex(/^\+?[\d\s()-]{7,20}$/, "Teléfono no válido."),

@@ -356,6 +356,21 @@ export const homeContentSchema: z.ZodType<HomeContent> = z.object({
   ),
 });
 
+/** Lo que FastAPI administra; el hero sigue siendo fijo (no está en RF 1.1). */
+export const remoteHomeContentSchema = z.object({
+  valuePropositions: z.array(
+    z.object({
+      id: z.string(),
+      title: z.string(),
+      description: z.string(),
+      icon: z.enum(["truck", "shield", "leaf", "wrench", "map-pin", "credit-card"]),
+    }),
+  ),
+  banners: z.array(
+    z.object({ id: z.string(), title: z.string(), description: z.string(), cta, startsAt: isoDate, endsAt: isoDate }),
+  ),
+});
+
 export const newsItemSchema: z.ZodType<NewsItem> = z.object({
   id: z.string(),
   slug: z.string(),

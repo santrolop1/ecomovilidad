@@ -5,6 +5,7 @@ from app.modules.autenticacion.models import User, UserSession
 from app.modules.autenticacion.security_records import ConsentRecord, LoginAttempt, PasswordResetToken
 from app.modules.carrito.models import Cart, CartItem
 from app.modules.catalogo.models import Category, Product
+from app.modules.contenidos.models import Banner, NewsItem, ValueProposition
 from app.modules.domicilios.models import Courier, Delivery, DeliveryEvent
 from app.modules.inventario.models import Inventory, InventoryMovement
 from app.modules.inventario.reservation_models import CartReservation
@@ -14,6 +15,7 @@ from app.modules.sucursales.models import Branch
 from app.modules.telemetria.models import Geofence, GeofenceAlert, GpsDevice, GpsPosition
 
 __all__ = [
+    "Banner",
     "Branch",
     "Cart",
     "CartItem",
@@ -31,6 +33,7 @@ __all__ = [
     "InventoryMovement",
     "Invoice",
     "LoginAttempt",
+    "NewsItem",
     "Order",
     "OrderItem",
     "PasswordResetToken",
@@ -43,4 +46,5 @@ __all__ = [
     "RentalUnit",
     "User",
     "UserSession",
+    "ValueProposition",
 ]

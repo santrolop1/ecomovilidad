@@ -38,6 +38,8 @@ from app.modules.admin.schemas import (
     UserUpdateIn,
 )
 from app.modules.alquiler.schemas import RentalUnitOut, RentalUnitStatusIn
+from app.modules.contenidos import service as content_service
+from app.modules.contenidos.schemas import AdminContentOut, BannerIn, NewsItemIn, ValuePropositionIn
 from app.modules.domicilios import service as delivery_service
 from app.modules.domicilios.schemas import (
     AdminDeliveryOut,
@@ -226,6 +228,49 @@ def update_delivery(delivery_id: uuid.UUID, data: DeliveryStatusIn, user: AdminU
 def validate_delivery(delivery_id: uuid.UUID, data: DeliveryValidationIn, user: AdminUser, db: DbSession):
     delivery_service.validate_delivery(db, delivery_id, data, user.id)
     return deliveries.get_delivery(db, delivery_id)
+
+
+# ─── Contenidos (CU-09) ─────────────────────────────────────────────────────
+
+
+@router.get("/content", response_model=AdminContentOut)
+def get_content(db: DbSession):
+    return content_service.admin_content(db)
+
+
+@router.post("/content/value-propositions", response_model=AdminContentOut)
+def create_value_proposition(data: ValuePropositionIn, db: DbSession):
+    return content_service.save(db, "value-propositions", data)
+
+
+@router.put("/content/value-propositions/{item_id}", response_model=AdminContentOut)
+def update_value_proposition(item_id: uuid.UUID, data: ValuePropositionIn, db: DbSession):
+    return content_service.save(db, "value-propositions", data, item_id)
+
+
+@router.post("/content/banners", response_model=AdminContentOut)
+def create_banner(data: BannerIn, db: DbSession):
+    return content_service.save(db, "banners", data)
+
+
+@router.put("/content/banners/{item_id}", response_model=AdminContentOut)
+def update_banner(item_id: uuid.UUID, data: BannerIn, db: DbSession):
+    return content_service.save(db, "banners", data, item_id)
+
+
+@router.post("/content/news", response_model=AdminContentOut)
+def create_news(data: NewsItemIn, db: DbSession):
+    return content_service.save(db, "news", data)
+
+
+@router.put("/content/news/{item_id}", response_model=AdminContentOut)
+def update_news(item_id: uuid.UUID, data: NewsItemIn, db: DbSession):
+    return content_service.save(db, "news", data, item_id)
+
+
+@router.delete("/content/{kind}/{item_id}", response_model=AdminContentOut)
+def delete_content(kind: Literal["value-propositions", "banners", "news"], item_id: uuid.UUID, db: DbSession):
+    return content_service.delete(db, kind, item_id)
 
 
 # ─── Telemetría y zonas (CU-10, CU-11) ──────────────────────────────────────
