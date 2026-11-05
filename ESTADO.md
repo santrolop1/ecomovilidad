@@ -10,9 +10,9 @@ Actualizado: 5 de noviembre de 2026. Detalle completo en [DOCUMENTACION.md](DOCU
 
 | Área | Estado | Observación |
 | --- | --- | --- |
-| Frontend | IMPLEMENTADO | 26 páginas públicas y 18 de panel; `API_MODE=mock` o `real`; responsive verificado de 360 a 1440 px. 94 pruebas Vitest. |
-| Backend | IMPLEMENTADO | FastAPI `/api/v1`: catálogo, sucursales, cuentas, carrito, pedidos, pagos, facturas, alquileres, reembolsos y administración, en una carpeta por servicio (`backend/app/modules/`). 172 pruebas pytest. |
-| Base de datos | IMPLEMENTADO | PostgreSQL 16 + PostGIS 3.6 en Docker; 22 tablas; migraciones 0001 a 0007; seed DEMO idempotente. |
+| Frontend | IMPLEMENTADO | 27 páginas públicas y 21 de panel; `API_MODE=mock` o `real`; responsive verificado de 360 a 1440 px. 94 pruebas Vitest. |
+| Backend | IMPLEMENTADO | FastAPI `/api/v1`: catálogo, sucursales, cuentas, carrito, pedidos, pagos, facturas, alquileres, reembolsos y administración, en una carpeta por servicio (`backend/app/modules/`). 182 pruebas pytest. |
+| Base de datos | IMPLEMENTADO | PostgreSQL 16 + PostGIS 3.6 en Docker; 25 tablas; migraciones 0001 a 0008; seed DEMO idempotente. |
 | Auth | PARCIAL | Real: registro, login, logout, sesiones revocables, httpOnly, CSRF, rol `is_admin`, perfil, cambio y recuperación de contraseña (token hash, 30 min, un uso), límite de intentos (5/cuenta, 30/IP fiable, 15 min). Pendiente: proveedor de correo real (en desarrollo el enlace va al log de la API), roles intermedios. |
 | Catálogo | IMPLEMENTADO | Real y administrable desde el panel. Productos y marcas DEMO; fotos reales referenciales (Wikimedia Commons). |
 | Sucursales | IMPLEMENTADO | Reales y administrables. **Datos DEMO** en Bucaramanga, Floridablanca, Girón y Piedecuesta. |
@@ -28,9 +28,9 @@ Actualizado: 5 de noviembre de 2026. Detalle completo en [DOCUMENTACION.md](DOCU
 | Mapa operativo (admin) | MOCK | `/admin/operacion`: sucursales reales; activos, posiciones y estados **simulados** en el navegador (MODO DEMOSTRACIÓN). Preparado para sustituir la fuente por telemetría real. |
 | GPS | PENDIENTE | Sin dispositivos ni ingesta de telemetría. |
 | WebSockets | PENDIENTE | — |
-| Domicilios | PENDIENTE | Sin asignación, seguimiento ni estados de domicilio. |
-| QR | PENDIENTE | — |
-| Firma digital | PENDIENTE | — |
+| Domicilios | IMPLEMENTADO | `/admin/domicilios`: domiciliarios, asignación manual, estados con historial, fallo y reprogramación. Se crean al pagar. Pendiente: sesión propia del domiciliario. |
+| QR | IMPLEMENTADO | El cliente muestra un QR y un código de 6 dígitos; el panel escribe el código. Sin escáner con cámara. |
+| Firma digital | IMPLEMENTADO | Firma en pantalla como alternativa al QR. |
 | Mantenimiento | PARCIAL / MOCK | Real: unidades en mantenimiento salen de la oferta de alquiler. Mock: regla del 90% solo en `API_MODE=mock`. |
 | CMS | MOCK | `src/mocks/content.ts`. |
 | Demo pública | IMPLEMENTADO (temporal) | `scripts/demo.sh`: Cloudflare Tunnel temporal hacia Next.js en el Mac; FastAPI y PostgreSQL solo en `127.0.0.1`. Ver [DEMO_PUBLICA.md](DEMO_PUBLICA.md). Sin despliegue en la nube. |

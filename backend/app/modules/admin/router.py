@@ -4,13 +4,13 @@
 import uuid
 from typing import Literal
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, status
 
 from app.api.deps import AdminUser, DbSession, require_admin
 from app.core.errors import NotFoundError
 from app.models import Invoice
-from app.models.enums import MovementKind, OrderStatus, RentalStatus
-from app.modules.admin import branches, catalog, dashboard, inventory, orders, rentals, users
+from app.models.enums import DeliveryStatus, MovementKind, OrderStatus, RentalStatus
+from app.modules.admin import branches, catalog, dashboard, deliveries, inventory, orders, rentals, users
 from app.modules.admin.schemas import (
     AdminBranchDetailOut,
     AdminBranchOut,
@@ -38,6 +38,17 @@ from app.modules.admin.schemas import (
     UserUpdateIn,
 )
 from app.modules.alquiler.schemas import RentalUnitOut, RentalUnitStatusIn
+from app.modules.domicilios import service as delivery_service
+from app.modules.domicilios.schemas import (
+    AdminDeliveryOut,
+    AdminDeliverySummaryOut,
+    AssignCourierIn,
+    CourierCreateIn,
+    CourierOut,
+    CourierUpdateIn,
+    DeliveryStatusIn,
+    DeliveryValidationIn,
+)
 from app.modules.pagos.invoices_router import invoice_response
 from app.modules.pedidos import service as order_service
 from app.modules.reembolsos import service as refunds
@@ -149,6 +160,54 @@ def list_inventory_movements(
     kind: MovementKind | None = None,
 ):
     return inventory.list_movements(db, page=page, query=q, branch_id=branch_id, kind=kind)
+
+
+# ─── Domicilios (CU-07, CU-08, CU-14) ───────────────────────────────────────
+
+
+@router.get("/couriers", response_model=list[CourierOut])
+def list_couriers(db: DbSession):
+    return delivery_service.list_couriers(db)
+
+
+@router.post("/couriers", response_model=CourierOut, status_code=status.HTTP_201_CREATED)
+def create_courier(data: CourierCreateIn, db: DbSession):
+    return delivery_service.create_courier(db, data)
+
+
+@router.patch("/couriers/{courier_id}", response_model=CourierOut)
+def update_courier(courier_id: uuid.UUID, data: CourierUpdateIn, db: DbSession):
+    return delivery_service.update_courier(db, courier_id, data)
+
+
+@router.get("/deliveries", response_model=Page[AdminDeliverySummaryOut])
+def list_deliveries(
+    db: DbSession, page: int = PageQuery, q: str | None = SearchQuery, state: DeliveryStatus | None = None
+):
+    return deliveries.list_deliveries(db, page=page, query=q, status=state)
+
+
+@router.get("/deliveries/{delivery_id}", response_model=AdminDeliveryOut)
+def get_delivery(delivery_id: uuid.UUID, db: DbSession):
+    return deliveries.get_delivery(db, delivery_id)
+
+
+@router.post("/deliveries/{delivery_id}/assign", response_model=AdminDeliveryOut)
+def assign_delivery(delivery_id: uuid.UUID, data: AssignCourierIn, user: AdminUser, db: DbSession):
+    delivery_service.assign_courier(db, delivery_id, data.courier_id, user.id)
+    return deliveries.get_delivery(db, delivery_id)
+
+
+@router.patch("/deliveries/{delivery_id}", response_model=AdminDeliveryOut)
+def update_delivery(delivery_id: uuid.UUID, data: DeliveryStatusIn, user: AdminUser, db: DbSession):
+    delivery_service.change_status(db, delivery_id, data, user.id)
+    return deliveries.get_delivery(db, delivery_id)
+
+
+@router.post("/deliveries/{delivery_id}/validate", response_model=AdminDeliveryOut)
+def validate_delivery(delivery_id: uuid.UUID, data: DeliveryValidationIn, user: AdminUser, db: DbSession):
+    delivery_service.validate_delivery(db, delivery_id, data, user.id)
+    return deliveries.get_delivery(db, delivery_id)
 
 
 # ─── Pedidos ───────────────────────────────────────────────────────────────

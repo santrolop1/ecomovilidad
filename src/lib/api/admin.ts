@@ -12,6 +12,9 @@ import {
   adminRentalSchema,
   adminUserDetailSchema,
   adminUserSchema,
+  adminDeliverySchema,
+  adminDeliverySummarySchema,
+  courierSchema,
   dashboardSchema,
   inventoryMovementSchema,
   inventoryRowSchema,
@@ -83,6 +86,17 @@ export const adminApi = {
 
   listInventory: (query: Query) => get("/inventory", pageSchema(inventoryRowSchema), query),
   listInventoryMovements: (query: Query) => get("/inventory/movements", pageSchema(inventoryMovementSchema), query),
+
+  listCouriers: () => get("/couriers", z.array(courierSchema)),
+  createCourier: (body: unknown) => send("POST", "/couriers", courierSchema, body),
+  updateCourier: (id: string, body: unknown) => send("PATCH", `/couriers/${encodeURIComponent(id)}`, courierSchema, body),
+  listDeliveries: (query: Query) => get("/deliveries", pageSchema(adminDeliverySummarySchema), query),
+  getDelivery: (id: string) => get(`/deliveries/${encodeURIComponent(id)}`, adminDeliverySchema),
+  assignDelivery: (id: string, courierId: string) =>
+    send("POST", `/deliveries/${encodeURIComponent(id)}/assign`, adminDeliverySchema, { courierId }),
+  updateDelivery: (id: string, body: unknown) => send("PATCH", `/deliveries/${encodeURIComponent(id)}`, adminDeliverySchema, body),
+  validateDelivery: (id: string, body: unknown) =>
+    send("POST", `/deliveries/${encodeURIComponent(id)}/validate`, adminDeliverySchema, body),
 
   listOrders: (query: Query) => get("/orders", pageSchema(adminOrderSummarySchema), query),
   getOrder: (id: string) => get(`/orders/${encodeURIComponent(id)}`, adminOrderDetailSchema),

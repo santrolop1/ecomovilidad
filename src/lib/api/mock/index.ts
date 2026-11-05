@@ -189,6 +189,9 @@ export function createMockApi({ latencyMs = 0 }: MockApiOptions = {}): ApiClient
       },
     },
     orders: {
+      async getTracking() {
+        return null;
+      },
       async cancelOrder() {
         throw backendRequired("Las cancelaciones");
       },

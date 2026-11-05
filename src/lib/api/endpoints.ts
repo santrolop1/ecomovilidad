@@ -9,6 +9,7 @@ export const endpoints = {
   cartItem: (id: string) => `/cart/items/${encodeURIComponent(id)}`,
   orders: "/orders",
   timeSlots: "/orders/time-slots",
+  tracking: (token: string) => `/tracking/${encodeURIComponent(token)}`,
   order: (id: string) => `/orders/${encodeURIComponent(id)}`,
   payments: "/payments",
   paymentsConfig: "/payments/config",

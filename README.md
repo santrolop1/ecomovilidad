@@ -71,10 +71,10 @@ cd backend && uv run pytest          # requiere: docker compose up -d db
 | CU-12 Mantenimiento | Parcial | Umbrales de uso, alertas, bloqueo al 90% y bitácora |
 | CU-09 Contenidos | Simulado | Editar banners, noticias y textos desde el panel |
 | CU-10 Monitoreo de flota | Simulado | Recibir posiciones GPS reales por API |
-| CU-07 Seguimiento del domicilio | Pendiente | Enlace de seguimiento en tiempo real |
-| CU-08 Validar entrega | Pendiente | Código QR o firma digital |
+| CU-07 Seguimiento del domicilio | Hecho | Se actualiza cada 15 s; sin mapa hasta tener GPS |
+| CU-08 Validar entrega | Hecho | El código se escribe en el panel; sin escáner con cámara |
 | CU-11 Geofencing | Pendiente | Zonas permitidas y alertas |
-| CU-14 Gestionar domicilios | Pendiente | Asignación de domiciliario y estados del domicilio |
+| CU-14 Gestionar domicilios | Hecho | Asignación manual; sin app ni sesión para domiciliarios |
 
 **Para salir a producción también falta:**
 

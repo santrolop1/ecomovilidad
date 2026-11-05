@@ -15,6 +15,7 @@ import type {
   Session,
   ConsentRecord,
   CustomerOrder,
+  DeliveryTracking,
   CustomerRental,
   InvoiceRef,
   PaymentConfig,
@@ -252,6 +253,31 @@ export const orderSchema: z.ZodType<Order> = z.object({
   createdAt: isoDate,
 });
 
+const deliveryStatus = z.enum(["creado", "asignado", "en_recogida", "en_transito", "entregado", "fallido"]);
+const deliveryEventSchema = z.object({ status: deliveryStatus, note: z.string().optional(), createdAt: isoDate });
+
+export const customerDeliverySchema = z.object({
+  status: deliveryStatus,
+  trackingToken: z.string(),
+  confirmationCode: z.string().optional(),
+  qrImage: z.string().optional(),
+  courierName: z.string().optional(),
+  deliveredAt: isoDate.optional(),
+  failureReason: z.string().optional(),
+  events: z.array(deliveryEventSchema),
+});
+
+export const deliveryTrackingSchema: z.ZodType<DeliveryTracking> = z.object({
+  status: deliveryStatus,
+  courierFirstName: z.string().optional(),
+  city: z.string().optional(),
+  branchName: z.string(),
+  scheduledDate: z.string(),
+  timeSlot: z.string(),
+  deliveredAt: isoDate.optional(),
+  events: z.array(deliveryEventSchema),
+});
+
 export const customerOrderSchema: z.ZodType<CustomerOrder> = z.object({
   id: z.string(),
   status: orderStatus,
@@ -274,6 +300,7 @@ export const customerOrderSchema: z.ZodType<CustomerOrder> = z.object({
   payment: paymentSummarySchema.optional(),
   invoice: invoiceRefSchema.optional(),
   refundRequest: refundRequestSchema.optional(),
+  delivery: customerDeliverySchema.optional(),
   contactName: z.string(),
   contactEmail: z.string(),
   contactPhone: z.string(),

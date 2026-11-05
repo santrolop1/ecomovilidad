@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 from app.core.errors import ConflictError, NotFoundError
 from app.models import Order, Payment, RefundRequest, Rental, User
 from app.models.enums import OrderStatus, PaymentStatus, RentalStatus
+from app.modules.domicilios import service as delivery_service
 from app.modules.inventario.reservations import now_utc
 from app.modules.pedidos import service as order_service
 from app.modules.reembolsos.schemas import AdminRefundRequestOut, RefundRequestOut
@@ -100,6 +101,7 @@ def resolve_refund(db: Session, *, order_id: uuid.UUID | None = None, rental_id:
         order = order_service.lock_order(db, order_id)
         if order is None or order.status != OrderStatus.PAID:
             raise ConflictError("El pedido ya no está pagado y sin entregar.")
+        delivery_service.on_order_refunded(db, order.id)
         order_service.restock_order(db, order)
         order.status = OrderStatus.CANCELLED
     else:

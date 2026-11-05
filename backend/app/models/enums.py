@@ -17,6 +17,20 @@ class OrderStatus(StrEnum):
     COMPLETED = "completed"
 
 
+class DeliveryStatus(StrEnum):
+    CREATED = "creado"  # pedido pagado, sin domiciliario
+    ASSIGNED = "asignado"
+    PICKING_UP = "en_recogida"
+    IN_TRANSIT = "en_transito"
+    DELIVERED = "entregado"  # validada con código QR o firma
+    FAILED = "fallido"
+
+
+class DeliveryProof(StrEnum):
+    QR = "qr"
+    SIGNATURE = "firma"
+
+
 class MovementKind(StrEnum):
     INITIAL = "saldo_inicial"  # unidades que ya existían al empezar el registro
     IN = "entrada"  # el panel aumenta las unidades físicas

@@ -248,6 +248,7 @@ Dentro de cada servicio los archivos siguen el mismo patrón: `router.py` (endpo
 | Catálogo (CU-02) | `modules/catalogo` | `features/catalog` | Real |
 | Sucursales y mapas | `modules/sucursales` | `features/branches`, `components/map` | Real |
 | Inventario (CU-03, CU-13) | `modules/inventario`, `modules/admin/inventory.py` | `features/cart`, `app/admin/inventario` | Real, con registro de entradas y salidas |
+| Domicilios (CU-07, CU-08, CU-14) | `modules/domicilios`, `modules/admin/deliveries.py` | `features/deliveries`, `app/admin/domicilios`, `app/(sitio)/seguimiento` | Real |
 | Carrito | `modules/carrito` | `features/cart` | Real |
 | Pedidos (CU-03) | `modules/pedidos` | `features/checkout`, `features/account` | Real |
 | Pasarela de pagos y facturación (CU-05) | `modules/pagos` | `features/payments`, `app/api/webhooks`, `app/api/facturas` | Real (pagos de prueba, sin DIAN) |
@@ -282,6 +283,9 @@ PostgreSQL 16 + PostGIS. Claves primarias UUID (`gen_random_uuid()`) y marcas de
 | `branches` | slug, nombre, dirección, barrio, municipio, teléfono, latitud, longitud, **location** (geography), horarios (JSONB), servicios, is_demo, is_active | municipio ∈ área metropolitana; coordenadas válidas; índice GiST |
 | `inventory` | product_id, branch_id, disponible, reservado, total | único (producto, sucursal); cantidades ≥ 0; disponible + reservado ≤ total |
 | `inventory_movements` | inventario, tipo (saldo inicial, entrada, salida, venta, devolución), cantidad con signo, saldo, motivo, pedido, responsable | solo se agregan filas; la suma de cantidades de un inventario es su total; las reservas no se registran |
+| `couriers` | nombre, teléfono, activo | domiciliarios; no inician sesión |
+| `deliveries` | pedido, domiciliario, estado, token de seguimiento, código de entrega, prueba (QR o firma), motivo de fallo | uno por pedido; entregado exige prueba |
+| `delivery_events` | domicilio, estado, nota, usuario, fecha | historial; solo se agregan filas |
 | `carts` | user_id, status (active / converted / abandoned) | un solo carrito activo por usuario (índice único parcial) |
 | `cart_items` | cart_id, product_id, cantidad, precio unitario | único (carrito, producto); cantidad 1–10 |
 | `cart_reservations` | cart_item_id, inventory_id, cantidad, expires_at | → cart_items (CASCADE), → inventory (RESTRICT); cantidad > 0; índice por `expires_at`. La suma de reservas de una línea es su cantidad |
@@ -598,6 +602,7 @@ Base: `http://localhost:8000/api/v1`. Documentación interactiva en `http://loca
 | PATCH, DELETE | `/cart/items/{id}` | ✔ |
 | POST, GET | `/orders` (POST exige reservas vigentes y `policyVersion`) | ✔ |
 | GET | `/orders/{id}` | ✔ (404 si es de otro usuario) |
+| GET | `/tracking/{token}`: seguimiento público, sin datos personales (CU-07) | — |
 | GET | `/orders/time-slots` (`date`, `branch_id` opcional): franjas con cupo real (CU-06) | — |
 | GET | `/rental-offers` | — (oferta de alquiler) |
 | POST | `/rental-offers/{productId}/quote` | — (precio y unidades libres) |
@@ -624,6 +629,10 @@ Base: `http://localhost:8000/api/v1`. Documentación interactiva en `http://loca
 | GET, POST | `/admin/branches` |
 | GET, PATCH | `/admin/branches/{id}` |
 | GET | `/admin/inventory` (`q`, `branch_id`, `low_stock`, `page`) |
+| GET, POST | `/admin/couriers`; PATCH `/admin/couriers/{id}`: domiciliarios |
+| GET | `/admin/deliveries` (`q`, `state`, `page`), `/admin/deliveries/{id}` |
+| POST | `/admin/deliveries/{id}/assign`, `/admin/deliveries/{id}/validate` (código o firma) |
+| PATCH | `/admin/deliveries/{id}`: estado y motivo |
 | GET | `/admin/inventory/movements` (`q`, `branch_id`, `kind`, `page`): entradas y salidas (CU-13) |
 | GET | `/admin/orders` (`q`, `status`, `page`) |
 | GET, PATCH | `/admin/orders/{id}` (cuerpo `{ "status": "completed" \| "cancelled" }`, según `allowedTransitions`) |
