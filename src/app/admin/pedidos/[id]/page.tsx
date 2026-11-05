@@ -111,6 +111,11 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/pedid
               )}
               <Field label="Fecha">{formatDate(`${order.scheduledDate}T12:00:00-05:00`)}</Field>
               <Field label="Franja">{slotLabels[order.timeSlot] ?? order.timeSlot}</Field>
+              {order.deliveryId && (
+                <div className="col-span-2">
+                  <Link href={`/admin/domicilios/${order.deliveryId}`} className="underline">Gestionar domicilio</Link>
+                </div>
+              )}
               {order.paymentMethod && <Field label="Método elegido (histórico)">{paymentLabels[order.paymentMethod]}</Field>}
             </dl>
           </section>

@@ -27,6 +27,7 @@ from app.core.email import EmailMessage, get_email_sender
 from app.core.errors import ConflictError, NotFoundError, ServiceError
 from app.models import Invoice, Order, Payment, PaymentEvent, Rental, User
 from app.models.enums import OrderStatus, PaymentStatus, RentalStatus
+from app.modules.domicilios import service as delivery_service
 from app.modules.inventario.reservations import now_utc
 from app.modules.pagos.gateway import CheckoutCustomer, GatewayTransaction, PaymentGateway, SimulatedGateway
 from app.modules.pagos.invoices import issue_invoice
@@ -155,6 +156,7 @@ def _apply_to_order(db: Session, payment: Payment) -> None:
         return
     order_service.settle_order_stock(db, order)
     order.status = OrderStatus.PAID
+    delivery_service.create_for_order(db, order)
     db.flush()
     invoice = issue_invoice(db, payment, order=order)
     _notify(payment, order, invoice)

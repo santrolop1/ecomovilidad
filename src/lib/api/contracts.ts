@@ -29,6 +29,7 @@ import type {
   Service,
   Session,
   TimeSlot,
+  DeliveryTracking,
   User,
 } from "@/types";
 
@@ -95,6 +96,8 @@ export interface OrdersApi {
   cancelOrder(id: string): Promise<CustomerOrder>;
   /** POST /orders/:id/refund-request — pagado y sin entregar (CU-15) */
   requestOrderRefund(id: string, reason: string): Promise<RefundRequest>;
+  /** GET /tracking/:token — seguimiento público (CU-07); null si el enlace no existe. */
+  getTracking(token: string): Promise<DeliveryTracking | null>;
 }
 
 export interface PaymentsApi {

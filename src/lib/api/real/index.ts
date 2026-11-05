@@ -25,6 +25,7 @@ import {
   sessionSchema,
   userSchema,
   timeSlotSchema,
+  deliveryTrackingSchema,
 } from "../schemas";
 
 /** Revalidación de lecturas públicas desde Server Components. */
@@ -153,6 +154,14 @@ export function createRealApi(http: HttpClient): ApiClient {
         http.request(endpoints.cartItem(itemId), { method: "DELETE", schema: cartSchema, auth: true }),
     },
     orders: {
+      getTracking: async (token) => {
+        try {
+          return await http.request(endpoints.tracking(token), { schema: deliveryTrackingSchema, next: { revalidate: 0 } });
+        } catch (error) {
+          if (isApiError(error) && error.code === "NOT_FOUND") return null;
+          throw error;
+        }
+      },
       createOrder: (input) =>
         http.request(endpoints.orders, { method: "POST", body: input, schema: orderSchema, auth: true }),
       listOrders: () => http.request(endpoints.orders, { schema: z.array(customerOrderSchema), auth: true }),

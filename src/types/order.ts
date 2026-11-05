@@ -65,6 +65,36 @@ export interface OrderLine {
 }
 
 /** Pedido tal como lo ve su dueño en "Mis pedidos". */
+export interface DeliveryEvent {
+  status: DeliveryStatus;
+  note?: string;
+  createdAt: string;
+}
+
+/** Domicilio visto por el dueño del pedido (CU-07, CU-08). */
+export interface CustomerDelivery {
+  status: DeliveryStatus;
+  trackingToken: string;
+  confirmationCode?: string;
+  qrImage?: string;
+  courierName?: string;
+  deliveredAt?: string;
+  failureReason?: string;
+  events: DeliveryEvent[];
+}
+
+/** Seguimiento público por enlace: sin datos personales. */
+export interface DeliveryTracking {
+  status: DeliveryStatus;
+  courierFirstName?: string;
+  city?: string;
+  branchName: string;
+  scheduledDate: string;
+  timeSlot: string;
+  deliveredAt?: string;
+  events: DeliveryEvent[];
+}
+
 export interface CustomerOrder extends Order {
   itemCount: number;
   branchName: string;
@@ -82,6 +112,7 @@ export interface CustomerOrder extends Order {
   payment?: PaymentSummary;
   invoice?: InvoiceRef;
   refundRequest?: RefundRequest;
+  delivery?: CustomerDelivery;
   contactName: string;
   contactEmail: string;
   contactPhone: string;

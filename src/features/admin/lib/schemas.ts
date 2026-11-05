@@ -81,6 +81,30 @@ export const stockSchema = z.coerce
   .min(0, "No puede ser negativo.")
   .max(100_000);
 
+export const courierFormSchema = z.object({
+  name: z.string().trim().min(3, "Escribe el nombre.").max(120),
+  phone: z.string().trim().regex(/^\+?[\d\s()-]{7,20}$/, "Teléfono no válido."),
+});
+
+export const deliveryStatusSchema = z
+  .object({
+    status: z.enum(["creado", "en_recogida", "en_transito", "fallido"]),
+    note: z.string().trim().max(300, "Máximo 300 caracteres.").optional(),
+  })
+  .refine((d) => d.status !== "fallido" || (d.note?.length ?? 0) >= 3, {
+    message: "Escribe por qué falló la entrega.",
+    path: ["note"],
+  });
+
+export const deliveryValidationSchema = z.discriminatedUnion("method", [
+  z.object({ method: z.literal("qr"), code: z.string().trim().regex(/^\d{6}$/, "El código tiene 6 dígitos.") }),
+  z.object({
+    method: z.literal("firma"),
+    signerName: z.string().trim().min(3, "Escribe quién recibe.").max(120),
+    signatureImage: z.string().startsWith("data:image/png;base64,", "Falta la firma.").max(300_000, "La firma es muy grande."),
+  }),
+]);
+
 export const stockUpdateSchema = z.object({
   totalQuantity: stockSchema,
   reason: z.string().trim().min(3, "Escribe el motivo del cambio.").max(200, "Máximo 200 caracteres."),

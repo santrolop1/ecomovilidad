@@ -53,8 +53,8 @@ Fuente: `SRS_EcoMovilidad_v3_0` (22/sep/2026). Módulo 8 tomado del Plan de Desa
 | ID | Descripción | Estado | Implementación |
 | --- | --- | --- | --- |
 | RF-5.1 | Asignación del domiciliario más cercano | **Pendiente** | — |
-| RF-5.2 | Enlace de seguimiento en tiempo real | **Pendiente** | — |
-| RF-5.3 | Estados Creado → Asignado → En recogida → En tránsito → Entregado / Fallido | **Pendiente** | Solo se describen en `/servicios`. Los pedidos tienen estados de compra, no de domicilio. |
+| RF-5.2 | Enlace de seguimiento en tiempo real | **Parcial** | Real: enlace público que se refresca cada 15 s. Pendiente: tiempo real con WebSockets. |
+| RF-5.3 | Estados Creado → Asignado → En recogida → En tránsito → Entregado / Fallido | **Implementado** | Tabla `deliveries` con transiciones validadas e historial en `delivery_events`. |
 
 ## Módulo 6 — Venta de dispositivos nuevos
 
@@ -69,8 +69,8 @@ Fuente: `SRS_EcoMovilidad_v3_0` (22/sep/2026). Módulo 8 tomado del Plan de Desa
 | ID | Descripción | Estado | Implementación |
 | --- | --- | --- | --- |
 | RF-7.1 | Agendar por franjas horarias según la capacidad del día | **Implementado** | `GET /orders/time-slots` calcula el cupo por sucursal, franja y día; FastAPI lo vuelve a verificar al crear el pedido, bloqueando la franja para que dos clientes no tomen el último cupo. |
-| RF-7.2 | Validación de entrega con código QR | **Pendiente** | — |
-| RF-7.3 | Firma digital como alternativa al QR | **Pendiente** | — |
+| RF-7.2 | Validación de entrega con código QR | **Implementado** | QR y código por domicilio; se comparan en el servidor. |
+| RF-7.3 | Firma digital como alternativa al QR | **Implementado** | Firma en pantalla guardada como PNG, con el nombre de quien recibe. |
 
 ## Módulo 8 (SDP) — Registro y gestión de usuarios
 
@@ -110,12 +110,12 @@ Fuente: `SRS_EcoMovilidad_v3_0` (22/sep/2026). Módulo 8 tomado del Plan de Desa
 | CU-04 | Solicitar alquiler | **Implementado** | Vehículo y fechas, verificación de disponibilidad, reserva de una unidad, pago y confirmación. |
 | CU-05 | Realizar pago | **Implementado (pago de pruebas)** | Hoy con la pasarela de pruebas propia; listo para Wompi al configurar sus llaves. Redirección a la pasarela, autenticación y pago en la pasarela, confirmación verificada y comprobante (factura PDF/XML). |
 | CU-06 | Agendar entrega o recogida | **Implementado** | Fecha, franja y dirección con cupo real por sucursal (`slot_capacity`, editable en el panel). Una franja llena o ya iniciada no se ofrece ni se acepta. Sin asignación de domiciliario (ver CU-14). |
-| CU-07 | Seguimiento del domicilio | **Pendiente** | — |
-| CU-08 | Validar entrega con QR o firma | **Pendiente** | — |
+| CU-07 | Seguimiento del domicilio | **Implementado** | Enlace público `/seguimiento/{token}` sin datos personales, con estados y fechas; se actualiza cada 15 s. Sin WebSockets. |
+| CU-08 | Validar entrega con QR o firma | **Implementado** | El cliente ve un QR y un código de 6 dígitos; el panel escribe el código o captura la firma. Entregar exige una de las dos pruebas. Sin escáner con cámara. |
 | CU-09 | Gestionar contenidos | **Mock** | Contenido en `src/mocks/content.ts`. |
 | CU-10 | Monitorear flota en tiempo real | **Mock** | `/admin/operacion` con posiciones simuladas (sin GPS). |
 | CU-11 | Geofencing | **Pendiente** | Solo la base PostGIS. |
 | CU-12 | Mantenimiento preventivo | **Parcial** | Unidades de la flota en mantenimiento salen de la oferta; sin umbrales, alertas ni bitácora. |
 | CU-13 | Gestionar inventario | **Implementado** | Consulta y ajuste por sucursal con motivo obligatorio; registro de entradas y salidas (`inventory_movements`) con ventas y devoluciones automáticas, en `/admin/inventario/movimientos`. |
-| CU-14 | Gestionar domicilios | **Pendiente** | — |
+| CU-14 | Gestionar domicilios | **Implementado** | `modules/domicilios`: domiciliarios, asignación, estados con historial, fallo con motivo y reprogramación. El domiciliario no tiene sesión propia: el panel registra su avance. |
 | CU-15 | Reembolso / cancelación | **Implementado (reembolso manual)** | El cliente cancela lo no pagado o solicita el reembolso de lo pagado; el panel valida y registra (cancela y devuelve inventario). La devolución del dinero se hace en la pasarela; falta la nota crédito DIAN. |

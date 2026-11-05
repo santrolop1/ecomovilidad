@@ -346,6 +346,7 @@ class AdminOrderDetailOut(AdminOrderSummaryOut):
     items: list[AdminOrderItemOut]
     updated_at: datetime
     allowed_transitions: list[OrderStatus]
+    delivery_id: uuid.UUID | None = None
 
 
 class OrderStatusIn(ApiModel):

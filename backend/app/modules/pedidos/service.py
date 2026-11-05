@@ -32,6 +32,7 @@ from app.models.enums import (
 from app.modules.autenticacion import consent
 from app.modules.carrito.repository import get_active_cart
 from app.modules.catalogo.repository import get_products
+from app.modules.domicilios import service as delivery_service
 from app.modules.inventario import reservations
 from app.modules.inventario.movements import record_movement
 from app.modules.pagos.queries import PaymentInfo, payment_info
@@ -269,7 +270,13 @@ def get_order(db: Session, user: User, order_id: uuid.UUID) -> OrderOut:
     from app.modules.reembolsos.service import latest_request, refund_out
 
     out = to_order_out(order, payment_info(db, order_ids=[order.id]).get(order.id))
-    return out.model_copy(update={"refund_request": refund_out(latest_request(db, order_id=order.id))})
+    delivery = delivery_service.delivery_of_order(db, order.id)
+    return out.model_copy(
+        update={
+            "refund_request": refund_out(latest_request(db, order_id=order.id)),
+            "delivery": delivery_service.customer_view(delivery) if delivery else None,
+        }
+    )
 
 
 def _locked_order_stock(db: Session, order: Order) -> dict[uuid.UUID, Inventory]:
@@ -348,6 +355,9 @@ def change_status(db: Session, order_id: uuid.UUID, new_status: OrderStatus) -> 
         if current == OrderStatus.PAID and new_status == OrderStatus.CANCELLED:
             raise ConflictError("Un pedido pagado no se puede cancelar aquí: requiere reembolso (pendiente, CU-15).")
         raise ConflictError(f"Un pedido {STATUS_LABELS[current]} no puede pasar a {STATUS_LABELS[new_status]}.")
+
+    if new_status == OrderStatus.COMPLETED and delivery_service.has_delivery(db, order_id):
+        raise ConflictError("Este pedido se completa al validar su entrega en Domicilios.")
 
     if new_status == OrderStatus.CANCELLED:
         release_order_stock(db, order)

@@ -4,6 +4,7 @@ import { ProductImage } from "@/components/shared/product-image";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { formatCOP, formatDate, formatDateTime, shortId } from "@/lib/format";
 import type { CustomerOrder } from "@/types";
+import { OrderDelivery } from "@/features/deliveries/components/order-delivery";
 import { PaymentSection } from "@/features/payments/components/payment-section";
 import { CancelRefund } from "./cancel-refund";
 import { customerOrderStatus, paymentMethodLabels, timeSlotLabels } from "../lib/labels";
@@ -73,6 +74,7 @@ export function OrderDetail({ order }: { order: CustomerOrder }) {
               <Field label="Franja">{timeSlotLabels[order.timeSlot] ?? order.timeSlot}</Field>
             </dl>
           </section>
+          {order.delivery && <OrderDelivery delivery={order.delivery} />}
           <PaymentSection
             awaitingPayment={order.status === "pending"}
             expiresAt={order.paymentExpiresAt}

@@ -10,6 +10,7 @@ from app.core.api_model import ApiModel
 from app.models.enums import FulfillmentMethod, OrderStatus, PaymentMethod
 from app.modules.autenticacion.schemas import PHONE_PATTERN
 from app.modules.carrito.models import MAX_QUANTITY_PER_ITEM
+from app.modules.domicilios.schemas import CustomerDeliveryOut
 from app.modules.pagos.schemas import InvoiceRefOut, PaymentSummaryOut
 from app.modules.reembolsos.schemas import RefundRequestOut
 
@@ -99,6 +100,7 @@ class OrderOut(ApiModel):
     payment: PaymentSummaryOut | None = None
     invoice: InvoiceRefOut | None = None
     refund_request: RefundRequestOut | None = None
+    delivery: CustomerDeliveryOut | None = None
     contact_name: str
     contact_email: str
     contact_phone: str

@@ -10,6 +10,7 @@ from app.modules.admin import repository as repo
 from app.modules.admin.common import PAGE_SIZE
 from app.modules.admin.payments import payments_for
 from app.modules.admin.schemas import AdminOrderDetailOut, AdminOrderItemOut, AdminOrderSummaryOut, OrderUserOut, Page
+from app.modules.domicilios.service import delivery_of_order
 from app.modules.pagos.queries import PaymentInfo, payment_info
 from app.modules.pedidos.service import ALLOWED_TRANSITIONS
 from app.modules.reembolsos.service import latest_request, refund_out
@@ -56,6 +57,7 @@ def get_order(db: Session, order_id: uuid.UUID) -> AdminOrderDetailOut:
     if order is None:
         raise NotFoundError("El pedido no existe.")
     summary = order_summary(order, sum(i.quantity for i in order.items))
+    delivery = delivery_of_order(db, order.id)
     return AdminOrderDetailOut(
         **summary.model_dump(),
         subtotal=order.subtotal,
@@ -87,5 +89,8 @@ def get_order(db: Session, order_id: uuid.UUID) -> AdminOrderDetailOut:
             for i in order.items
         ],
         updated_at=order.updated_at,
-        allowed_transitions=sorted(ALLOWED_TRANSITIONS[OrderStatus(order.status)]),
+        allowed_transitions=sorted(
+            ALLOWED_TRANSITIONS[OrderStatus(order.status)] - ({OrderStatus.COMPLETED} if delivery else set())
+        ),
+        delivery_id=delivery.id if delivery else None,
     )

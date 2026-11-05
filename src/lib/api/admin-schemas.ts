@@ -80,6 +80,46 @@ export const inventoryMovementSchema = z.object({
   createdAt: isoDate,
 });
 
+export const courierSchema = z.object({
+  id,
+  name: z.string(),
+  phone: z.string(),
+  isActive: z.boolean(),
+  openDeliveries: z.number(),
+});
+
+export const deliveryStatuses = ["creado", "asignado", "en_recogida", "en_transito", "entregado", "fallido"] as const;
+const deliveryStatus = z.enum(deliveryStatuses);
+
+export const adminDeliverySummarySchema = z.object({
+  id,
+  orderId: id,
+  status: deliveryStatus,
+  courierName: z.string().nullable(),
+  contactName: z.string(),
+  deliveryCity: z.string().nullable(),
+  branchName: z.string(),
+  scheduledDate: z.string(),
+  timeSlot: z.string(),
+  updatedAt: isoDate,
+});
+
+export const adminDeliverySchema = adminDeliverySummarySchema.extend({
+  courierId: id.nullable(),
+  contactPhone: z.string(),
+  deliveryAddress: z.string().nullable(),
+  trackingToken: z.string(),
+  proofMethod: z.enum(["qr", "firma"]).nullable(),
+  signerName: z.string().nullable(),
+  signatureImage: z.string().nullable(),
+  failureReason: z.string().nullable(),
+  deliveredAt: isoDate.nullable(),
+  events: z.array(z.object({ status: deliveryStatus, note: z.string().nullable().transform((n) => n ?? undefined), createdAt: isoDate })),
+  allowedTransitions: z.array(deliveryStatus),
+  canValidate: z.boolean(),
+  canAssign: z.boolean(),
+});
+
 export const adminProductDetailSchema = adminProductSchema.extend({ inventory: z.array(inventoryRowSchema) });
 
 export const adminCategorySchema = z.object({
@@ -177,6 +217,7 @@ export const adminOrderDetailSchema = adminOrderSummarySchema.extend({
   ),
   updatedAt: isoDate,
   allowedTransitions: z.array(orderStatus),
+  deliveryId: id.nullable().optional(),
 });
 
 export const adminUserSchema = z.object({
@@ -277,6 +318,9 @@ export type RentalStatusValue = (typeof rentalStatuses)[number];
 export type AdminProduct = z.infer<typeof adminProductSchema>;
 export type AdminProductDetail = z.infer<typeof adminProductDetailSchema>;
 export type InventoryRow = z.infer<typeof inventoryRowSchema>;
+export type Courier = z.infer<typeof courierSchema>;
+export type AdminDeliverySummary = z.infer<typeof adminDeliverySummarySchema>;
+export type AdminDelivery = z.infer<typeof adminDeliverySchema>;
 export type InventoryMovement = z.infer<typeof inventoryMovementSchema>;
 export type MovementKind = (typeof movementKinds)[number];
 export type AdminCategory = z.infer<typeof adminCategorySchema>;

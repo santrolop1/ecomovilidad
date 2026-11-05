@@ -5,7 +5,15 @@ import { z } from "zod";
 import { type ActionResult, runAction } from "@/lib/action-result";
 import { adminApi } from "@/lib/api/admin";
 import { orderStatuses, rentalStatuses, rentalUnitStatuses } from "@/lib/api/admin-schemas";
-import { branchFormSchema, categoryFormSchema, productFormSchema, stockUpdateSchema } from "./lib/schemas";
+import {
+  branchFormSchema,
+  categoryFormSchema,
+  courierFormSchema,
+  deliveryStatusSchema,
+  deliveryValidationSchema,
+  productFormSchema,
+  stockUpdateSchema,
+} from "./lib/schemas";
 
 /**
  * Acciones del panel. FastAPI vuelve a validar el rol de administrador y el
@@ -46,6 +54,41 @@ export async function setStock(productId: string, branchId: string, input: unkno
   return runAction(stockUpdateSchema, input, async (data) => {
     await adminApi.setStock(idSchema.parse(productId), idSchema.parse(branchId), data);
     refreshStorefront("products", "branches");
+    return null;
+  });
+}
+
+export async function createCourier(input: unknown): Promise<ActionResult<null>> {
+  return runAction(courierFormSchema, input, async (data) => {
+    await adminApi.createCourier(data);
+    return null;
+  });
+}
+
+export async function setCourierActive(id: string, isActive: boolean): Promise<ActionResult<null>> {
+  return runAction(z.boolean(), isActive, async (value) => {
+    await adminApi.updateCourier(idSchema.parse(id), { isActive: value });
+    return null;
+  });
+}
+
+export async function assignDelivery(id: string, courierId: unknown): Promise<ActionResult<null>> {
+  return runAction(z.string().uuid("Elige un domiciliario."), courierId, async (value) => {
+    await adminApi.assignDelivery(idSchema.parse(id), value);
+    return null;
+  });
+}
+
+export async function changeDeliveryStatus(id: string, input: unknown): Promise<ActionResult<null>> {
+  return runAction(deliveryStatusSchema, input, async (data) => {
+    await adminApi.updateDelivery(idSchema.parse(id), data);
+    return null;
+  });
+}
+
+export async function validateDelivery(id: string, input: unknown): Promise<ActionResult<null>> {
+  return runAction(deliveryValidationSchema, input, async (data) => {
+    await adminApi.validateDelivery(idSchema.parse(id), data);
     return null;
   });
 }
