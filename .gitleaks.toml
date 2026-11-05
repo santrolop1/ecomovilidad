@@ -1,0 +1,7 @@
+# Las pruebas usan contraseñas inventadas para cuentas temporales.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Datos de prueba"
+paths = ['''^backend/tests/''']
