@@ -2,7 +2,19 @@
 
 Tienda, servicios y panel de operación de **EcoMovilidad Colombia S.A.S.** en el área metropolitana de Bucaramanga (Bucaramanga, Floridablanca, Girón y Piedecuesta).
 
-Next.js 16 · FastAPI · PostgreSQL 16 + PostGIS 3 · Leaflet + OpenStreetMap
+Incluye compra en línea, alquiler de flota, facturas, reembolsos y panel de administración. Aún no está en producción y usa datos de demostración.
+
+## Tecnologías
+
+| Área | Tecnologías |
+| --- | --- |
+| Frontend (`src/`) | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4, shadcn/ui + Radix, TanStack Query, Zod |
+| Mapas | Leaflet + OpenStreetMap; Google Maps opcional si se configura una llave |
+| Backend (`backend/`) | Python 3.13, FastAPI, SQLAlchemy 2, Pydantic 2, Alembic, Argon2, fpdf2; dependencias con uv |
+| Base de datos | PostgreSQL 16 + PostGIS 3 |
+| Pagos | Pasarela de pruebas propia; integración con Wompi lista para recibir llaves |
+| Pruebas y calidad | Vitest, Testing Library, ESLint, pytest, Ruff, GitHub Actions, gitleaks |
+| Infraestructura | Docker Compose; demo temporal con Cloudflare Tunnel |
 
 ## Inicio rápido
 
@@ -38,6 +50,38 @@ Sin AWS ni dominio: Cloudflare Tunnel hacia Next.js en este Mac. El Mac debe seg
 npm run check                        # typecheck + lint + Vitest + build
 cd backend && uv run pytest          # requiere: docker compose up -d db
 ```
+
+## Estado y lo que falta
+
+| Caso de uso | Estado | Qué falta |
+| --- | --- | --- |
+| CU-01 Registro e inicio de sesión | Hecho | — |
+| CU-02 Catálogo | Hecho | — |
+| CU-03 Compra | Hecho (pago de pruebas) | Cobro real con Wompi |
+| CU-04 Alquiler | Hecho | — |
+| CU-05 Pago | Hecho (pago de pruebas) | Probar Wompi con llaves reales |
+| CU-15 Cancelación y reembolso | Hecho (reembolso manual) | Devolución automática y nota crédito |
+| CU-06 Agendar entrega | Parcial | Franjas según la capacidad real del día |
+| CU-12 Mantenimiento | Parcial | Umbrales de uso, alertas, bloqueo al 90% y bitácora |
+| CU-13 Inventario | Parcial | Registro de entradas y salidas |
+| CU-09 Contenidos | Simulado | Editar banners, noticias y textos desde el panel |
+| CU-10 Monitoreo de flota | Simulado | Recibir posiciones GPS reales por API |
+| CU-07 Seguimiento del domicilio | Pendiente | Enlace de seguimiento en tiempo real |
+| CU-08 Validar entrega | Pendiente | Código QR o firma digital |
+| CU-11 Geofencing | Pendiente | Zonas permitidas y alertas |
+| CU-14 Gestionar domicilios | Pendiente | Asignación de domiciliario y estados del domicilio |
+
+**Para salir a producción también falta:**
+
+- Hacer que la pasarela de pruebas no se active si falta `ENVIRONMENT=production`.
+- Servidor con HTTPS, copias de seguridad y configuración segura (cookies, cabeceras, `/docs` cerrado).
+- Tarea programada para vencer reservas y pagos sin depender del tráfico.
+- Proveedor de correo para recuperar contraseñas.
+- Factura electrónica DIAN, que requiere un proveedor.
+- Revisión legal de los textos de datos personales, retracto y drones.
+- Reemplazar los datos de demostración por los reales.
+
+Detalle por requisito en [REQUISITOS.md](REQUISITOS.md) y por área en [ESTADO.md](ESTADO.md).
 
 ## Documentos
 
