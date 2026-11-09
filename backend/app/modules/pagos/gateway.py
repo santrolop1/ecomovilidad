@@ -229,6 +229,41 @@ class SimulatedGateway:
         return False  # la pasarela simulada no envía eventos
 
 
+class ManualGateway:
+    """Pago por transferencia o contra entrega, sin pasarela.
+
+    El cliente ve las instrucciones en /pagos/manual y un administrador confirma
+    o rechaza el pago en el panel, según lo que haya recibido. El cliente nunca
+    puede aprobarlo. Al confirmarse sigue el flujo normal: inventario y factura.
+    """
+
+    name = "manual"
+    sandbox = False
+    METHOD = "MANUAL"
+
+    def __init__(self, settings: Settings, db: Session):
+        self.settings = settings
+        self.db = db
+
+    def checkout_url(
+        self,
+        *,
+        reference: str,
+        amount_in_cents: int,
+        redirect_url: str,
+        expires_at: datetime,
+        customer: CheckoutCustomer,
+    ) -> str:
+        query = urllib.parse.urlencode({"referencia": reference})
+        return f"{self.settings.frontend_url.rstrip('/')}/pagos/manual?{query}"
+
+    def get_transaction(self, transaction_id: str) -> GatewayTransaction | None:
+        return None  # el resultado lo registra el panel, no el regreso del cliente
+
+    def verify_event(self, payload: dict[str, Any], checksum: str | None) -> bool:
+        return False
+
+
 class UnconfiguredGateway:
     """Sin pasarela disponible: ningún pago se puede iniciar ni verificar."""
 
@@ -256,4 +291,6 @@ def get_payment_gateway(db: Annotated[Session, Depends(get_db)]) -> PaymentGatew
         return WompiGateway(settings)
     if provider == "simulado":
         return SimulatedGateway(settings, db)
+    if provider == "manual":
+        return ManualGateway(settings, db)
     return UnconfiguredGateway()

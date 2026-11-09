@@ -19,6 +19,7 @@ const methodLabels: Record<string, string> = {
   DAVIPLATA: "Daviplata",
   PCOL: "Puntos Colombia",
   SIMULADO: "Pasarela de pruebas (sin cobro real)",
+  MANUAL: "Pago manual confirmado por EcoMovilidad",
 };
 
 export function paymentMethodLabel(type?: string): string {

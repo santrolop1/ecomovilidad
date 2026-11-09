@@ -29,6 +29,7 @@ import type {
   Service,
   Session,
   TimeSlot,
+  ManualPayment,
   DeliveryTracking,
   User,
 } from "@/types";
@@ -109,6 +110,8 @@ export interface PaymentsApi {
   verify(transactionId: string): Promise<PaymentResult>;
   /** GET /payments/simulator/:reference — pasarela simulada (null si no aplica o no es del usuario). */
   getSimulation(reference: string): Promise<PaymentSimulation | null>;
+  /** GET /payments/manual/:reference — instrucciones del pago manual (null si no aplica o no es del usuario). */
+  getManualPayment(reference: string): Promise<ManualPayment | null>;
   /** POST /payments/simulator/:reference — aprobar o rechazar en la pasarela simulada; devuelve la transacción. */
   simulate(reference: string, decision: "approved" | "declined"): Promise<{ transactionId: string }>;
 }
@@ -120,7 +123,7 @@ export interface ContentApi {
   listNews(): Promise<NewsItem[]>;
   listFaqs(): Promise<FaqGroup[]>;
   listServices(): Promise<Service[]>;
-  /** SIN backend: en modo real responde "no disponible". */
+  /** POST /contact — sin sesión, con límite de envíos. */
   sendContactMessage(input: ContactMessageInput): Promise<{ id: string }>;
 }
 

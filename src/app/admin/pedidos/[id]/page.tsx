@@ -52,7 +52,13 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/pedid
           <span className="text-sm text-muted-foreground">Estado actual</span>
           <StatusBadge tone={orderStatusTone[order.status]}>{orderStatusLabels[order.status]}</StatusBadge>
         </div>
-        <OrderStatusActions orderId={order.id} transitions={order.allowedTransitions} />
+        {order.deliveryId && order.status === "paid" ? (
+          <p className="text-sm text-muted-foreground">
+            Se completa al validar la entrega en <Link href={`/admin/domicilios/${order.deliveryId}`} className="underline">Domicilios</Link>.
+          </p>
+        ) : (
+          <OrderStatusActions orderId={order.id} transitions={order.allowedTransitions} />
+        )}
       </section>
       <p className="text-xs text-muted-foreground">
         No se guarda historial de cambios de estado: solo el estado actual y la fecha de la última actualización.

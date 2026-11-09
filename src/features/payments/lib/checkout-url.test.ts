@@ -21,6 +21,7 @@ describe("destino del pago", () => {
     expect(resolveCheckoutTarget("http://localhost:3000/pagos/simulador?referencia=EMP-1A2B-3C4D")).toBe(
       "/pagos/simulador?referencia=EMP-1A2B-3C4D",
     );
+    expect(resolveCheckoutTarget("http://localhost:3000/pagos/manual?referencia=EMP-1")).toBe("/pagos/manual?referencia=EMP-1");
     expect(resolveCheckoutTarget("https://evil.com/pagos/simulador?referencia=EMP-1")).toBe("/pagos/simulador?referencia=EMP-1");
     expect(resolveCheckoutTarget("https://x.test/pagos/simulador?referencia=<script>")).toBeNull();
     expect(resolveCheckoutTarget("https://x.test/pagos/simulador")).toBeNull();

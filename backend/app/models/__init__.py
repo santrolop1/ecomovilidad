@@ -5,6 +5,7 @@ from app.modules.autenticacion.models import User, UserSession
 from app.modules.autenticacion.security_records import ConsentRecord, LoginAttempt, PasswordResetToken
 from app.modules.carrito.models import Cart, CartItem
 from app.modules.catalogo.models import Category, Product
+from app.modules.contacto.models import ContactMessage
 from app.modules.contenidos.models import Banner, NewsItem, ValueProposition
 from app.modules.domicilios.models import Courier, Delivery, DeliveryEvent
 from app.modules.inventario.models import Inventory, InventoryMovement
@@ -22,6 +23,7 @@ __all__ = [
     "CartReservation",
     "ConsentRecord",
     "Category",
+    "ContactMessage",
     "Courier",
     "Delivery",
     "Geofence",

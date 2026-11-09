@@ -34,8 +34,19 @@ export interface PaymentStart {
   provider: PaymentProvider;
 }
 
-/** Wompi cuando tiene llaves; la simulada solo en desarrollo y demostraciones. */
-export type PaymentProvider = "wompi" | "simulado";
+/** Wompi con sus llaves; manual, confirmado en el panel; la simulada solo en desarrollo y demostraciones. */
+export type PaymentProvider = "wompi" | "simulado" | "manual";
+
+/** Lo que ve el cliente para pagar por transferencia o contra entrega. */
+export interface ManualPayment {
+  reference: string;
+  amount: number;
+  status: PaymentStatus;
+  target: "pedido" | "alquiler";
+  targetId: string;
+  expiresAt?: string;
+  instructions: string;
+}
 
 /** Datos que muestra la pasarela simulada antes de aprobar o rechazar. */
 export interface PaymentSimulation {

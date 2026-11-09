@@ -192,6 +192,27 @@ export async function finishUnitMaintenance(id: string, note: unknown): Promise<
   });
 }
 
+const manualPaymentSchema = z.object({
+  reference: z.string().regex(/^[A-Za-z0-9-]{3,64}$/, "Referencia no válida."),
+  approved: z.boolean(),
+  note: z.string().trim().max(255).optional(),
+});
+
+export async function resolveManualPayment(input: unknown): Promise<ActionResult<null>> {
+  return runAction(manualPaymentSchema, input, async ({ reference, approved, note }) => {
+    await adminApi.resolveManualPayment(reference, approved, note);
+    refreshStorefront("products", "branches", "rental-offers");
+    return null;
+  });
+}
+
+export async function setContactMessageStatus(id: string, status: unknown): Promise<ActionResult<null>> {
+  return runAction(z.enum(["nuevo", "atendido"]), status, async (value) => {
+    await adminApi.updateContactMessage(idSchema.parse(id), value);
+    return null;
+  });
+}
+
 export async function createCategory(input: unknown): Promise<ActionResult<null>> {
   return runAction(categoryFormSchema, input, async (data) => {
     await adminApi.createCategory(data);

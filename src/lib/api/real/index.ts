@@ -2,7 +2,7 @@ import { z } from "zod";
 import { catalogFiltersToSearchParams } from "@/features/catalog/lib/search-params";
 import type { ApiClient } from "../contracts";
 import { endpoints } from "../endpoints";
-import { ApiError, isApiError } from "../errors";
+import { isApiError } from "../errors";
 import type { HttpClient } from "../http-client";
 import { createMockApi } from "../mock";
 import {
@@ -26,6 +26,7 @@ import {
   userSchema,
   newsItemSchema,
   remoteHomeContentSchema,
+  manualPaymentSchema,
   timeSlotSchema,
   deliveryTrackingSchema,
 } from "../schemas";
@@ -139,6 +140,14 @@ export function createRealApi(http: HttpClient): ApiClient {
           throw error;
         }
       },
+      async getManualPayment(reference) {
+        try {
+          return await http.request(endpoints.paymentManual(reference), { schema: manualPaymentSchema, auth: true });
+        } catch (error) {
+          if (isApiError(error) && error.code === "NOT_FOUND") return null;
+          throw error;
+        }
+      },
       simulate: (reference, decision) =>
         http.request(endpoints.paymentSimulation(reference), {
           method: "POST",
@@ -204,13 +213,13 @@ export function createRealApi(http: HttpClient): ApiClient {
           schema: z.array(newsItemSchema),
           next: { revalidate: CONTENT_REVALIDATE_S, tags: ["content"] },
         }),
-      async sendContactMessage() {
-        throw new ApiError(
-          "SERVICE_UNAVAILABLE",
-          "El formulario de contacto aún no está conectado. Escríbenos al correo de contacto.",
-          503,
-        );
-      },
+      sendContactMessage: (input) =>
+        http.request(endpoints.contact, {
+          method: "POST",
+          body: input,
+          schema: z.object({ id: z.string() }),
+          relayCookies: true, // reenvía la IP del navegador para el límite de envíos
+        }),
     },
     auth: {
       login: (input) =>

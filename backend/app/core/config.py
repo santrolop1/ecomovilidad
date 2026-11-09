@@ -29,7 +29,11 @@ class Settings(BaseSettings):
     # Pasarela de pagos: "auto" usa Wompi si están sus cuatro llaves y, si no, en
     # desarrollo, la pasarela SIMULADA (página de pruebas sin cobro real). "wompi"
     # o "simulado" la fijan. La simulada nunca funciona con ENVIRONMENT=production.
-    payment_provider: Literal["auto", "wompi", "simulado"] = "auto"
+    # "manual": el cliente paga por transferencia o contra entrega y un
+    # administrador confirma el pago en el panel; no requiere pasarela.
+    payment_provider: Literal["auto", "wompi", "simulado", "manual"] = "auto"
+    # Cómo pagar con el proveedor manual: cuenta, Nequi, punto de pago…
+    payment_instructions: str = ""
     # Pagos con Wompi. Las llaves NUNCA van en el repositorio (backend/.env o el entorno).
     wompi_public_key: str = ""
     wompi_private_key: str = ""
@@ -47,6 +51,17 @@ class Settings(BaseSettings):
     # Vacío hasta tener el NIT real; la factura muestra "pendiente".
     company_nit: str = ""
 
+    # Correo por SMTP. Sin SMTP_HOST no se envían correos.
+    smtp_host: str = ""
+    smtp_port: int = Field(default=587, ge=1, le=65535)
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_from: str = ""
+    smtp_starttls: bool = True
+
+    # Días que se conserva el historial de posiciones GPS.
+    gps_retention_days: int = Field(default=90, ge=1, le=3650)
+
     @property
     def wompi_configured(self) -> bool:
         return all(
@@ -54,8 +69,10 @@ class Settings(BaseSettings):
         )
 
     @property
-    def active_payment_provider(self) -> Literal["wompi", "simulado"] | None:
+    def active_payment_provider(self) -> Literal["wompi", "simulado", "manual"] | None:
         """Pasarela en uso, o None si no hay ninguna disponible (pagos → 503)."""
+        if self.payment_provider == "manual":
+            return "manual"
         if self.payment_provider == "wompi" or (self.payment_provider == "auto" and self.wompi_configured):
             return "wompi" if self.wompi_configured else None
         if self.environment == "production":

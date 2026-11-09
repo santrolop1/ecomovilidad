@@ -181,6 +181,9 @@ export function createMockApi({ latencyMs = 0 }: MockApiOptions = {}): ApiClient
       async verify() {
         throw backendRequired("Los pagos en línea");
       },
+      async getManualPayment() {
+        return null;
+      },
       async getSimulation() {
         return null;
       },

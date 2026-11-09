@@ -7,6 +7,7 @@ from app.api.deps import CurrentUser, DbSession
 from app.modules.pagos import service
 from app.modules.pagos.gateway import PaymentGateway, get_payment_gateway
 from app.modules.pagos.schemas import (
+    ManualPaymentOut,
     PaymentConfigOut,
     PaymentResultOut,
     PaymentStartIn,
@@ -49,6 +50,12 @@ def simulation(reference: str, user: CurrentUser, db: DbSession, gateway: Gatewa
 def simulate(reference: str, data: SimulationDecisionIn, user: CurrentUser, db: DbSession, gateway: Gateway):
     """Pasarela simulada: el cliente aprueba o rechaza (sin cobro real)."""
     return service.simulate_decision(db, user, gateway, reference, data.decision)
+
+
+@router.get("/manual/{reference}", response_model=ManualPaymentOut, response_model_exclude_none=True)
+def manual_payment(reference: str, user: CurrentUser, db: DbSession, gateway: Gateway):
+    """Pago manual: instrucciones y estado (solo su dueño; 404 con otra pasarela)."""
+    return service.manual_info(db, user, gateway, reference)
 
 
 @router.get("/{reference}", response_model=PaymentResultOut, response_model_exclude_none=True)

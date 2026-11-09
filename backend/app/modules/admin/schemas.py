@@ -148,6 +148,11 @@ class ProductUpdateIn(_ProductFields):
     is_active: bool | None = None
 
 
+class ManualPaymentResolveIn(ApiModel):
+    approved: bool
+    note: str | None = Field(default=None, max_length=255)
+
+
 class InventoryUpsertIn(ApiModel):
     total_quantity: int = Field(ge=0, le=100_000)
     reason: str = Field(min_length=3, max_length=200)
@@ -317,6 +322,7 @@ class AdminOrderItemOut(ApiModel):
 class AdminPaymentOut(ApiModel):
     status: PaymentStatus
     reference: str
+    provider: str
     provider_transaction_id: str | None = None
     payment_method_type: str | None = None
     status_message: str | None = None

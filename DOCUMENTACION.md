@@ -5,8 +5,8 @@
 | | |
 | --- | --- |
 | **Producto** | Portal web, tienda en línea y panel de operación |
-| **Versión** | 0.7.0 (fase 7: domicilios, GPS, zonas, contenidos y mantenimiento) |
-| **Fecha** | 5 de noviembre de 2026 |
+| **Versión** | 0.8.0 (fase 8: preparación para producción) |
+| **Fecha** | 9 de noviembre de 2026 |
 | **Estado** | En desarrollo. Funciona localmente sobre datos de **demostración**. No está desplegado en producción. |
 | **Repositorio** | `ecomovilidad/` (Next.js + FastAPI + PostgreSQL/PostGIS) |
 
@@ -252,6 +252,7 @@ Dentro de cada servicio los archivos siguen el mismo patrón: `router.py` (endpo
 | Telemetría y zonas (CU-10, CU-11) | `modules/telemetria`, `scripts/simulate_gps.py` | `features/operations`, `app/admin/operacion` | Real; sin aparatos físicos |
 | Contenidos (CU-09) | `modules/contenidos` | `features/content`, `app/admin/contenidos` | Real |
 | Mantenimiento (CU-12) | `modules/alquiler/maintenance.py` | `app/admin/flota` | Real; el uso se registra a mano |
+| Contacto | `modules/contacto` | `features/contact`, `app/admin/mensajes` | Real |
 | Carrito | `modules/carrito` | `features/cart` | Real |
 | Pedidos (CU-03) | `modules/pedidos` | `features/checkout`, `features/account` | Real |
 | Pasarela de pagos y facturación (CU-05) | `modules/pagos` | `features/payments`, `app/api/webhooks`, `app/api/facturas` | Real (pagos de prueba, sin DIAN) |
@@ -294,6 +295,7 @@ PostgreSQL 16 + PostGIS. Claves primarias UUID (`gen_random_uuid()`) y marcas de
 | `geofences` | nombre, centro, radio, activa | zonas permitidas; ubicación PostGIS calculada |
 | `geofence_alerts` | dispositivo, posición, apertura, cierre | una abierta por dispositivo |
 | `maintenance_logs` | unidad, evento, cantidad, uso acumulado, nota, responsable | bitácora; un trigger impide editar o borrar |
+| `contact_messages` | nombre, correo, teléfono, tema, mensaje, estado, versión de la política, hash de la IP | la IP nunca se guarda en claro |
 | `value_propositions`, `banners`, `news_items` | textos del inicio y de Nosotros, vigencia y publicación | editables en el panel; los enlaces de banners solo pueden ser internos |
 | `carts` | user_id, status (active / converted / abandoned) | un solo carrito activo por usuario (índice único parcial) |
 | `cart_items` | cart_id, product_id, cantidad, precio unitario | único (carrito, producto); cantidad 1–10 |
@@ -611,6 +613,8 @@ Base: `http://localhost:8000/api/v1`. Documentación interactiva en `http://loca
 | PATCH, DELETE | `/cart/items/{id}` | ✔ |
 | POST, GET | `/orders` (POST exige reservas vigentes y `policyVersion`) | ✔ |
 | GET | `/orders/{id}` | ✔ (404 si es de otro usuario) |
+| POST | `/contact`: formulario de contacto, sin sesión y con límite de envíos | — |
+| GET | `/payments/manual/{referencia}`: instrucciones del pago manual | ✔ |
 | GET | `/content/home`, `/content/news`: contenidos publicados (CU-09) | — |
 | POST | `/telemetry/positions`: dispositivos GPS con `Authorization: Bearer <token>` (público en `/api/telemetry/positions`) | — |
 | GET | `/tracking/{token}`: seguimiento público, sin datos personales (CU-07) | — |
@@ -640,6 +644,8 @@ Base: `http://localhost:8000/api/v1`. Documentación interactiva en `http://loca
 | GET, POST | `/admin/branches` |
 | GET, PATCH | `/admin/branches/{id}` |
 | GET | `/admin/inventory` (`q`, `branch_id`, `low_stock`, `page`) |
+| GET | `/admin/contact-messages` (`q`, `state`, `page`); PATCH `/admin/contact-messages/{id}` |
+| POST | `/admin/payments/{referencia}/resolve`: confirma o rechaza un pago manual |
 | GET | `/admin/rental-units/{id}`, `/admin/rental-units/{id}/maintenance-log` |
 | POST | `/admin/rental-units/{id}/usage`, `/admin/rental-units/{id}/maintenance/finish` |
 | PUT | `/admin/rental-units/{id}/threshold` |
@@ -692,6 +698,9 @@ Las listas paginadas devuelven `{ items, total, page, pageSize }` con 20 element
 | `ENVIRONMENT` | No (`production`) | Solo `development` activa la pasarela de pruebas automática y escribe enlaces de recuperación en el log. Docker Compose lo define como `development`. |
 | `FRONTEND_URL` | En producción | Base de los enlaces de recuperación. En Docker Compose se toma del entorno (`scripts/demo.sh` pone la URL del túnel). |
 | `PASSWORD_RESET_TTL_MINUTES` | No (30) | Vigencia del enlace de recuperación. |
+| `PAYMENT_INSTRUCTIONS` | Con pago manual | Cómo pagar; se muestra al cliente. |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` | Para enviar correos | Sin `SMTP_HOST` no se envían. |
+| `GPS_RETENTION_DAYS` | No (90) | Días que se conserva el historial GPS. |
 | `PRIVACY_POLICY_VERSION` | No (`2026-10-06`) | Versión vigente de la política; debe coincidir con `src/config/legal.ts`. |
 | `TRUSTED_PROXIES` | Recomendada | CIDR (JSON) de los proxies cuyo `X-Forwarded-For` se acepta. En Docker Compose: redes privadas y `127.0.0.1`. |
 | `PAYMENT_PROVIDER` | No (`auto`) | `auto`: Wompi si tiene llaves; si no, la pasarela de pruebas en desarrollo. `wompi` o `simulado` la fijan. La simulada nunca funciona en producción. |
@@ -843,17 +852,17 @@ El estado por área se mantiene en [ESTADO.md](ESTADO.md) y por requisito en [RE
 
 ## 21. Funcionalidades pendientes
 
-1. Cobro real: llaves de Wompi, o pago manual confirmado en el panel.
+1. Probar Wompi con llaves reales, si se elige esa forma de cobro.
 2. Facturación electrónica DIAN (RF 4.2) y devolución automática del dinero.
-3. Proveedor real de correo (recuperación de contraseña, comprobantes).
+3. Contratar una cuenta de correo SMTP; el envío ya está construido.
 4. Sesión o app para domiciliarios, y roles intermedios (M8-8).
 5. Aparatos GPS físicos, y uso de mantenimiento calculado desde el GPS.
 6. WebSockets en lugar de consultas por intervalos (RNF 3.6).
 7. Limpieza periódica de `gps_positions`.
 8. Escáner de QR con cámara y carga de imágenes de producto.
-9. Formulario de contacto conectado y edición del texto principal, los servicios y la ayuda.
+9. Edición del texto principal, los servicios y la ayuda.
 10. Texto legal revisado: datos personales, retracto y drones.
-11. Despliegue, HTTPS/TLS 1.3, monitoreo y copias de seguridad.
+11. Contratar servidor y dominio (ver `docs/DESPLIEGUE.md`), y monitoreo externo.
 
 ## 22. Decisiones técnicas importantes
 
@@ -921,9 +930,9 @@ El estado por área se mantiene en [ESTADO.md](ESTADO.md) y por requisito en [RE
 
 En orden de prioridad:
 
-1. **Despliegue:** servidor, HTTPS, configuración de producción, copias de seguridad y tarea programada de vencimientos.
-2. **Cobro real:** Wompi en sandbox y luego producción, o pago manual.
-3. **Correo:** proveedor para recuperar contraseñas y enviar comprobantes.
+1. **Publicar:** contratar servidor y dominio, y seguir `docs/DESPLIEGUE.md`.
+2. **Cobro real:** decidir entre pago manual y Wompi (sandbox y luego producción).
+3. **Correo:** contratar una cuenta SMTP.
 4. **Datos reales:** sucursales, catálogo y fotografías; retirar los datos DEMO.
 5. **Legal y fiscal:** revisión de textos y factura electrónica DIAN.
 6. **Operación en campo:** sesión o app para domiciliarios, aparatos GPS y escáner de QR.
