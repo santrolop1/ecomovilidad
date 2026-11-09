@@ -3,6 +3,7 @@ import { InvoiceLinks } from "@/features/payments/components/invoice-links";
 import { paymentMethodLabel, paymentStatusLabels } from "@/features/payments/lib/labels";
 import type { AdminPayment } from "@/lib/api/admin-schemas";
 import { formatDateTime } from "@/lib/format";
+import { ManualPaymentActions } from "./manual-payment-actions";
 
 interface PaymentAttemptsProps {
   payments: AdminPayment[];
@@ -31,12 +32,13 @@ export function PaymentAttempts({ payments, invoice, expiresAt }: PaymentAttempt
                   <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
                 </div>
                 <p className="text-muted-foreground">
-                  {paymentMethodLabel(payment.paymentMethodType ?? undefined)} · {formatDateTime(payment.createdAt)}
+                  {payment.provider === "manual" && payment.status === "pending" ? "Pago manual por confirmar" : paymentMethodLabel(payment.paymentMethodType ?? undefined)} · {formatDateTime(payment.createdAt)}
                 </p>
                 {payment.providerTransactionId && (
                   <p className="tabular break-all text-xs text-muted-foreground">Transacción {payment.providerTransactionId}</p>
                 )}
                 {payment.statusMessage && <p className="text-xs text-muted-foreground">{payment.statusMessage}</p>}
+                {payment.provider === "manual" && payment.status === "pending" && <ManualPaymentActions reference={payment.reference} />}
                 {payment.requiresRefund && (
                   <p className="text-xs font-medium text-destructive">Aprobado fuera de plazo o duplicado: requiere reembolso.</p>
                 )}

@@ -30,6 +30,7 @@ from app.modules.admin.schemas import (
     InventoryMovementOut,
     InventoryRowOut,
     InventoryUpsertIn,
+    ManualPaymentResolveIn,
     OrderStatusIn,
     Page,
     ProductCreateIn,
@@ -46,6 +47,8 @@ from app.modules.alquiler.schemas import (
     UnitThresholdIn,
     UnitUsageIn,
 )
+from app.modules.contacto import service as contact_service
+from app.modules.contacto.schemas import ContactMessageOut, ContactStatus, ContactStatusIn
 from app.modules.contenidos import service as content_service
 from app.modules.contenidos.schemas import AdminContentOut, BannerIn, NewsItemIn, ValuePropositionIn
 from app.modules.domicilios import service as delivery_service
@@ -59,6 +62,7 @@ from app.modules.domicilios.schemas import (
     DeliveryStatusIn,
     DeliveryValidationIn,
 )
+from app.modules.pagos import service as payment_service
 from app.modules.pagos.invoices_router import invoice_response
 from app.modules.pedidos import service as order_service
 from app.modules.reembolsos import service as refunds
@@ -433,6 +437,26 @@ def set_unit_threshold(unit_id: uuid.UUID, data: UnitThresholdIn, user: AdminUse
 def finish_unit_maintenance(unit_id: uuid.UUID, data: MaintenanceFinishIn, user: AdminUser, db: DbSession):
     maintenance.finish_maintenance(db, unit_id, data.note, user.id)
     return rentals.get_unit(db, unit_id)
+
+
+# ─── Pago manual y mensajes de contacto ─────────────────────────────────────
+
+
+@router.post("/payments/{reference}/resolve", status_code=status.HTTP_204_NO_CONTENT)
+def resolve_manual_payment(reference: str, data: ManualPaymentResolveIn, db: DbSession):
+    payment_service.resolve_manual_payment(db, reference, approved=data.approved, note=data.note)
+
+
+@router.get("/contact-messages", response_model=Page[ContactMessageOut])
+def list_contact_messages(
+    db: DbSession, page: int = PageQuery, q: str | None = SearchQuery, state: ContactStatus | None = None
+):
+    return contact_service.list_messages(db, page=page, query=q, state=state)
+
+
+@router.patch("/contact-messages/{message_id}", response_model=ContactMessageOut)
+def update_contact_message(message_id: uuid.UUID, data: ContactStatusIn, db: DbSession):
+    return contact_service.set_status(db, message_id, data.status)
 
 
 # ─── Facturas ──────────────────────────────────────────────────────────────

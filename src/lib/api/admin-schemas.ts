@@ -209,6 +209,17 @@ export const adminContentSchema = z.object({
   ),
 });
 
+export const contactMessageSchema = z.object({
+  id,
+  fullName: z.string(),
+  email: z.string(),
+  phone: z.string().nullable(),
+  topic: z.string(),
+  message: z.string(),
+  status: z.enum(["nuevo", "atendido"]),
+  createdAt: isoDate,
+});
+
 export const adminProductDetailSchema = adminProductSchema.extend({ inventory: z.array(inventoryRowSchema) });
 
 export const adminCategorySchema = z.object({
@@ -260,6 +271,7 @@ export const adminOrderSummarySchema = z.object({
 export const adminPaymentSchema = z.object({
   status: z.enum(["pending", "approved", "declined", "voided", "error"]),
   reference: z.string(),
+  provider: z.string(),
   providerTransactionId: z.string().nullable().optional(),
   paymentMethodType: z.string().nullable().optional(),
   statusMessage: z.string().nullable().optional(),
@@ -422,6 +434,7 @@ export type RentalStatusValue = (typeof rentalStatuses)[number];
 export type AdminProduct = z.infer<typeof adminProductSchema>;
 export type AdminProductDetail = z.infer<typeof adminProductDetailSchema>;
 export type InventoryRow = z.infer<typeof inventoryRowSchema>;
+export type ContactMessage = z.infer<typeof contactMessageSchema>;
 export type MaintenanceLogEntry = z.infer<typeof maintenanceLogSchema>;
 export type AdminContent = z.infer<typeof adminContentSchema>;
 export type GpsDevice = z.infer<typeof gpsDeviceSchema>;

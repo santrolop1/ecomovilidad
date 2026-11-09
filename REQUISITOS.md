@@ -80,7 +80,7 @@ Fuente: `SRS_EcoMovilidad_v3_0` (22/sep/2026). Módulo 8 tomado del Plan de Desa
 | M8-2 | Inicio y cierre de sesión | **Implementado** | `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`. Sesiones en servidor, revocables y con expiración; cookies httpOnly; CSRF. |
 | M8-3 | Rol administrativo y gestión de cuentas | **Implementado** | `users.is_admin` (migración 0002), asignado por CLI (`python -m app.cli make-admin`). Panel `/admin/usuarios`: listar, buscar, ver y desactivar o reactivar (cierra sesiones). Protegido en FastAPI (403 sin rol). |
 | M8-4 | Perfil propio | **Implementado** | `PATCH /auth/me` (nombre, apellido, celular, documento; otros campos → 422) y `POST /auth/password` (cierra otras sesiones). Página `/cuenta`. |
-| M8-5 | Recuperación de contraseña | **Parcial** | Real: `POST /auth/password-reset/request` (202 genérico, máx. 3/h) y `/confirm` (cierra todas las sesiones); token SHA-256, 30 min, un uso; páginas `/recuperar` y `/recuperar/nueva`. Pendiente: proveedor de correo; en desarrollo el enlace se escribe en el log de la API. |
+| M8-5 | Recuperación de contraseña | **Implementado** | `POST /auth/password-reset/request` (202 genérico, máx. 3/h) y `/confirm`; envío por SMTP configurable. Requiere contratar una cuenta de correo. |
 | M8-6 | Límite de intentos de login | **Implementado** | Tabla `login_attempts`: 5 fallos/cuenta y 30/IP en 15 min → 429 uniforme. IP solo de `X-Forwarded-For` de proxies en `TRUSTED_PROXIES`. Límites documentados en DOCUMENTACION.md §14. |
 | M8-7 | Mis pedidos | **Implementado** | `GET /orders`, `GET /orders/{id}` (404 si es ajeno); `/cuenta/pedidos` y `/cuenta/pedidos/[id]`. Nunca muestra "Pago confirmado". |
 | M8-8 | Roles intermedios (operador, domiciliario) | **Pendiente** | — |
@@ -93,7 +93,7 @@ Fuente: `SRS_EcoMovilidad_v3_0` (22/sep/2026). Módulo 8 tomado del Plan de Desa
 | RNF-3.3 | Disponibilidad 99,9% con réplicas | **Pendiente** | Solo existe el entorno local con Docker Compose. |
 | RNF-3.4 | Carga inicial < 1,8 s; mapa < 3 s | **Pendiente** (medición) | Hay SSG/ISR, Server Components y carga diferida de Leaflet (solo en las páginas con mapa), pero no se ha medido. |
 | RNF-3.5 | API RESTful escalable | **Implementado** | FastAPI versionada en `/api/v1`. |
-| RNF-3.6 | HTTPS/TLS 1.3 y WSS | **Pendiente** | Local por HTTP. Las cookies son `Secure` en producción. Sin WebSockets. |
+| RNF-3.6 | HTTPS/TLS 1.3 y WSS | **Parcial** | HTTPS automático con Caddy en `docker-compose.prod.yml`, probado en local con certificado interno. Sin WebSockets. |
 | RNF-3.7 | FAQ y manuales en el portal | **Mock** | `/ayuda` con contenido mock; sin manuales. |
 | LEG-1581 | Tratamiento de datos (Habeas Data) | **Parcial** | Real: consentimiento obligatorio y **evidencia** en `consent_records` (usuario, fecha, versión de la política, pedido) en registro y en cada pedido; versión desactualizada → 409; historial en `/cuenta`. Pendiente: texto legal definitivo revisado por un abogado. |
 | LEG-1480 | Estatuto del Consumidor y retracto | **Pendiente** | Solo hay texto informativo. |

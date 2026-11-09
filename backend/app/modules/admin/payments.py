@@ -12,6 +12,7 @@ def to_admin_payment(payment: Payment) -> AdminPaymentOut:
     return AdminPaymentOut(
         status=payment.status,
         reference=payment.reference,
+        provider=payment.provider,
         provider_transaction_id=payment.provider_transaction_id,
         payment_method_type=payment.payment_method_type,
         status_message=payment.status_message,

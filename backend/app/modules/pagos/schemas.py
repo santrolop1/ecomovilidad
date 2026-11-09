@@ -34,7 +34,7 @@ class PaymentStartOut(ApiModel):
     reference: str
     expires_at: datetime
     sandbox: bool
-    provider: Literal["wompi", "simulado"]
+    provider: Literal["wompi", "simulado", "manual"]
 
 
 class PaymentVerifyIn(ApiModel):
@@ -59,7 +59,7 @@ class PaymentConfigOut(ApiModel):
     sandbox: bool
     window_minutes: int
     # Pasarela en uso: Wompi cuando tiene llaves; si no, la simulada (solo desarrollo y demo).
-    provider: Literal["wompi", "simulado"] | None = None
+    provider: Literal["wompi", "simulado", "manual"] | None = None
 
 
 class SimulationOut(ApiModel):
@@ -71,6 +71,18 @@ class SimulationOut(ApiModel):
     target: Literal["pedido", "alquiler"]
     description: str
     expires_at: datetime | None = None
+
+
+class ManualPaymentOut(ApiModel):
+    """Lo que ve el cliente para pagar por transferencia o contra entrega."""
+
+    reference: str
+    amount: int
+    status: PaymentStatus
+    target: Literal["pedido", "alquiler"]
+    target_id: uuid.UUID
+    expires_at: datetime | None = None
+    instructions: str
 
 
 class SimulationDecisionIn(ApiModel):

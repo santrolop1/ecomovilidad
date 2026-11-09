@@ -15,6 +15,7 @@ import {
   adminContentSchema,
   adminDeliverySchema,
   adminDeliverySummarySchema,
+  contactMessageSchema,
   courierSchema,
   fleetSnapshotSchema,
   geofenceAlertSchema,
@@ -126,6 +127,12 @@ export const adminApi = {
       : send("POST", `/content/${kind}`, adminContentSchema, body),
   deleteContent: (kind: "value-propositions" | "banners" | "news", id: string) =>
     send("DELETE", `/content/${kind}/${encodeURIComponent(id)}`, adminContentSchema, undefined),
+
+  resolveManualPayment: (reference: string, approved: boolean, note?: string) =>
+    send("POST", `/payments/${encodeURIComponent(reference)}/resolve`, z.null(), { approved, note }),
+  listContactMessages: (query: Query) => get("/contact-messages", pageSchema(contactMessageSchema), query),
+  updateContactMessage: (id: string, status: "nuevo" | "atendido") =>
+    send("PATCH", `/contact-messages/${encodeURIComponent(id)}`, contactMessageSchema, { status }),
 
   listOrders: (query: Query) => get("/orders", pageSchema(adminOrderSummarySchema), query),
   getOrder: (id: string) => get(`/orders/${encodeURIComponent(id)}`, adminOrderDetailSchema),

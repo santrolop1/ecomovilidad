@@ -16,6 +16,7 @@ import type {
   ConsentRecord,
   CustomerOrder,
   DeliveryTracking,
+  ManualPayment,
   CustomerRental,
   InvoiceRef,
   PaymentConfig,
@@ -206,7 +207,7 @@ export const refundRequestSchema: z.ZodType<RefundRequest> = z.object({
 
 export const invoiceRefSchema: z.ZodType<InvoiceRef> = z.object({ id: z.string(), number: z.string(), issuedAt: isoDate });
 
-const paymentProvider = z.enum(["wompi", "simulado"]);
+const paymentProvider = z.enum(["wompi", "simulado", "manual"]);
 
 export const paymentStartSchema: z.ZodType<PaymentStart> = z.object({
   checkoutUrl: z.url(),
@@ -255,6 +256,16 @@ export const orderSchema: z.ZodType<Order> = z.object({
 
 const deliveryStatus = z.enum(["creado", "asignado", "en_recogida", "en_transito", "entregado", "fallido"]);
 const deliveryEventSchema = z.object({ status: deliveryStatus, note: z.string().optional(), createdAt: isoDate });
+
+export const manualPaymentSchema: z.ZodType<ManualPayment> = z.object({
+  reference: z.string(),
+  amount: z.number(),
+  status: z.enum(["pending", "approved", "declined", "voided", "error"]),
+  target: z.enum(["pedido", "alquiler"]),
+  targetId: z.string(),
+  expiresAt: isoDate.optional(),
+  instructions: z.string(),
+});
 
 export const customerDeliverySchema = z.object({
   status: deliveryStatus,

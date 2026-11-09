@@ -7,6 +7,7 @@ from app.modules.alquiler import router as rentals
 from app.modules.autenticacion import router as auth
 from app.modules.carrito import router as cart
 from app.modules.catalogo import router as catalog
+from app.modules.contacto import router as contact
 from app.modules.contenidos import router as content
 from app.modules.domicilios import router as tracking
 from app.modules.pagos import invoices_router as invoices
@@ -29,6 +30,7 @@ for module in (
     tracking,
     telemetry,
     content,
+    contact,
     admin,
 ):
     api_router.include_router(module.router)

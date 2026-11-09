@@ -1,0 +1,11 @@
+.git
+.github
+.next
+.demo
+.playwright-mcp
+node_modules
+backend
+backups
+.env*
+!.env.example
+*.md

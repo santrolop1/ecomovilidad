@@ -8,10 +8,14 @@ from app.core.errors import ServiceError
 
 settings = get_settings()
 
+# En producción no se publica la documentación interactiva de la API.
+_docs = {} if settings.environment != "production" else {"docs_url": None, "redoc_url": None, "openapi_url": None}
+
 app = FastAPI(
     title="EcoMovilidad API",
-    version="0.1.0",
+    version="0.7.0",
     description="Catálogo, inventario, carrito, pedidos y alquiler. Área metropolitana de Bucaramanga.",
+    **_docs,
 )
 
 app.add_middleware(

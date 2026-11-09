@@ -1,0 +1,7 @@
+# Publica el portal por HTTPS. Caddy obtiene y renueva el certificado solo;
+# el dominio debe apuntar a este servidor y los puertos 80 y 443 estar abiertos.
+{$DOMAIN} {
+	encode zstd gzip
+	header Strict-Transport-Security "max-age=31536000; includeSubDomains"
+	reverse_proxy web:3000
+}

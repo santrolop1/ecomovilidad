@@ -2,7 +2,7 @@
 
 Tienda en línea, alquiler de flota, domicilios y panel de operación de **EcoMovilidad Colombia S.A.S.** para el área metropolitana de Bucaramanga (Bucaramanga, Floridablanca, Girón y Piedecuesta).
 
-Los 15 casos de uso del proyecto están implementados. Aún no está en producción: usa datos de demostración, una pasarela de pagos de pruebas y un simulador de GPS. Abajo está [lo que falta para salir a producción](#lo-que-falta).
+Los 15 casos de uso del proyecto están implementados. Aún no está publicado: usa datos de demostración, una pasarela de pagos de pruebas y un simulador de GPS. Abajo está [lo que falta para salir a producción](#lo-que-falta).
 
 ## Tecnologías
 
@@ -12,9 +12,9 @@ Los 15 casos de uso del proyecto están implementados. Aún no está en producci
 | Mapas | Leaflet + OpenStreetMap; Google Maps opcional si se configura una llave |
 | Backend (`backend/`) | Python 3.13, FastAPI, SQLAlchemy 2, Pydantic 2, Alembic, Argon2, fpdf2, segno; dependencias con uv |
 | Base de datos | PostgreSQL 16 + PostGIS 3 |
-| Pagos | Pasarela de pruebas propia; integración con Wompi lista para recibir llaves |
+| Pagos | Pasarela de pruebas para desarrollo; en producción, pago manual o Wompi |
 | Pruebas y calidad | Vitest, Testing Library, ESLint, pytest, Ruff, GitHub Actions, gitleaks |
-| Infraestructura | Docker Compose; demo temporal con Cloudflare Tunnel |
+| Infraestructura | Docker Compose; Caddy para HTTPS en producción; demo temporal con Cloudflare Tunnel |
 
 ## Inicio rápido
 
@@ -58,17 +58,17 @@ Sin Docker, `npm run dev` sin `.env.local` arranca la tienda con datos de ejempl
 - **Mantenimiento:** en *Panel > Flota* registra el uso de una unidad. Al 90 % de su umbral sale sola de la oferta, y volver a operar exige registrar el mantenimiento.
 - **Contenidos:** en *Panel > Contenidos* edita la propuesta de valor, los banners y las noticias de la tienda.
 
-Los correos no se envían: el enlace de recuperación de contraseña aparece en `docker compose logs api`.
+En desarrollo los correos no se envían: el enlace de recuperación de contraseña aparece en `docker compose logs api`.
 
 ## Estado por caso de uso
 
 | Caso de uso | Estado | Límite actual |
 | --- | --- | --- |
-| CU-01 Registro e inicio de sesión | Hecho | Sin proveedor de correo real |
+| CU-01 Registro e inicio de sesión | Hecho | Requiere una cuenta SMTP para recuperar contraseñas |
 | CU-02 Catálogo | Hecho | Productos de demostración |
-| CU-03 Compra | Hecho | Pago de pruebas |
+| CU-03 Compra | Hecho | Requiere elegir cómo cobrar |
 | CU-04 Alquiler | Hecho | Sin recargos por demora |
-| CU-05 Pago | Hecho | Pasarela de pruebas; Wompi sin probar con llaves reales |
+| CU-05 Pago | Hecho | Pago manual o Wompi; Wompi sin probar con llaves reales |
 | CU-06 Agendar entrega | Hecho | Cupo por sucursal y franja |
 | CU-07 Seguimiento del domicilio | Hecho | Se actualiza cada 15 s, sin WebSockets |
 | CU-08 Validar entrega | Hecho | El código se escribe en el panel, sin escáner con cámara |
@@ -84,19 +84,14 @@ Detalle por requisito en [REQUISITOS.md](REQUISITOS.md) y por área en [ESTADO.m
 
 ## Lo que falta
 
-**Para cobrar de verdad** se necesita una de estas dos opciones:
+El software está preparado para producción: HTTPS, copias de seguridad, tareas programadas, correo por SMTP, pago manual y una revisión que impide arrancar con una configuración insegura. La guía está en [docs/DESPLIEGUE.md](docs/DESPLIEGUE.md).
 
-- Una pasarela real: abrir una cuenta de Wompi y poner sus llaves en `backend/.env`. La integración ya existe, pero no se ha probado con llaves reales.
-- Pago manual (contra entrega o transferencia, confirmado en el panel). Esto aún no está construido.
+**Lo que queda depende del negocio y no se resuelve con código:**
 
-**Para salir a producción:**
-
-- Servidor con HTTPS y copias de seguridad de la base de datos.
-- Configuración de producción: `COOKIE_SECURE=true`, cabeceras de seguridad y `/docs` cerrado.
-- Tarea programada para vencer reservas y pagos sin depender del tráfico (`python -m app.cli release-expired`).
-- Limpieza periódica del historial de posiciones GPS.
-- Proveedor de correo para recuperar contraseñas y enviar comprobantes.
-- Factura electrónica DIAN, que requiere un proveedor.
+- Contratar un servidor y un dominio.
+- Elegir cómo cobrar: pago manual, ya construido, o abrir una cuenta de Wompi y probarla con sus llaves.
+- Una cuenta de correo SMTP.
+- Factura electrónica DIAN, que requiere un proveedor. La app emite una factura de venta que no la reemplaza.
 - Revisión legal de los textos de datos personales, retracto y drones.
 - Datos reales en lugar de los de demostración.
 
@@ -144,5 +139,6 @@ Sin AWS ni dominio: Cloudflare Tunnel hacia Next.js en este Mac, que debe seguir
 - [REQUISITOS.md](REQUISITOS.md): requisitos del SRS con su estado.
 - [ESTADO.md](ESTADO.md): estado por área.
 - [DEMO_PUBLICA.md](DEMO_PUBLICA.md): cómo publicar la demo temporal.
+- [docs/DESPLIEGUE.md](docs/DESPLIEGUE.md): cómo publicar en producción.
 
 Las sucursales, productos y datos de contacto son **datos de demostración**. Las fotos de producto provienen de Wikimedia Commons (créditos en `/creditos`).

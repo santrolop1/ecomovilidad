@@ -29,10 +29,17 @@ from app.models import Invoice, Order, Payment, PaymentEvent, Rental, User
 from app.models.enums import OrderStatus, PaymentStatus, RentalStatus
 from app.modules.domicilios import service as delivery_service
 from app.modules.inventario.reservations import now_utc
-from app.modules.pagos.gateway import CheckoutCustomer, GatewayTransaction, PaymentGateway, SimulatedGateway
+from app.modules.pagos.gateway import (
+    CheckoutCustomer,
+    GatewayTransaction,
+    ManualGateway,
+    PaymentGateway,
+    SimulatedGateway,
+)
 from app.modules.pagos.invoices import issue_invoice
 from app.modules.pagos.queries import invoice_ref
 from app.modules.pagos.schemas import (
+    ManualPaymentOut,
     PaymentConfigOut,
     PaymentResultOut,
     PaymentStartOut,
@@ -347,6 +354,55 @@ def simulate_decision(
     apply_transaction(db, tx)
     db.commit()
     return SimulationDecisionOut(transaction_id=tx.id)
+
+
+# ── Pago manual ─────────────────────────────────────────────────────────────
+
+
+def manual_info(db: Session, user: User, gateway: PaymentGateway, reference: str) -> ManualPaymentOut:
+    if not isinstance(gateway, ManualGateway):
+        raise NotFoundError("El pago manual no está disponible.")
+    payment = db.scalars(
+        select(Payment).where(
+            Payment.reference == reference, Payment.user_id == user.id, Payment.provider == gateway.name
+        )
+    ).one_or_none()
+    if payment is None:
+        raise NotFoundError("No encontramos ese pago.")
+    target = db.get(Order, payment.order_id) if payment.order_id else db.get(Rental, payment.rental_id)
+    return ManualPaymentOut(
+        reference=payment.reference,
+        amount=payment.amount_in_cents // 100,
+        status=payment.status,
+        target="pedido" if payment.order_id else "alquiler",
+        target_id=target.id,
+        expires_at=target.payment_expires_at,
+        instructions=get_settings().payment_instructions,
+    )
+
+
+def resolve_manual_payment(db: Session, reference: str, *, approved: bool, note: str | None) -> None:
+    """El panel confirma o rechaza lo recibido. Se aplica como cualquier
+    transacción de una pasarela: inventario, domicilio y factura."""
+    payment = db.scalars(select(Payment).where(Payment.reference == reference).with_for_update()).one_or_none()
+    if payment is None or payment.provider != ManualGateway.name:
+        raise NotFoundError("No encontramos ese pago manual.")
+    if payment.status != PaymentStatus.PENDING:
+        raise ConflictError("Este pago ya se procesó.")
+    target = db.get(Order, payment.order_id) if payment.order_id else db.get(Rental, payment.rental_id)
+    if approved and target.status != OrderStatus.PENDING:
+        raise ConflictError("El pedido o alquiler ya no está pendiente: venció o se canceló.")
+    tx = GatewayTransaction(
+        id=f"MAN-{secrets.token_hex(8).upper()}",
+        reference=payment.reference,
+        status="APPROVED" if approved else "DECLINED",
+        amount_in_cents=payment.amount_in_cents,
+        currency=payment.currency,
+        payment_method_type=ManualGateway.METHOD,
+        status_message=note or (None if approved else "Pago no recibido."),
+    )
+    apply_transaction(db, tx)
+    db.commit()
 
 
 # ── Vencimiento sin pago ────────────────────────────────────────────────────
