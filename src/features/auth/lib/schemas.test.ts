@@ -25,5 +25,10 @@ describe("formularios de cuenta", () => {
     expect(safeNextPath("/cuenta/pedidos")).toBe("/cuenta/pedidos");
     expect(safeNextPath("//evil.com")).toBe("/");
     expect(safeNextPath("https://evil.com")).toBe("/");
+    expect(safeNextPath("/\\evil.com")).toBe("/");
+    expect(safeNextPath("/\tevil.com")).toBe("/");
+    expect(safeNextPath("/%5Cevil.com")).toBe("/%5Cevil.com");
+    expect(safeNextPath("/alquiler/kondor?desde=1#pago")).toBe("/alquiler/kondor?desde=1#pago");
+    expect(safeNextPath(["/cuenta"])).toBe("/");
   });
 });

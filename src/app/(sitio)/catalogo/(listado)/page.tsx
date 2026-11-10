@@ -58,7 +58,10 @@ export default async function CatalogPage({ searchParams }: PageProps<"/catalogo
             <CatalogFilters facets={facets} />
           </div>
         </aside>
-        <section aria-label="Resultados" className="min-w-0 space-y-6">
+        <section aria-labelledby="resultados" className="min-w-0 space-y-6">
+          <h2 id="resultados" className="sr-only">
+            Resultados
+          </h2>
           <CatalogToolbar total={total} facets={facets} />
           <CatalogResultsRegion>
             {items.length > 0 ? <ProductGrid products={items} priorityCount={3} /> : <CatalogEmptyState />}

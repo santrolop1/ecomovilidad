@@ -9,3 +9,9 @@ const bogotaDate = new Intl.DateTimeFormat("en-CA", {
 export function todayInBogota(now: Date = new Date()): string {
   return bogotaDate.format(now);
 }
+
+/** Suma días a una fecha AAAA-MM-DD, sin depender de la zona horaria. */
+export function addDays(isoDate: string, days: number): string {
+  const [year, month, day] = isoDate.split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10);
+}

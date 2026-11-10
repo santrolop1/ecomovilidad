@@ -10,6 +10,7 @@ import { fulfillmentLabels, orderStatusLabels, paymentLabels } from "@/features/
 import { adminApi } from "@/lib/api/admin";
 import { isApiError } from "@/lib/api/errors";
 import { formatCOP, formatDate, formatDateTime, shortId } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import { getAdminUser } from "@/features/admin/lib/guard";
 
 export const metadata = { title: "Detalle de pedido" };
@@ -22,9 +23,9 @@ const slotLabels: Record<string, string> = {
   "slot-16": "4:00 p. m. – 6:00 p. m.",
 };
 
-function Field({ label, children }: { label: string; children: ReactNode }) {
+function Field({ label, children, className }: { label: string; children: ReactNode; className?: string }) {
   return (
-    <div className="min-w-0">
+    <div className={cn("min-w-0", className)}>
       <dt className="text-xs text-muted-foreground">{label}</dt>
       <dd className="mt-0.5 break-words">{children}</dd>
     </div>
@@ -111,19 +112,19 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/pedid
               <Field label="Método">{fulfillmentLabels[order.fulfillmentMethod]}</Field>
               <Field label="Sucursal">{order.branchName}, {order.branchCity}</Field>
               {order.fulfillmentMethod === "domicilio" && (
-                <div className="col-span-2">
-                  <Field label="Dirección">{order.deliveryAddress}, {order.deliveryCity}</Field>
-                </div>
+                <Field label="Dirección" className="col-span-2">
+                  {order.deliveryAddress}, {order.deliveryCity}
+                </Field>
               )}
               <Field label="Fecha">{formatDate(`${order.scheduledDate}T12:00:00-05:00`)}</Field>
               <Field label="Franja">{slotLabels[order.timeSlot] ?? order.timeSlot}</Field>
-              {order.deliveryId && (
-                <div className="col-span-2">
-                  <Link href={`/admin/domicilios/${order.deliveryId}`} className="underline">Gestionar domicilio</Link>
-                </div>
-              )}
               {order.paymentMethod && <Field label="Método elegido (histórico)">{paymentLabels[order.paymentMethod]}</Field>}
             </dl>
+            {order.deliveryId && (
+              <Link href={`/admin/domicilios/${order.deliveryId}`} className="mt-3 inline-block text-sm underline">
+                Gestionar domicilio
+              </Link>
+            )}
           </section>
           {order.refundRequest && <RefundRequestCard kind="pedido" id={order.id} request={order.refundRequest} />}
           <PaymentAttempts payments={order.payments} invoice={order.invoice} expiresAt={order.paymentExpiresAt} />

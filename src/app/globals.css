@@ -66,8 +66,9 @@
   --paper: #f8fafc;
   --slate: #64748b;
   --line: #dce3ec;
-  --success: #0b7a45;
-  --warning: #a15c07;
+  /* Más oscuros que volt-strong: deben leerse sobre su propio fondo al 10 %. */
+  --success: #0a6e3f;
+  --warning: #8f5106;
 
   --background: var(--paper);
   --foreground: var(--ink);

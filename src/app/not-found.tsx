@@ -13,6 +13,7 @@ export default function NotFound() {
       <main id="contenido" className="flex-1">
     <Container className="py-20">
       <EmptyState
+        headingLevel="h1"
         icon={Compass}
         title="Esta página no existe"
         description="Puede que el enlace esté desactualizado o que el producto ya no esté en el catálogo."
