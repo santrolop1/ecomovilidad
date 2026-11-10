@@ -7,7 +7,8 @@ import { Providers } from "./providers";
 import "./globals.css";
 
 const archivo = Archivo({
-  subsets: ["latin", "latin-ext"],
+  // "latin" ya trae tildes, ñ y ü; "latin-ext" añadía otra fuente de ~85 KB.
+  subsets: ["latin"],
   axes: ["wdth"],
   variable: "--font-archivo",
   display: "swap",

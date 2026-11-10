@@ -394,6 +394,9 @@ export function CheckoutForm({ branches, timeSlots: initialSlots, minDate, requi
                 </Label>
               ))}
             </RadioGroup>
+            {timeSlots.length > 0 && !timeSlots.some((slot) => slot.available) && (
+              <p className="text-sm text-muted-foreground">No quedan franjas para esta fecha. Elige otro día.</p>
+            )}
             {errors["fulfillment.timeSlotId"] && (
               <p className="text-xs font-medium text-destructive">{errors["fulfillment.timeSlotId"]}</p>
             )}

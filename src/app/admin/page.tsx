@@ -22,22 +22,20 @@ const statusBar: Record<(typeof orderStatuses)[number], string> = {
 };
 
 function Figure({ label, value, detail, href }: { label: string; value: string | number; detail?: string; href?: string }) {
-  const body = (
-    <>
-      <dt className="text-sm text-muted-foreground">{label}</dt>
+  // El enlace va dentro del <dt> y cubre la tarjeta: un <dl> no admite <a> entre sus <dt> y <dd>.
+  return (
+    <div className="relative min-w-0 bg-card p-4 has-[a:hover]:opacity-80 sm:p-5">
+      <dt className="text-sm text-muted-foreground">
+        {href ? (
+          <Link href={href} className="rounded-md after:absolute after:inset-0">
+            {label}
+          </Link>
+        ) : (
+          label
+        )}
+      </dt>
       <dd className="font-display-tight tabular mt-1 text-2xl sm:text-3xl">{value}</dd>
       {detail && <dd className="mt-0.5 text-xs text-muted-foreground">{detail}</dd>}
-    </>
-  );
-  return (
-    <div className="min-w-0 bg-card p-4 sm:p-5">
-      {href ? (
-        <Link href={href} className="block rounded-md hover:opacity-80">
-          {body}
-        </Link>
-      ) : (
-        body
-      )}
     </div>
   );
 }

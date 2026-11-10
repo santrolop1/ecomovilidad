@@ -3,7 +3,7 @@ import { Container } from "@/components/shared/container";
 import { CheckoutForm } from "@/features/checkout/components/checkout-form";
 import { loadPaymentConfig } from "@/features/payments/lib/config";
 import { api, isRealApi } from "@/lib/api";
-import { todayInBogota } from "@/lib/dates";
+import { addDays, todayInBogota } from "@/lib/dates";
 import { createPageMetadata } from "@/lib/seo";
 
 export const metadata = createPageMetadata({
@@ -16,12 +16,16 @@ export const metadata = createPageMetadata({
 export default async function CheckoutPage() {
   // Página por solicitud: la fecha mínima y las franjas dependen del día.
   await connection();
-  const minDate = todayInBogota();
-  const [branches, timeSlots, paymentConfig] = await Promise.all([
+  const today = todayInBogota();
+  const [branches, todaySlots, paymentConfig] = await Promise.all([
     api.branches.listBranches(),
-    api.rentals.listTimeSlots(minDate),
+    api.rentals.listTimeSlots(today),
     loadPaymentConfig(),
   ]);
+  // Pasada la última franja del día, se propone mañana en vez de un día sin cupo.
+  const todayOpen = todaySlots.some((slot) => slot.available);
+  const minDate = todayOpen ? today : addDays(today, 1);
+  const timeSlots = todayOpen ? todaySlots : await api.rentals.listTimeSlots(minDate);
 
   return (
     <Container className="py-10 sm:py-14">

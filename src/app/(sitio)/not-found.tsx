@@ -10,6 +10,7 @@ export default function SiteNotFound() {
     <Container className="py-20">
       <EmptyState
         icon={Compass}
+        headingLevel="h1"
         title="Esta página no existe"
         description="Puede que el enlace esté desactualizado o que el producto ya no esté en el catálogo."
         action={

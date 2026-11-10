@@ -32,8 +32,16 @@ export const registerSchema = z
   });
 
 /** Solo rutas internas: evita redirecciones abiertas (?next=https://otro-sitio). */
+/**
+ * Ruta interna a la que volver tras ingresar. Rechaza todo lo que un navegador
+ * pueda leer como otro sitio: `//x`, `/\\x` (equivale a `//x`) y caracteres de
+ * control, que el navegador elimina antes de interpretar la URL.
+ */
 export function safeNextPath(value: unknown): string {
-  return typeof value === "string" && value.startsWith("/") && !value.startsWith("//") ? value : "/";
+  if (typeof value !== "string" || !value.startsWith("/") || /[\\\u0000-\u001f\u007f]/.test(value)) return "/";
+  const base = "http://interno.invalid";
+  const url = new URL(value, base);
+  return url.origin === base ? url.pathname + url.search + url.hash : "/";
 }
 
 const strongPassword = z
