@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { ActionResult } from "@/lib/action-result";
 import type { RentalUnit } from "@/lib/api/admin-schemas";
-import { finishUnitMaintenance, recordUnitUsage, setUnitThreshold } from "../actions";
+import { finishUnitMaintenance, recordUnitUsage, setUnitInterval, setUnitThreshold } from "../actions";
 
 export function UnitMaintenance({ unit }: { unit: RentalUnit }) {
   const router = useRouter();
@@ -19,6 +19,7 @@ export function UnitMaintenance({ unit }: { unit: RentalUnit }) {
   const [amount, setAmount] = useState("");
   const [usageNote, setUsageNote] = useState("");
   const [threshold, setThreshold] = useState(String(unit.serviceThreshold));
+  const [interval, setIntervalDays] = useState(String(unit.serviceIntervalDays));
   const [finishNote, setFinishNote] = useState("");
 
   function run(action: () => Promise<ActionResult<unknown>>, message: string, reset?: () => void) {
@@ -43,7 +44,10 @@ export function UnitMaintenance({ unit }: { unit: RentalUnit }) {
         <div className="space-y-2 rounded-xl border border-border p-4">
           <Label htmlFor="m-finish">Qué se le hizo</Label>
           <Textarea id="m-finish" maxLength={300} value={finishNote} onChange={(e) => setFinishNote(e.target.value)} className="bg-card" />
-          <p className="text-xs text-muted-foreground">Al terminar, el uso vuelve a cero y la unidad regresa a la oferta.</p>
+          <p className="text-xs text-muted-foreground">
+            Al terminar, el uso vuelve a cero, la próxima revisión periódica se programa en {unit.serviceIntervalDays} días y la unidad regresa a
+            la oferta.
+          </p>
           <Button
             type="button"
             className="h-10 rounded-full"
@@ -102,6 +106,25 @@ export function UnitMaintenance({ unit }: { unit: RentalUnit }) {
           </Button>
         </div>
         <p className="text-xs text-muted-foreground">Al llegar al 90 % la unidad sale sola de la oferta.</p>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="m-interval">Revisión periódica cada (días)</Label>
+        <div className="flex flex-wrap gap-2">
+          <Input id="m-interval" inputMode="numeric" value={interval} onChange={(e) => setIntervalDays(e.target.value)} className="w-28 bg-card" />
+          <Button
+            type="button"
+            variant="outline"
+            className="h-10 rounded-full"
+            disabled={isPending || interval === String(unit.serviceIntervalDays)}
+            onClick={() => run(() => setUnitInterval(unit.id, interval), "Plazo de revisión actualizado.")}
+          >
+            Guardar plazo
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Aunque casi no se use, al vencer el plazo la unidad sale de la oferta hasta registrar el mantenimiento. Avisamos 7 días antes.
+        </p>
       </div>
     </div>
   );

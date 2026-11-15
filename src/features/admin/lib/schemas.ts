@@ -145,6 +145,29 @@ export const unitThresholdSchema = z.coerce
   .min(1, "Mínimo 1.")
   .max(1_000_000);
 
+export const unitIntervalSchema = z.coerce
+  .number({ error: "Escribe un número." })
+  .int("Sin decimales.")
+  .min(1, "Mínimo 1 día.")
+  .max(730, "Máximo 730 días.");
+
+/** Punto de entrega del dron: dentro del área metropolitana de Bucaramanga. */
+export const droneAssignSchema = z.object({
+  droneDeviceId: z.string().uuid("Elige un dron."),
+  destinationLatitude: z.coerce.number({ error: "Latitud no válida." }).min(6.9, "Fuera del área metropolitana.").max(7.3, "Fuera del área metropolitana."),
+  destinationLongitude: z.coerce
+    .number({ error: "Longitud no válida." })
+    .min(-73.3, "Fuera del área metropolitana.")
+    .max(-72.9, "Fuera del área metropolitana."),
+});
+
+export const rentalCheckOutSchema = z.object({ note: z.string().trim().max(300, "Máximo 300 caracteres.").optional() });
+
+export const rentalCheckInSchema = z.object({
+  usage: z.coerce.number({ error: "Escribe un número." }).min(0, "No puede ser negativo.").max(100_000),
+  note: z.string().trim().max(300, "Máximo 300 caracteres.").optional(),
+});
+
 export const maintenanceNoteSchema = z.string().trim().min(3, "Escribe qué se hizo.").max(300, "Máximo 300 caracteres.");
 
 export const courierFormSchema = z.object({
@@ -164,6 +187,7 @@ export const deliveryStatusSchema = z
 
 export const deliveryValidationSchema = z.discriminatedUnion("method", [
   z.object({ method: z.literal("qr"), code: z.string().trim().regex(/^\d{6}$/, "El código tiene 6 dígitos.") }),
+  z.object({ method: z.literal("dron") }),
   z.object({
     method: z.literal("firma"),
     signerName: z.string().trim().min(3, "Escribe quién recibe.").max(120),

@@ -102,6 +102,10 @@ export interface CustomerRental {
   unitCode?: string;
   startAt: string;
   endAt: string;
+  /** La sucursal registró la salida del vehículo con el cliente. */
+  checkedOutAt?: string;
+  /** La sucursal registró la entrada del vehículo. */
+  returnedAt?: string;
   status: RentalStatus;
   price: number;
   paymentExpiresAt?: string;

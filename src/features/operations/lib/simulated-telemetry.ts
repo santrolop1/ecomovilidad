@@ -146,7 +146,8 @@ function startTrip(asset: SimulatedAsset, hub: Hub, random: Random, midway = fal
   asset.status = "en_uso";
   asset.returning = false;
   asset.target = randomNear(hub.location, 1200, asset.kind === "dron" ? 2500 : 4000, random);
-  if (asset.kind === "domicilio") asset.destination = asset.target;
+  // Domiciliarios y drones de domicilios van a un punto de entrega.
+  if (asset.kind === "domicilio" || asset.kind === "dron") asset.destination = asset.target;
   if (midway) asset.position = moveToward(asset.parking, asset.target, distanceMeters(asset.parking, asset.target) * random());
 }
 
@@ -221,6 +222,22 @@ export function advanceFleet(fleet: SimulatedAsset[], hubs: Hub[], random: Rando
   return fleet;
 }
 
+/** Qué hace cada activo, como lo describe la operación real. */
+export function activityOf(asset: SimulatedAsset): string {
+  const delivers = asset.kind === "domicilio" || asset.kind === "dron";
+  switch (asset.status) {
+    case "en_uso":
+      if (asset.returning) return "Regresando a la sucursal";
+      return delivers ? "Llevando un domicilio" : "Alquilado";
+    case "mantenimiento":
+      return "En mantenimiento";
+    case "incidencia":
+      return "Incidencia: revisar en el mapa";
+    default:
+      return delivers ? "Libre" : "Disponible en su sucursal";
+  }
+}
+
 function toSnapshot(fleet: SimulatedAsset[], now: Date): TelemetrySnapshot {
   return {
     at: now.toISOString(),
@@ -238,6 +255,7 @@ function toSnapshot(fleet: SimulatedAsset[], now: Date): TelemetrySnapshot {
         hubId: asset.hubId,
         ...(asset.destination ? { destination: { ...asset.destination } } : {}),
         updatedAt: asset.updatedAt,
+        activity: activityOf(asset),
       }),
     ),
   };

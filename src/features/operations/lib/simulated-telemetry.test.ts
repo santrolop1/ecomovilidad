@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { advanceFleet, createFleet, createRandom, createSimulatedTelemetry, distanceMeters, isInsideMetro } from "./simulated-telemetry";
+import { activityOf, advanceFleet, createFleet, createRandom, createSimulatedTelemetry, distanceMeters, isInsideMetro } from "./simulated-telemetry";
 import { countByStatus, type Hub, type TelemetrySnapshot } from "./telemetry";
 
 // Coordenadas de las sucursales DEMO del seed (backend/app/db/seed_data.json).
@@ -69,5 +69,23 @@ describe("telemetría simulada", () => {
     // El snapshot no expone el estado interno de la simulación.
     expect(snapshots[0].assets[0]).not.toHaveProperty("target");
     expect(snapshots[0].assets[0]).not.toHaveProperty("parking");
+  });
+});
+
+describe("actividad de cada activo", () => {
+  it("describe qué hace cada activo, incluidos los drones que llevan domicilios", () => {
+    const random = createRandom(5);
+    const fleet = createFleet(hubs, random, start);
+    for (let tick = 0; tick < 200; tick += 1) advanceFleet(fleet, hubs, random, new Date(start.getTime() + tick * 3000));
+    const drones = fleet.filter((a) => a.kind === "dron");
+    expect(drones.length).toBeGreaterThan(0);
+    for (const asset of fleet) {
+      const text = activityOf(asset);
+      expect(text.length).toBeGreaterThan(0);
+      if (asset.status === "en_uso" && !asset.returning && asset.kind === "dron") {
+        expect(text).toBe("Llevando un domicilio");
+        expect(asset.destination).toBeDefined();
+      }
+    }
   });
 });

@@ -23,7 +23,7 @@ export function UnitUsage({ unit }: { unit: RentalUnit }) {
       </span>
       {unit.serviceAlert !== "ok" && (
         <span className={cn("mt-1 block text-xs font-medium", unit.serviceAlert === "bloqueado" ? "text-destructive" : "text-warning")}>
-          {alertLabels[unit.serviceAlert]}
+          {unit.serviceReason ?? alertLabels[unit.serviceAlert]}
         </span>
       )}
     </span>

@@ -108,6 +108,10 @@ export const adminApi = {
 
   assignNearestDelivery: (id: string) =>
     send("POST", `/deliveries/${encodeURIComponent(id)}/assign-nearest`, adminDeliverySchema, {}),
+  listDeliveryDrones: () => get("/delivery-drones", z.array(gpsDeviceSchema)),
+  assignDeliveryDrone: (id: string, body: unknown) =>
+    send("POST", `/deliveries/${encodeURIComponent(id)}/assign-drone`, adminDeliverySchema, body),
+  recordDeliveryDrop: (id: string) => send("POST", `/deliveries/${encodeURIComponent(id)}/drop`, adminDeliverySchema, {}),
 
   fleet: () => get("/telemetry/fleet", fleetSnapshotSchema),
   listGpsDevices: () => get("/gps-devices", z.array(gpsDeviceSchema)),
@@ -148,6 +152,10 @@ export const adminApi = {
   getRental: (id: string) => get(`/rentals/${encodeURIComponent(id)}`, adminRentalSchema),
   updateRentalStatus: (id: string, status: RentalStatusValue) =>
     send("PATCH", `/rentals/${encodeURIComponent(id)}`, adminRentalSchema, { status }),
+  checkOutRental: (id: string, body: unknown) =>
+    send("POST", `/rentals/${encodeURIComponent(id)}/check-out`, adminRentalSchema, body),
+  checkInRental: (id: string, body: unknown) =>
+    send("POST", `/rentals/${encodeURIComponent(id)}/check-in`, adminRentalSchema, body),
   resolveOrderRefund: (id: string) =>
     send("POST", `/orders/${encodeURIComponent(id)}/refund`, adminOrderDetailSchema, undefined),
   resolveRentalRefund: (id: string) =>
@@ -158,6 +166,8 @@ export const adminApi = {
   recordUnitUsage: (id: string, body: unknown) => send("POST", `/rental-units/${encodeURIComponent(id)}/usage`, rentalUnitSchema, body),
   setUnitThreshold: (id: string, serviceThreshold: number) =>
     send("PUT", `/rental-units/${encodeURIComponent(id)}/threshold`, rentalUnitSchema, { serviceThreshold }),
+  setUnitInterval: (id: string, serviceIntervalDays: number) =>
+    send("PUT", `/rental-units/${encodeURIComponent(id)}/interval`, rentalUnitSchema, { serviceIntervalDays }),
   finishUnitMaintenance: (id: string, note: string) =>
     send("POST", `/rental-units/${encodeURIComponent(id)}/maintenance/finish`, rentalUnitSchema, { note }),
   updateRentalUnit: (id: string, status: RentalUnitStatusValue) =>

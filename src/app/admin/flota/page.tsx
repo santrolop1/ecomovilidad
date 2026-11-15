@@ -2,6 +2,7 @@ import { Bike } from "lucide-react";
 import { EmptyState } from "@/components/shared/empty-state";
 import { AdminPageHeader } from "@/features/admin/components/admin-page-header";
 import { type Column, DataTable } from "@/features/admin/components/data-table";
+import { UnitAvailability, UnitNextService } from "@/features/admin/components/unit-availability";
 import { UnitStatusSelect } from "@/features/admin/components/unit-status-select";
 import { UnitUsage } from "@/features/admin/components/unit-usage";
 import { getAdminUser } from "@/features/admin/lib/guard";
@@ -22,7 +23,9 @@ const columns: Column<RentalUnit>[] = [
     ),
   },
   { header: "Vehículo", cell: (u) => u.productName },
+  { header: "Ahora", cell: (u) => <UnitAvailability unit={u} /> },
   { header: "Uso", cell: (u) => <UnitUsage unit={u} /> },
+  { header: "Próxima revisión", cell: (u) => <UnitNextService unit={u} /> },
   { header: "Sucursal", cell: (u) => u.branchName },
   {
     header: "Próximo alquiler",
@@ -36,12 +39,13 @@ export default async function AdminFleetPage() {
   if (!(await getAdminUser())) return null;
   const units = await adminApi.listRentalUnits();
   const inService = units.filter((u) => u.status === "operativo").length;
+  const out = units.filter((u) => u.availability === "fuera").length;
   const attention = units.filter((u) => u.serviceAlert !== "ok").length;
   return (
     <>
       <AdminPageHeader
         title="Flota de alquiler"
-        description={`${units.length} unidades, ${inService} operativas. Las unidades en mantenimiento o retiradas no se ofrecen en /alquiler.`}
+        description={`${units.length} unidades, ${inService} operativas, ${out} afuera con clientes. Las unidades afuera, en mantenimiento o retiradas no se ofrecen en /alquiler.`}
         back={{ href: "/admin/alquileres", label: "Alquileres" }}
       />
       {attention > 0 && (

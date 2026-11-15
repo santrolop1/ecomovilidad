@@ -267,19 +267,26 @@ export const manualPaymentSchema: z.ZodType<ManualPayment> = z.object({
   instructions: z.string(),
 });
 
+const deliveryCarrier = z.enum(["domiciliario", "dron"]);
+
 export const customerDeliverySchema = z.object({
   status: deliveryStatus,
   trackingToken: z.string(),
+  carrier: deliveryCarrier.optional(),
   confirmationCode: z.string().optional(),
   qrImage: z.string().optional(),
   courierName: z.string().optional(),
   deliveredAt: isoDate.optional(),
   failureReason: z.string().optional(),
+  droppedAt: isoDate.optional(),
+  dropDistanceM: z.number().optional(),
+  canConfirmReceipt: z.boolean().optional(),
   events: z.array(deliveryEventSchema),
 });
 
 export const deliveryTrackingSchema: z.ZodType<DeliveryTracking> = z.object({
   status: deliveryStatus,
+  carrier: deliveryCarrier.optional(),
   courierFirstName: z.string().optional(),
   city: z.string().optional(),
   branchName: z.string(),
@@ -447,6 +454,8 @@ export const customerRentalSchema: z.ZodType<CustomerRental> = z.object({
   unitCode: z.string().optional(),
   startAt: isoDate,
   endAt: isoDate,
+  checkedOutAt: isoDate.optional(),
+  returnedAt: isoDate.optional(),
   status: z.enum(["pending", "confirmed", "active", "completed", "cancelled"]),
   price: z.number().int().nonnegative(),
   paymentExpiresAt: isoDate.optional(),

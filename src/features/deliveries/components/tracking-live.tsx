@@ -65,11 +65,18 @@ export function TrackingLive({ token, initial }: { token: string; initial: Deliv
           <dt className="text-xs text-muted-foreground">Despacha</dt>
           <dd>{tracking.branchName}</dd>
         </div>
-        {tracking.courierFirstName && (
+        {tracking.carrier === "dron" ? (
           <div>
-            <dt className="text-xs text-muted-foreground">Domiciliario</dt>
-            <dd>{tracking.courierFirstName}</dd>
+            <dt className="text-xs text-muted-foreground">Lo lleva</dt>
+            <dd>Un dron de EcoMovilidad</dd>
           </div>
+        ) : (
+          tracking.courierFirstName && (
+            <div>
+              <dt className="text-xs text-muted-foreground">Domiciliario</dt>
+              <dd>{tracking.courierFirstName}</dd>
+            </div>
+          )
         )}
       </dl>
       {stale && <p className="text-xs text-muted-foreground">No pudimos actualizar el avance. Lo intentaremos de nuevo.</p>}

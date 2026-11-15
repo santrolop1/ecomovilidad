@@ -23,6 +23,7 @@ from app.core.config import get_settings
 from app.core.errors import ConflictError, NotFoundError, ServiceError
 from app.models import Branch, Product, Rental, RentalRate, RentalUnit, User
 from app.models.enums import BranchService, ConsentPurpose, RentalRateUnit, RentalStatus, RentalUnitStatus
+from app.modules.alquiler import maintenance
 from app.modules.alquiler import repository as repo
 from app.modules.alquiler.models import HOLDING_STATUSES
 from app.modules.alquiler.schemas import (
@@ -72,6 +73,9 @@ def list_offers(db: Session) -> list[RentalOfferOut]:
         .join(Branch, Branch.id == RentalUnit.branch_id)
         .where(
             RentalUnit.status == RentalUnitStatus.OPERATIONAL,
+            ~maintenance.due_by_time(),
+            # Una unidad que salió con un cliente no está disponible hasta que la sucursal registre su entrada.
+            RentalUnit.id.not_in(units_out()),
             Branch.is_active,
             Branch.services.contains([BranchService.RENTAL]),
         )
@@ -187,6 +191,7 @@ def _free_units(
             RentalUnit.product_id == product_id,
             RentalUnit.branch_id == branch_id,
             RentalUnit.status == RentalUnitStatus.OPERATIONAL,
+            ~maintenance.due_by_time(),
         )
         .order_by(RentalUnit.code)
     )
@@ -203,7 +208,22 @@ def _free_units(
             )
         )
     )
-    return [u for u in units if u.id not in busy]
+    # Afuera y con la devolución vencida: no se vuelve a alquilar hasta que regrese.
+    late = set(
+        db.scalars(
+            select(Rental.rental_unit_id).where(
+                Rental.rental_unit_id.in_([u.id for u in units]),
+                Rental.status == RentalStatus.ACTIVE,
+                Rental.end_at <= now_utc(),
+            )
+        )
+    )
+    return [u for u in units if u.id not in busy and u.id not in late]
+
+
+def units_out():
+    """Unidades que salieron de la sucursal con un cliente y aún no vuelven."""
+    return select(Rental.rental_unit_id).where(Rental.status == RentalStatus.ACTIVE, Rental.rental_unit_id.is_not(None))
 
 
 def quote(db: Session, product_id: uuid.UUID, data: RentalPeriodIn) -> RentalQuoteOut:
@@ -229,6 +249,8 @@ def to_rental_out(rental: Rental, info: PaymentInfo | None = None) -> RentalOut:
         branch_city=rental.branch.city,
         branch_address=rental.branch.address,
         unit_code=rental.unit.code if rental.unit else None,
+        checked_out_at=rental.checked_out_at,
+        returned_at=rental.returned_at,
         start_at=rental.start_at,
         end_at=rental.end_at,
         status=rental.status,

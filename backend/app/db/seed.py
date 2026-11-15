@@ -110,6 +110,8 @@ def seed(session: Session) -> dict[str, int]:
             # Drones por horas de vuelo; lo demás por kilómetros (RF 3.1). Umbrales de demostración.
             "usage_unit": UsageUnit.HOURS if offer["product"] in drones else UsageUnit.KM,
             "service_threshold": 50 if offer["product"] in drones else 500,
+            # Revisión periódica: drones cada 60 días; lo demás cada 90.
+            "service_interval_days": 60 if offer["product"] in drones else 90,
             "product_id": product_ids[offer["product"]],
             "branch_id": branch_ids[branch],
             "code": f"{_unit_prefix(offer['product'])}-{branch_code}-{n:02d}",
