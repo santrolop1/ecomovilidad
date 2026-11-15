@@ -89,7 +89,7 @@ Detalle por requisito en [REQUISITOS.md](REQUISITOS.md) y por área en [ESTADO.m
 
 ## Lo que falta
 
-El software está preparado para producción: HTTPS, copias de seguridad, tareas programadas, correo por SMTP, pago manual y una revisión que impide arrancar con una configuración insegura. La guía está en [docs/DESPLIEGUE.md](docs/DESPLIEGUE.md).
+El proyecto incluye las piezas para desplegarlo: HTTPS con Caddy, copias de seguridad, tareas programadas, correo por SMTP, pago manual y una revisión que impide arrancar con una configuración insegura. **Todavía no está desplegado en producción**, y el correo real y Wompi no se han probado con servicios reales. La guía está en [docs/DESPLIEGUE.md](docs/DESPLIEGUE.md).
 
 **Lo que queda depende del negocio y no se resuelve con código:**
 
