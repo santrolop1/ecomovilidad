@@ -55,7 +55,12 @@ Sin Docker, `npm run dev` sin `.env.local` arranca la tienda con datos de ejempl
   GPS_TOKEN=<token> python3 scripts/simulate_gps.py --salir   # sale de la zona permitida y genera una alerta
   ```
   Sin dispositivos registrados, el mapa de Operación muestra una flota simulada con un aviso visible.
-- **Mantenimiento:** en *Panel > Flota* registra el uso de una unidad. Al 90 % de su umbral sale sola de la oferta, y volver a operar exige registrar el mantenimiento.
+- **Domicilio con dron:** registra un dispositivo GPS de tipo *Dron* sin unidad de alquiler. En el domicilio elige *Dron*, escribe el punto exacto de entrega y avanza hasta *En camino*. El dron avisa que soltó el paquete (o el panel lo registra con su GPS) solo si está a menos de 50 m del punto; luego el cliente toca *Recibí mi pedido* en su cuenta. Si no confirma ni reclama en 30 minutos, el panel cierra con la evidencia del dron.
+  ```bash
+  GPS_TOKEN=<token del dron> python3 scripts/simulate_gps.py --destino 7.1105,-73.1180 --liberar
+  ```
+- **Salida y entrada en sucursal:** en el detalle de un alquiler pagado, *Registrar salida del vehículo*. Desde ese momento la unidad aparece *Afuera con un cliente* y no se ofrece en `/alquiler`. Al volver, *Registrar entrada* con los km u horas de uso, que suman al mantenimiento.
+- **Mantenimiento:** en *Panel > Flota* registra el uso de una unidad. Al 90 % de su umbral sale sola de la oferta, y volver a operar exige registrar el mantenimiento. Además cada unidad tiene una revisión periódica (90 días; 60 los drones, editable): el panel avisa 7 días antes y, al vencer, la unidad deja de ofrecerse hasta registrar el mantenimiento.
 - **Contenidos:** en *Panel > Contenidos* edita la propuesta de valor, los banners y las noticias de la tienda.
 
 En desarrollo los correos no se envían: el enlace de recuperación de contraseña aparece en `docker compose logs api`.
@@ -71,11 +76,11 @@ En desarrollo los correos no se envían: el enlace de recuperación de contrase�
 | CU-05 Pago | Hecho | Pago manual o Wompi; Wompi sin probar con llaves reales |
 | CU-06 Agendar entrega | Hecho | Cupo por sucursal y franja |
 | CU-07 Seguimiento del domicilio | Hecho | Se actualiza cada 15 s, sin WebSockets |
-| CU-08 Validar entrega | Hecho | El código se escribe en el panel, sin escáner con cámara |
+| CU-08 Validar entrega | Hecho | Código QR, firma o, con dron, GPS del punto de entrega más confirmación del cliente. El código se escribe en el panel, sin escáner con cámara |
 | CU-09 Contenidos | Hecho | Sin subir imágenes; el texto principal del inicio y la ayuda son fijos |
 | CU-10 Monitoreo de flota | Hecho | Probado con simulador, sin aparatos físicos |
 | CU-11 Geofencing | Hecho | Zonas circulares; alertas solo en el panel |
-| CU-12 Mantenimiento | Hecho | El uso se registra a mano, no sale del GPS |
+| CU-12 Mantenimiento | Hecho | Por uso y por tiempo. El uso se registra a mano o al recibir el vehículo, no sale del GPS |
 | CU-13 Inventario | Hecho | Solo registra lo que pasa por la app |
 | CU-14 Gestionar domicilios | Hecho | El domiciliario no tiene app ni sesión: el panel registra su avance |
 | CU-15 Cancelación y reembolso | Hecho | El dinero se devuelve a mano en la pasarela; sin nota crédito |

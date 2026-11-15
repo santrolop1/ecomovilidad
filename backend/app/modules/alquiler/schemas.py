@@ -70,6 +70,9 @@ class RentalOut(ApiModel):
     unit_code: str | None = None
     start_at: datetime
     end_at: datetime
+    # La sucursal registra cuándo salió el vehículo con el cliente y cuándo volvió.
+    checked_out_at: datetime | None = None
+    returned_at: datetime | None = None
     status: RentalStatus
     price: int
     payment_expires_at: datetime | None = None
@@ -95,6 +98,17 @@ class RentalUnitOut(ApiModel):
     service_threshold: int
     usage_percent: int
     service_alert: Literal["ok", "proximo", "bloqueado"]
+    # Revisión periódica por tiempo.
+    service_interval_days: int
+    last_service_at: datetime
+    next_service_at: datetime
+    days_to_service: int
+    service_reason: str | None = None
+    # ¿Dónde está ahora? Afuera con un cliente desde que la sucursal registró su salida.
+    availability: Literal["disponible", "fuera", "mantenimiento", "retirada"]
+    current_rental_id: uuid.UUID | None = None
+    checked_out_at: datetime | None = None
+    expected_return_at: datetime | None = None
 
 
 class UnitUsageIn(ApiModel):
@@ -104,6 +118,21 @@ class UnitUsageIn(ApiModel):
 
 class UnitThresholdIn(ApiModel):
     service_threshold: int = Field(ge=1, le=1_000_000)
+
+
+class UnitIntervalIn(ApiModel):
+    service_interval_days: int = Field(ge=1, le=730)
+
+
+class RentalCheckOutIn(ApiModel):
+    note: str | None = Field(default=None, max_length=300)
+
+
+class RentalCheckInIn(ApiModel):
+    """Al recibir el vehículo se anota cuánto se usó (km u horas de vuelo)."""
+
+    usage: float = Field(ge=0, le=100_000)
+    note: str | None = Field(default=None, max_length=300)
 
 
 class MaintenanceFinishIn(ApiModel):

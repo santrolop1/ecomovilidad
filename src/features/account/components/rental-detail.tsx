@@ -45,6 +45,8 @@ export function RentalDetail({ rental }: { rental: CustomerRental }) {
           <dl className="grid gap-3 text-sm sm:grid-cols-2">
             <Field label="Recoge">{formatDateTime(rental.startAt)}</Field>
             <Field label="Devuelve">{formatDateTime(rental.endAt)}</Field>
+            {rental.checkedOutAt && <Field label="Lo recogiste">{formatDateTime(rental.checkedOutAt)}</Field>}
+            {rental.returnedAt && <Field label="Lo devolviste">{formatDateTime(rental.returnedAt)}</Field>}
             <Field label="Sucursal">
               {rental.branchName}
               {rental.branchAddress ? `, ${rental.branchAddress}` : ""}

@@ -2,6 +2,7 @@
 
 import uuid
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
@@ -20,7 +21,7 @@ from app.models import (
     Rental,
     RentalUnit,
 )
-from app.models.enums import DeliveryStatus, RentalStatus, RentalUnitStatus
+from app.models.enums import AssetKind, DeliveryStatus, RentalStatus, RentalUnitStatus
 from app.modules.inventario.reservations import now_utc
 from app.modules.telemetria.schemas import (
     FleetAssetOut,
@@ -36,6 +37,7 @@ from app.modules.telemetria.schemas import (
     PositionIn,
 )
 
+BOGOTA = ZoneInfo("America/Bogota")
 MIN_REPORT_INTERVAL = timedelta(seconds=1)
 STALE_AFTER = timedelta(minutes=5)
 NEAREST_MAX_AGE = timedelta(minutes=10)
@@ -130,17 +132,13 @@ def _trails(db: Session, device_ids: list[uuid.UUID]) -> dict[uuid.UUID, list[Ge
     return trails
 
 
-def _busy_owners(db: Session) -> tuple[set[uuid.UUID], set[uuid.UUID]]:
-    couriers = set(
-        db.scalars(
-            select(Delivery.courier_id).where(
-                Delivery.courier_id.is_not(None),
-                Delivery.status.in_((DeliveryStatus.PICKING_UP, DeliveryStatus.IN_TRANSIT)),
-            )
-        )
-    )
-    units = set(db.scalars(select(Rental.rental_unit_id).where(Rental.status == RentalStatus.ACTIVE)))
-    return couriers, units
+OPEN_DELIVERY = (DeliveryStatus.ASSIGNED, DeliveryStatus.PICKING_UP, DeliveryStatus.IN_TRANSIT)
+MOVING_DELIVERY = (DeliveryStatus.PICKING_UP, DeliveryStatus.IN_TRANSIT)
+DELIVERY_ACTIVITY = {
+    DeliveryStatus.ASSIGNED: "Domicilio asignado",
+    DeliveryStatus.PICKING_UP: "Recogiendo un domicilio",
+    DeliveryStatus.IN_TRANSIT: "Llevando un domicilio",
+}
 
 
 def fleet_snapshot(db: Session) -> FleetSnapshotOut:
@@ -149,21 +147,60 @@ def fleet_snapshot(db: Session) -> FleetSnapshotOut:
     reporting = [d for d in devices if d.last_seen_at is not None]
     trails = _trails(db, [d.id for d in reporting])
     open_alerts = set(db.scalars(select(GeofenceAlert.device_id).where(GeofenceAlert.closed_at.is_(None))))
-    busy_couriers, busy_units = _busy_owners(db)
-    maintenance = set(db.scalars(select(RentalUnit.id).where(RentalUnit.status == RentalUnitStatus.MAINTENANCE)))
+    deliveries = db.scalars(select(Delivery).where(Delivery.status.in_(OPEN_DELIVERY))).all()
+    by_courier = {d.courier_id: d for d in deliveries if d.courier_id}
+    by_drone = {d.drone_device_id: d for d in deliveries if d.drone_device_id}
+    rentals = {
+        r.rental_unit_id: r for r in db.scalars(select(Rental).where(Rental.status == RentalStatus.ACTIVE)).unique()
+    }
+    couriers = {c.id: c for c in db.scalars(select(Courier))}
+    units = {u.id: u for u in db.scalars(select(RentalUnit)).unique()}
+
+    def delivery_of(device: GpsDevice) -> Delivery | None:
+        return by_courier.get(device.courier_id) or by_drone.get(device.id)
 
     def status_of(device: GpsDevice) -> str:
         if device.id in open_alerts:
             return "incidencia"
-        if device.rental_unit_id in maintenance:
+        unit = units.get(device.rental_unit_id)
+        if unit is not None and unit.status == RentalUnitStatus.MAINTENANCE:
             return "mantenimiento"
-        if device.courier_id in busy_couriers or device.rental_unit_id in busy_units:
+        delivery = delivery_of(device)
+        if (delivery is not None and delivery.status in MOVING_DELIVERY) or device.rental_unit_id in rentals:
             return "en_uso"
         return "disponible"
+
+    def owner_of(device: GpsDevice) -> str | None:
+        if device.courier_id in couriers:
+            return couriers[device.courier_id].name
+        unit = units.get(device.rental_unit_id)
+        if unit is not None:
+            return f"{unit.code} · {unit.product.name}"
+        return "Dron de domicilios" if device.kind == AssetKind.DRONE else None
+
+    def activity_of(device: GpsDevice) -> str:
+        delivery = delivery_of(device)
+        if delivery is not None:
+            city = delivery.order.delivery_city
+            return f"{DELIVERY_ACTIVITY[DeliveryStatus(delivery.status)]}{f' en {city}' if city else ''}"
+        rental = rentals.get(device.rental_unit_id)
+        if rental is not None:
+            return f"Alquilado hasta el {rental.end_at.astimezone(BOGOTA):%d/%m a las %H:%M}"
+        unit = units.get(device.rental_unit_id)
+        if unit is not None and unit.status == RentalUnitStatus.MAINTENANCE:
+            return "En mantenimiento"
+        return "Disponible en su sucursal" if unit is not None else "Libre"
+
+    def destination_of(device: GpsDevice) -> GeoPointOut | None:
+        delivery = delivery_of(device)
+        if delivery is None or delivery.destination_latitude is None:
+            return None
+        return GeoPointOut(lat=float(delivery.destination_latitude), lng=float(delivery.destination_longitude))
 
     assets = []
     for device in reporting:
         trail = trails.get(device.id, [])
+        delivery = delivery_of(device)
         assets.append(
             FleetAssetOut(
                 id=device.id,
@@ -177,6 +214,10 @@ def fleet_snapshot(db: Session) -> FleetSnapshotOut:
                 updated_at=device.last_seen_at,
                 stale=now - device.last_seen_at > STALE_AFTER,
                 outside_zone=device.id in open_alerts,
+                owner_name=owner_of(device),
+                activity=activity_of(device),
+                delivery_id=delivery.id if delivery else None,
+                destination=destination_of(device),
             )
         )
     return FleetSnapshotOut(
@@ -186,6 +227,18 @@ def fleet_snapshot(db: Session) -> FleetSnapshotOut:
         active_devices=len(devices),
         at=now,
     )
+
+
+def device_position(
+    db: Session, device_id: uuid.UUID, max_age: timedelta = NEAREST_MAX_AGE
+) -> tuple[float, float, datetime] | None:
+    """Última posición reciente de un dispositivo (p. ej. un dron de domicilios)."""
+    device = db.get(GpsDevice, device_id)
+    if device is None or not device.is_active or device.last_seen_at is None:
+        return None
+    if device.last_seen_at < now_utc() - max_age:
+        return None
+    return float(device.last_latitude), float(device.last_longitude), device.last_seen_at
 
 
 def courier_position(db: Session, courier_id: uuid.UUID) -> tuple[float, float, datetime] | None:
@@ -242,9 +295,13 @@ def _device_out(db: Session, device: GpsDevice) -> dict:
     }
 
 
+def device_out(db: Session, device: GpsDevice) -> GpsDeviceOut:
+    return GpsDeviceOut(**_device_out(db, device))
+
+
 def list_devices(db: Session) -> list[GpsDeviceOut]:
     devices = db.scalars(select(GpsDevice).order_by(GpsDevice.is_active.desc(), GpsDevice.code))
-    return [GpsDeviceOut(**_device_out(db, d)) for d in devices]
+    return [device_out(db, d) for d in devices]
 
 
 def create_device(db: Session, data: GpsDeviceCreateIn) -> GpsDeviceCreatedOut:

@@ -57,6 +57,7 @@ class RentalUnit(UUIDPrimaryKey, Timestamps, Base):
         CheckConstraint(f"usage_unit IN {sql_in(UsageUnit)}", name="valid_usage_unit"),
         CheckConstraint("usage_value >= 0", name="usage_non_negative"),
         CheckConstraint("service_threshold > 0", name="threshold_positive"),
+        CheckConstraint("service_interval_days > 0", name="interval_positive"),
     )
 
     product_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("products.id", ondelete="RESTRICT"), index=True)
@@ -70,6 +71,9 @@ class RentalUnit(UUIDPrimaryKey, Timestamps, Base):
     usage_unit: Mapped[str] = mapped_column(String(10), default=UsageUnit.KM, server_default=UsageUnit.KM)
     usage_value: Mapped[Decimal] = mapped_column(Numeric(10, 1), default=0, server_default="0")
     service_threshold: Mapped[int] = mapped_column(Integer, default=500, server_default="500")
+    # Mantenimiento por tiempo: cada cuántos días toca revisión, aunque casi no se use.
+    service_interval_days: Mapped[int] = mapped_column(Integer, default=90, server_default="90")
+    last_service_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     product: Mapped[Product] = relationship(lazy="joined")
     branch: Mapped[Branch] = relationship(lazy="joined")
@@ -105,6 +109,7 @@ class Rental(UUIDPrimaryKey, Timestamps, Base):
         CheckConstraint(f"status IN {sql_in(RentalStatus)}", name="valid_status"),
         CheckConstraint("end_at > start_at", name="end_after_start"),
         CheckConstraint("price >= 0", name="price_non_negative"),
+        CheckConstraint("returned_at IS NULL OR checked_out_at IS NOT NULL", name="return_after_checkout"),
         ExcludeConstraint(
             ("rental_unit_id", "="),
             ("period", "&&"),
@@ -134,6 +139,12 @@ class Rental(UUIDPrimaryKey, Timestamps, Base):
     contact_phone: Mapped[str | None] = mapped_column(String(20))
     document_type: Mapped[str | None] = mapped_column(String(3))
     document_number: Mapped[str | None] = mapped_column(String(20))
+    # Registro de la sucursal: cuándo salió el vehículo con el cliente y cuándo volvió.
+    checked_out_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    checked_out_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
+    returned_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    returned_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
+    return_usage: Mapped[Decimal | None] = mapped_column(Numeric(10, 1))
 
     product: Mapped[Product] = relationship(lazy="joined")
     branch: Mapped[Branch] = relationship(lazy="joined")

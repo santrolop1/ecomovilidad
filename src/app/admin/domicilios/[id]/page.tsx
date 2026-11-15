@@ -26,13 +26,22 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 export default async function AdminDeliveryPage({ params }: PageProps<"/admin/domicilios/[id]">) {
   if (!(await getAdminUser())) return null;
   const { id } = await params;
-  const [delivery, couriers] = await Promise.all([
+  const [delivery, couriers, drones] = await Promise.all([
     adminApi.getDelivery(id).catch((error: unknown) => {
       if (isApiError(error) && (error.code === "NOT_FOUND" || error.code === "VALIDATION_ERROR")) notFound();
       throw error;
     }),
     adminApi.listCouriers(),
+    adminApi.listDeliveryDrones(),
   ]);
+  const proofText =
+    delivery.proofMethod === "qr"
+      ? "Validada con el código del cliente."
+      : delivery.proofMethod === "dron"
+        ? delivery.customerConfirmedAt
+          ? `El dron dejó el paquete a ${delivery.dropDistanceM} m del punto de entrega y el cliente confirmó que lo recibió.`
+          : `El dron dejó el paquete a ${delivery.dropDistanceM} m del punto de entrega. El cliente no confirmó ni reclamó en 30 minutos.`
+        : `Firmada por ${delivery.signerName}.`;
 
   return (
     <>
@@ -48,18 +57,40 @@ export default async function AdminDeliveryPage({ params }: PageProps<"/admin/do
               <h2 className="font-display-tight text-lg">Acciones</h2>
               <StatusBadge tone={deliveryStatusTone[delivery.status]}>{deliveryStatusLabels[delivery.status]}</StatusBadge>
             </div>
-            <DeliveryActions key={delivery.updatedAt} delivery={delivery} couriers={couriers} />
+            <DeliveryActions key={delivery.updatedAt} delivery={delivery} couriers={couriers} drones={drones} />
           </section>
           {delivery.proofMethod && (
             <section className="space-y-2 rounded-2xl border border-border bg-card p-5">
               <h2 className="font-display-tight text-lg">Prueba de entrega</h2>
-              <p className="text-sm">
-                {delivery.proofMethod === "qr" ? "Validada con el código del cliente." : `Firmada por ${delivery.signerName}.`}
-              </p>
+              <p className="text-sm">{proofText}</p>
               {delivery.signatureImage && (
                 // eslint-disable-next-line @next/next/no-img-element -- firma en línea guardada como PNG
                 <img src={delivery.signatureImage} alt={`Firma de ${delivery.signerName}`} className="max-h-40 rounded-xl border border-border bg-white" />
               )}
+            </section>
+          )}
+          {delivery.carrier === "dron" && delivery.destinationLatitude != null && (
+            <section className="space-y-2 rounded-2xl border border-border bg-card p-5">
+              <h2 className="font-display-tight text-lg">Entrega con dron</h2>
+              <dl className="grid gap-3 text-sm sm:grid-cols-2">
+                <Field label="Punto de entrega">
+                  <span className="tabular">
+                    {delivery.destinationLatitude.toFixed(5)}, {delivery.destinationLongitude?.toFixed(5)}
+                  </span>
+                </Field>
+                <Field label="Liberación del paquete">
+                  {delivery.droppedAt ? (
+                    <span className="tabular">
+                      {formatDateTime(delivery.droppedAt)}, a {delivery.dropDistanceM} m del punto
+                    </span>
+                  ) : (
+                    "Pendiente"
+                  )}
+                </Field>
+                <Field label="Confirmación del cliente">
+                  {delivery.customerConfirmedAt ? formatDateTime(delivery.customerConfirmedAt) : "Pendiente"}
+                </Field>
+              </dl>
             </section>
           )}
         </div>
@@ -73,7 +104,7 @@ export default async function AdminDeliveryPage({ params }: PageProps<"/admin/do
               <Field label="Despacha">{delivery.branchName}</Field>
               <Field label="Fecha">{formatDate(`${delivery.scheduledDate}T12:00:00-05:00`)}</Field>
               <Field label="Franja">{timeSlotLabels[delivery.timeSlot] ?? delivery.timeSlot}</Field>
-              <Field label="Domiciliario">{delivery.courierName ?? "Sin asignar"}</Field>
+              <Field label={delivery.carrier === "dron" ? "Dron" : "Domiciliario"}>{delivery.courierName ?? "Sin asignar"}</Field>
               {delivery.failureReason && <Field label="Motivo del fallo">{delivery.failureReason}</Field>}
             </dl>
             <div className="mt-4 flex flex-wrap gap-3 text-sm">

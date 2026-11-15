@@ -37,7 +37,7 @@ const columns: Column<AdminDeliverySummary>[] = [
       </span>
     ),
   },
-  { header: "Domiciliario", cell: (d) => d.courierName ?? "Sin asignar" },
+  { header: "Lo lleva", cell: (d) => d.courierName ?? "Sin asignar" },
   { header: "Despacha", cell: (d) => d.branchName, hideOnMobile: true, className: "hidden xl:table-cell" },
 ];
 

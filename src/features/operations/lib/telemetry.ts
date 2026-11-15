@@ -38,6 +38,12 @@ export interface FleetAsset {
   /** Domicilios: punto de entrega. */
   destination?: GeoPoint;
   updatedAt: string;
+  /** Quién es: domiciliario, unidad de alquiler o dron de domicilios. */
+  ownerName?: string;
+  /** Qué está haciendo ahora, p. ej. "Llevando un domicilio en Girón". */
+  activity?: string;
+  /** Domicilio que lleva, para abrirlo desde el mapa. */
+  deliveryId?: string;
 }
 
 export interface Zone {

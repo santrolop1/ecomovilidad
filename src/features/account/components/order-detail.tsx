@@ -74,7 +74,7 @@ export function OrderDetail({ order }: { order: CustomerOrder }) {
               <Field label="Franja">{timeSlotLabels[order.timeSlot] ?? order.timeSlot}</Field>
             </dl>
           </section>
-          {order.delivery && <OrderDelivery delivery={order.delivery} />}
+          {order.delivery && <OrderDelivery orderId={order.id} delivery={order.delivery} />}
           <PaymentSection
             awaitingPayment={order.status === "pending"}
             expiresAt={order.paymentExpiresAt}

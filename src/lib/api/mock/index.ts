@@ -201,6 +201,9 @@ export function createMockApi({ latencyMs = 0 }: MockApiOptions = {}): ApiClient
       async requestOrderRefund() {
         throw backendRequired("Los reembolsos");
       },
+      async confirmDeliveryReceipt() {
+        throw backendRequired("La confirmación de entregas");
+      },
       async createOrder(input) {
         await simulateLatency();
         const subtotal = input.items.reduce((sum, item) => sum + assertStock(item).price * item.quantity, 0);

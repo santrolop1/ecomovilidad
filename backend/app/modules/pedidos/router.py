@@ -4,6 +4,7 @@ from datetime import date
 from fastapi import APIRouter, status
 
 from app.api.deps import CurrentUser, DbSession
+from app.modules.domicilios import service as deliveries
 from app.modules.pedidos import schedule, service
 from app.modules.pedidos.schemas import OrderCreateIn, OrderOut, TimeSlotOut
 from app.modules.reembolsos import service as refunds
@@ -36,6 +37,13 @@ def get_order(order_id: uuid.UUID, user: CurrentUser, db: DbSession):
 def cancel_order(order_id: uuid.UUID, user: CurrentUser, db: DbSession):
     """El cliente cancela un pedido sin pagar (se libera el inventario)."""
     refunds.cancel_order(db, user, order_id)
+    return service.get_order(db, user, order_id)
+
+
+@router.post("/{order_id}/delivery/confirm", response_model=OrderOut, response_model_exclude_none=True)
+def confirm_delivery_receipt(order_id: uuid.UUID, user: CurrentUser, db: DbSession):
+    """El cliente confirma que recibió el paquete que dejó el dron (CU-08)."""
+    deliveries.confirm_receipt(db, user, order_id)
     return service.get_order(db, user, order_id)
 
 

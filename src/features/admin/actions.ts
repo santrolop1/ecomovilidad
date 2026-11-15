@@ -12,12 +12,16 @@ import {
   courierFormSchema,
   deliveryStatusSchema,
   deliveryValidationSchema,
+  droneAssignSchema,
   geofenceFormSchema,
   gpsDeviceFormSchema,
   maintenanceNoteSchema,
   newsFormSchema,
   productFormSchema,
+  rentalCheckInSchema,
+  rentalCheckOutSchema,
   stockUpdateSchema,
+  unitIntervalSchema,
   unitThresholdSchema,
   unitUsageSchema,
   valuePropFormSchema,
@@ -104,6 +108,44 @@ export async function validateDelivery(id: string, input: unknown): Promise<Acti
 export async function assignNearestDelivery(id: string): Promise<ActionResult<null>> {
   return runAction(idSchema, id, async (value) => {
     await adminApi.assignNearestDelivery(value);
+    return null;
+  });
+}
+
+export async function assignDeliveryDrone(id: string, input: unknown): Promise<ActionResult<null>> {
+  return runAction(droneAssignSchema, input, async (data) => {
+    await adminApi.assignDeliveryDrone(idSchema.parse(id), data);
+    return null;
+  });
+}
+
+export async function recordDeliveryDrop(id: string): Promise<ActionResult<null>> {
+  return runAction(idSchema, id, async (value) => {
+    await adminApi.recordDeliveryDrop(value);
+    return null;
+  });
+}
+
+export async function checkOutRental(id: string, input: unknown): Promise<ActionResult<null>> {
+  return runAction(rentalCheckOutSchema, input, async (data) => {
+    await adminApi.checkOutRental(idSchema.parse(id), data);
+    refreshStorefront("rental-offers");
+    return null;
+  });
+}
+
+export async function checkInRental(id: string, input: unknown): Promise<ActionResult<null>> {
+  return runAction(rentalCheckInSchema, input, async (data) => {
+    await adminApi.checkInRental(idSchema.parse(id), data);
+    refreshStorefront("rental-offers");
+    return null;
+  });
+}
+
+export async function setUnitInterval(id: string, value: unknown): Promise<ActionResult<null>> {
+  return runAction(unitIntervalSchema, value, async (days) => {
+    await adminApi.setUnitInterval(idSchema.parse(id), days);
+    refreshStorefront("rental-offers");
     return null;
   });
 }

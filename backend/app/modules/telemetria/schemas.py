@@ -74,6 +74,12 @@ class FleetAssetOut(ApiModel):
     updated_at: datetime
     stale: bool
     outside_zone: bool
+    # Quién es y qué está haciendo: domiciliario, unidad de alquiler o dron de domicilios.
+    owner_name: str | None = None
+    activity: str | None = None
+    delivery_id: uuid.UUID | None = None
+    # Punto de entrega del domicilio que lleva, si se conoce (drones).
+    destination: GeoPointOut | None = None
 
 
 class GeofenceOut(ApiModel):

@@ -1,6 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { toFieldErrors } from "@/lib/action-result";
-import { bannerFormSchema, branchFormSchema, productFormSchema, slugify, stockSchema, stockUpdateSchema } from "./schemas";
+import {
+  bannerFormSchema,
+  branchFormSchema,
+  deliveryValidationSchema,
+  droneAssignSchema,
+  productFormSchema,
+  rentalCheckInSchema,
+  slugify,
+  stockSchema,
+  stockUpdateSchema,
+  unitIntervalSchema,
+} from "./schemas";
 
 const product = {
   categoryId: "c1",
@@ -87,5 +98,35 @@ describe("formularios del panel", () => {
 
   it("slugify quita tildes y espacios", () => {
     expect(slugify("Kóndor Trail 29 ")).toBe("kondor-trail-29");
+  });
+});
+
+describe("domicilios con dron, salida y entrada, y revisión periódica", () => {
+  it("exige un dron y un punto de entrega dentro del área metropolitana", () => {
+    const ok = droneAssignSchema.safeParse({
+      droneDeviceId: "4f0d8a4e-7d3b-4c47-9b1e-2a5f6c7d8e9f",
+      destinationLatitude: "7.1193",
+      destinationLongitude: "-73.1227",
+    });
+    expect(ok.success).toBe(true);
+    const bogota = droneAssignSchema.safeParse({
+      droneDeviceId: "4f0d8a4e-7d3b-4c47-9b1e-2a5f6c7d8e9f",
+      destinationLatitude: "4.6097",
+      destinationLongitude: "-74.0817",
+    });
+    expect(bogota.success).toBe(false);
+    expect(droneAssignSchema.safeParse({ droneDeviceId: "", destinationLatitude: 7.1, destinationLongitude: -73.1 }).success).toBe(false);
+  });
+
+  it("acepta la evidencia del dron como prueba de entrega", () => {
+    expect(deliveryValidationSchema.safeParse({ method: "dron" }).success).toBe(true);
+  });
+
+  it("anota el uso al recibir el vehículo y valida el plazo de revisión", () => {
+    expect(rentalCheckInSchema.safeParse({ usage: "12.5" }).success).toBe(true);
+    expect(rentalCheckInSchema.safeParse({ usage: "-1" }).success).toBe(false);
+    expect(unitIntervalSchema.safeParse("90").success).toBe(true);
+    expect(unitIntervalSchema.safeParse("0").success).toBe(false);
+    expect(unitIntervalSchema.safeParse("1000").success).toBe(false);
   });
 });

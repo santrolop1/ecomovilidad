@@ -4,6 +4,8 @@
     GPS_TOKEN=<token> python3 scripts/simulate_gps.py                 # recorre Bucaramanga
     GPS_TOKEN=<token> python3 scripts/simulate_gps.py --salir         # sale de la zona a mitad de camino
     GPS_TOKEN=<token> python3 scripts/simulate_gps.py --url https://…/api/telemetry/positions
+    GPS_TOKEN=<token> python3 scripts/simulate_gps.py --destino 7.1105,-73.1180 --liberar
+        # dron de domicilios: vuela hasta el punto de entrega y avisa que soltó el paquete
 
 El token se crea en Panel > Operación > Dispositivos GPS y solo se lee del
 entorno, para que no quede en el historial de la terminal.
@@ -38,19 +40,33 @@ def send(url, token, lat, lng, battery):
         return json.load(response)
 
 
+def parse_point(text):
+    lat, _, lng = text.partition(",")
+    return float(lat), float(lng)
+
+
+def drops_url(positions_url):
+    return positions_url.rsplit("/positions", 1)[0] + "/drops"
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--url", default="http://localhost:3000/api/telemetry/positions")
     parser.add_argument("--intervalo", type=float, default=3.0, help="segundos entre posiciones (mínimo 1)")
     parser.add_argument("--pasos", type=int, default=6, help="posiciones entre dos puntos de la ruta")
     parser.add_argument("--salir", action="store_true", help="sale de la zona permitida a mitad de camino")
+    parser.add_argument("--destino", type=parse_point, help="punto de entrega LAT,LNG: el recorrido termina ahí")
+    parser.add_argument("--liberar", action="store_true", help="al llegar al destino, avisa que liberó el paquete")
     args = parser.parse_args()
+    if args.liberar and not args.destino:
+        sys.exit("--liberar necesita --destino con el punto de entrega.")
 
     token = os.environ.get("GPS_TOKEN")
     if not token:
         sys.exit("Define GPS_TOKEN con el token del dispositivo.")
 
-    points = list(interpolate(ROUTE, args.pasos))
+    route = [ROUTE[0], args.destino] if args.destino else ROUTE
+    points = list(interpolate(route, args.pasos))
     if args.salir:
         points.insert(len(points) // 2, FAR_AWAY)
     battery = 100
@@ -65,6 +81,14 @@ def main():
         print(f"{lat:.5f}, {lng:.5f}  {zone}", flush=True)
         battery = max(5, battery - 1)
         time.sleep(max(args.intervalo, 1.0))
+
+    if args.liberar:
+        lat, lng = args.destino
+        try:
+            result = send(drops_url(args.url), token, lat, lng, battery)
+        except urllib.error.HTTPError as error:
+            sys.exit(f"No se registró la liberación ({error.code}): {error.read().decode(errors='replace')[:200]}")
+        print(f"Paquete liberado a {result['distanceM']} m del punto de entrega.", flush=True)
 
 
 if __name__ == "__main__":
