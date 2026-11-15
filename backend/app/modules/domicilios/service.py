@@ -259,6 +259,7 @@ def assign_drone(db: Session, delivery_id: uuid.UUID, data: AssignDroneIn, user_
     delivery.destination_longitude = data.destination_longitude
     _add_event(delivery, DeliveryStatus.ASSIGNED, f"Asignado al dron {drone.code}", user_id)
     db.commit()
+    db.refresh(delivery)
 
 
 def _record_drop(db: Session, delivery: Delivery, latitude: float, longitude: float, user_id: uuid.UUID | None) -> int:
