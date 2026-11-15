@@ -94,7 +94,7 @@ Funciona de punta a punta con FastAPI y PostgreSQL y tiene pruebas automáticas.
 
 ### Implementado parcialmente
 
-- **Pagos.** La integración con Wompi es real, pero funciona en **sandbox** hasta configurar llaves de producción, y la URL de eventos se registra a mano en el panel de Wompi. No hay reembolsos (CU-15).
+- **Pagos.** La integración con Wompi está escrita, pero **no se ha probado con llaves reales de sandbox**: las pruebas usan un servidor simulado. Funciona en sandbox solo después de configurar las llaves de prueba, y la URL de eventos se registra a mano en el panel de Wompi. No hay reembolsos (CU-15).
 - **Factura.** Real y descargable, pero **no es factura electrónica DIAN** (falta resolución, CUFE y proveedor tecnológico).
 - **Alquileres.** Reales de punta a punta, sin entrega a domicilio, recargos por demora ni edición de tarifas desde el panel.
 - **Franjas horarias (RF 7.1).** El checkout permite elegir fecha y franja, y FastAPI las valida y guarda. La lista de franjas y su "sin cupo" son mock; no hay capacidad real por franja.
@@ -272,7 +272,7 @@ Dentro de cada servicio los archivos siguen el mismo patrón: `router.py` (endpo
 - Los errores de negocio responden `{"detail": "mensaje"}` con su código: 400, 401, 403, 404, 409 o 429.
 - Las violaciones de unicidad (SKU, slug) se traducen a 409 con un mensaje legible.
 
-**Pruebas.** 161 pruebas pytest contra PostgreSQL + PostGIS real (ver §19).
+**Pruebas.** 242 pruebas pytest contra PostgreSQL + PostGIS real (ver §19).
 
 ## 9. Base de datos
 
@@ -764,10 +764,10 @@ Resultados obtenidos el 6 de octubre de 2026 sobre una base de datos recreada de
 
 | Suite | Resultado |
 | --- | --- |
-| Backend, pytest (PostgreSQL + PostGIS real) | **161 / 161** pruebas (fase 6) |
+| Backend, pytest (PostgreSQL + PostGIS real) | **242 / 242** pruebas (última ejecución) |
 | Backend, ruff (lint y formato) | Sin errores |
 | Migraciones | `upgrade → downgrade → upgrade` correcto (0001 → 0004); `alembic check` sin diferencias |
-| Frontend, Vitest | **93 / 93** pruebas en 25 archivos (fase 6) |
+| Frontend, Vitest | **103 / 103** pruebas en 27 archivos (última ejecución) |
 | Frontend, typecheck (`tsc`) | Sin errores |
 | Frontend, ESLint | Sin errores ni advertencias |
 | Build de producción, `API_MODE=mock` | Correcto |

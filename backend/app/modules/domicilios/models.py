@@ -2,16 +2,18 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, String, Text, func
+from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Integer, Numeric, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, Timestamps, UUIDPrimaryKey
-from app.models.enums import DeliveryProof, DeliveryStatus, sql_in
+from app.models.enums import DeliveryCarrier, DeliveryProof, DeliveryStatus, sql_in
 
 if TYPE_CHECKING:
     from app.modules.pedidos.models import Order
+    from app.modules.telemetria.models import GpsDevice
 
 
 class Courier(UUIDPrimaryKey, Timestamps, Base):
@@ -32,6 +34,18 @@ class Delivery(UUIDPrimaryKey, Timestamps, Base):
         CheckConstraint(f"status IN {sql_in(DeliveryStatus)}", name="valid_status"),
         CheckConstraint(f"proof_method IS NULL OR proof_method IN {sql_in(DeliveryProof)}", name="valid_proof"),
         CheckConstraint("status <> 'entregado' OR proof_method IS NOT NULL", name="delivered_requires_proof"),
+        CheckConstraint(f"carrier IN {sql_in(DeliveryCarrier)}", name="valid_carrier"),
+        # Lo lleva un domiciliario o un dron, nunca los dos.
+        CheckConstraint("carrier = 'dron' OR drone_device_id IS NULL", name="courier_without_drone"),
+        CheckConstraint("carrier = 'domiciliario' OR courier_id IS NULL", name="drone_without_courier"),
+        # Un dron solo vuela con punto de entrega, y su prueba exige que haya liberado el paquete.
+        CheckConstraint(
+            "drone_device_id IS NULL OR (destination_latitude IS NOT NULL AND destination_longitude IS NOT NULL)",
+            name="drone_requires_destination",
+        ),
+        CheckConstraint(
+            "proof_method IS DISTINCT FROM 'dron' OR dropped_at IS NOT NULL", name="drone_proof_requires_drop"
+        ),
     )
 
     order_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("orders.id", ondelete="RESTRICT"), unique=True)
@@ -46,9 +60,25 @@ class Delivery(UUIDPrimaryKey, Timestamps, Base):
     signature_image: Mapped[str | None] = mapped_column(Text)
     failure_reason: Mapped[str | None] = mapped_column(String(300))
     delivered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Domicilio con dron: el dron (un dispositivo GPS) y el punto exacto de entrega.
+    carrier: Mapped[str] = mapped_column(
+        String(15), default=DeliveryCarrier.COURIER, server_default=DeliveryCarrier.COURIER
+    )
+    drone_device_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("gps_devices.id", ondelete="RESTRICT"), index=True
+    )
+    destination_latitude: Mapped[Decimal | None] = mapped_column(Numeric(9, 6))
+    destination_longitude: Mapped[Decimal | None] = mapped_column(Numeric(9, 6))
+    # Evidencia del dron: dónde y cuándo liberó el paquete, a cuántos metros del destino.
+    drop_latitude: Mapped[Decimal | None] = mapped_column(Numeric(9, 6))
+    drop_longitude: Mapped[Decimal | None] = mapped_column(Numeric(9, 6))
+    drop_distance_m: Mapped[int | None] = mapped_column(Integer)
+    dropped_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    customer_confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     order: Mapped[Order] = relationship()
     courier: Mapped[Courier | None] = relationship(lazy="joined")
+    drone: Mapped[GpsDevice | None] = relationship(lazy="joined")
     events: Mapped[list[DeliveryEvent]] = relationship(
         back_populates="delivery",
         cascade="all, delete-orphan",

@@ -90,11 +90,16 @@ export const courierSchema = z.object({
 
 export const deliveryStatuses = ["creado", "asignado", "en_recogida", "en_transito", "entregado", "fallido"] as const;
 const deliveryStatus = z.enum(deliveryStatuses);
+/** Quién lleva el domicilio: un domiciliario o un dron. */
+export const deliveryCarriers = ["domiciliario", "dron"] as const;
+const deliveryCarrier = z.enum(deliveryCarriers).default("domiciliario");
 
 export const adminDeliverySummarySchema = z.object({
   id,
   orderId: id,
   status: deliveryStatus,
+  carrier: deliveryCarrier,
+  /** Nombre del domiciliario o "Dron <código>". */
   courierName: z.string().nullable(),
   contactName: z.string(),
   deliveryCity: z.string().nullable(),
@@ -109,7 +114,7 @@ export const adminDeliverySchema = adminDeliverySummarySchema.extend({
   contactPhone: z.string(),
   deliveryAddress: z.string().nullable(),
   trackingToken: z.string(),
-  proofMethod: z.enum(["qr", "firma"]).nullable(),
+  proofMethod: z.enum(["qr", "firma", "dron"]).nullable(),
   signerName: z.string().nullable(),
   signatureImage: z.string().nullable(),
   failureReason: z.string().nullable(),
@@ -118,6 +123,16 @@ export const adminDeliverySchema = adminDeliverySummarySchema.extend({
   allowedTransitions: z.array(deliveryStatus),
   canValidate: z.boolean(),
   canAssign: z.boolean(),
+  droneDeviceId: id.nullable().optional(),
+  destinationLatitude: z.number().nullable().optional(),
+  destinationLongitude: z.number().nullable().optional(),
+  dropLatitude: z.number().nullable().optional(),
+  dropLongitude: z.number().nullable().optional(),
+  dropDistanceM: z.number().nullable().optional(),
+  droppedAt: isoDate.nullable().optional(),
+  customerConfirmedAt: isoDate.nullable().optional(),
+  canRecordDrop: z.boolean().default(false),
+  canCloseWithDroneEvidence: z.boolean().default(false),
 });
 
 const assetStatus = z.enum(["disponible", "en_uso", "mantenimiento", "incidencia"]);
@@ -147,6 +162,10 @@ export const fleetSnapshotSchema = z.object({
       updatedAt: isoDate,
       stale: z.boolean(),
       outsideZone: z.boolean(),
+      ownerName: z.string().nullable().optional(),
+      activity: z.string().nullable().optional(),
+      deliveryId: id.nullable().optional(),
+      destination: geoPoint.nullable().optional(),
     }),
   ),
   zones: z.array(geofenceSchema),
@@ -352,6 +371,15 @@ export const adminRentalSchema = z.object({
   invoice: invoiceRef.nullable().optional(),
   refundRequest: refundRequest.nullable().optional(),
   allowedTransitions: z.array(rentalStatus).default([]),
+  usageUnit: z.enum(["km", "horas"]).nullable().optional(),
+  checkedOutAt: isoDate.nullable().optional(),
+  checkedOutByName: z.string().nullable().optional(),
+  returnedAt: isoDate.nullable().optional(),
+  returnedByName: z.string().nullable().optional(),
+  returnUsage: z.number().nullable().optional(),
+  canCheckOut: z.boolean().default(false),
+  canCheckIn: z.boolean().default(false),
+  checkOutBlocker: z.string().nullable().optional(),
 });
 
 export const rentalUnitSchema = z.object({
@@ -369,6 +397,16 @@ export const rentalUnitSchema = z.object({
   serviceThreshold: z.number(),
   usagePercent: z.number(),
   serviceAlert: z.enum(["ok", "proximo", "bloqueado"]),
+  serviceIntervalDays: z.number(),
+  lastServiceAt: isoDate,
+  nextServiceAt: isoDate,
+  daysToService: z.number(),
+  serviceReason: z.string().nullable().optional(),
+  /** Dónde está ahora: afuera con un cliente desde que la sucursal registró su salida. */
+  availability: z.enum(["disponible", "fuera", "mantenimiento", "retirada"]),
+  currentRentalId: id.nullable().optional(),
+  checkedOutAt: isoDate.nullable().optional(),
+  expectedReturnAt: isoDate.nullable().optional(),
 });
 
 export const maintenanceLogSchema = z.object({

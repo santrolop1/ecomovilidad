@@ -18,6 +18,14 @@ export async function cancelPurchase(input: unknown): Promise<ActionResult<null>
   });
 }
 
+/** CU-08: el cliente confirma que recibió el paquete que dejó el dron. */
+export async function confirmDeliveryReceipt(orderId: unknown): Promise<ActionResult<null>> {
+  return runAction(z.uuid("Identificador inválido."), orderId, async (id) => {
+    await api.orders.confirmDeliveryReceipt(id);
+    return null;
+  });
+}
+
 export async function requestRefund(input: unknown): Promise<ActionResult<null>> {
   return runAction(refundSchema, input, async ({ kind, id, reason }) => {
     if (kind === "pedido") await api.orders.requestOrderRefund(id, reason);

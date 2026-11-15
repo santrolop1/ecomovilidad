@@ -42,8 +42,11 @@ from app.modules.alquiler import maintenance
 from app.modules.alquiler.schemas import (
     MaintenanceFinishIn,
     MaintenanceLogOut,
+    RentalCheckInIn,
+    RentalCheckOutIn,
     RentalUnitOut,
     RentalUnitStatusIn,
+    UnitIntervalIn,
     UnitThresholdIn,
     UnitUsageIn,
 )
@@ -56,6 +59,7 @@ from app.modules.domicilios.schemas import (
     AdminDeliveryOut,
     AdminDeliverySummaryOut,
     AssignCourierIn,
+    AssignDroneIn,
     CourierCreateIn,
     CourierOut,
     CourierUpdateIn,
@@ -230,6 +234,25 @@ def assign_nearest(delivery_id: uuid.UUID, user: AdminUser, db: DbSession):
     return deliveries.get_delivery(db, delivery_id)
 
 
+@router.get("/delivery-drones", response_model=list[GpsDeviceOut])
+def list_delivery_drones(db: DbSession):
+    """Drones que pueden llevar domicilios (dispositivos tipo dron fuera de la flota de alquiler)."""
+    return [telemetry_service.device_out(db, d) for d in delivery_service.delivery_drones(db)]
+
+
+@router.post("/deliveries/{delivery_id}/assign-drone", response_model=AdminDeliveryOut)
+def assign_delivery_drone(delivery_id: uuid.UUID, data: AssignDroneIn, user: AdminUser, db: DbSession):
+    delivery_service.assign_drone(db, delivery_id, data, user.id)
+    return deliveries.get_delivery(db, delivery_id)
+
+
+@router.post("/deliveries/{delivery_id}/drop", response_model=AdminDeliveryOut)
+def record_delivery_drop(delivery_id: uuid.UUID, user: AdminUser, db: DbSession):
+    """Registra la liberación del paquete con la última posición GPS del dron."""
+    delivery_service.record_drop_from_panel(db, delivery_id, user.id)
+    return deliveries.get_delivery(db, delivery_id)
+
+
 @router.patch("/deliveries/{delivery_id}", response_model=AdminDeliveryOut)
 def update_delivery(delivery_id: uuid.UUID, data: DeliveryStatusIn, user: AdminUser, db: DbSession):
     delivery_service.change_status(db, delivery_id, data, user.id)
@@ -381,9 +404,23 @@ def get_rental(rental_id: uuid.UUID, db: DbSession):
 
 
 @router.patch("/rentals/{rental_id}", response_model=AdminRentalOut)
-def update_rental_status(rental_id: uuid.UUID, data: RentalStatusIn, db: DbSession):
+def update_rental_status(rental_id: uuid.UUID, data: RentalStatusIn, user: AdminUser, db: DbSession):
     """Pagado → entregado → devuelto; pendiente de pago → cancelado."""
-    rentals.change_status(db, rental_id, data.status)
+    rentals.change_status(db, rental_id, data.status, user.id)
+    return rentals.get_rental(db, rental_id)
+
+
+@router.post("/rentals/{rental_id}/check-out", response_model=AdminRentalOut)
+def check_out_rental(rental_id: uuid.UUID, data: RentalCheckOutIn, user: AdminUser, db: DbSession):
+    """La sucursal registra la salida del vehículo: queda como no disponible hasta su entrada."""
+    rentals.check_out(db, rental_id, user.id, data.note)
+    return rentals.get_rental(db, rental_id)
+
+
+@router.post("/rentals/{rental_id}/check-in", response_model=AdminRentalOut)
+def check_in_rental(rental_id: uuid.UUID, data: RentalCheckInIn, user: AdminUser, db: DbSession):
+    """La sucursal registra la entrada del vehículo y el uso del alquiler."""
+    rentals.check_in(db, rental_id, user.id, data.usage, data.note)
     return rentals.get_rental(db, rental_id)
 
 
@@ -430,6 +467,13 @@ def record_unit_usage(unit_id: uuid.UUID, data: UnitUsageIn, user: AdminUser, db
 @router.put("/rental-units/{unit_id}/threshold", response_model=RentalUnitOut)
 def set_unit_threshold(unit_id: uuid.UUID, data: UnitThresholdIn, user: AdminUser, db: DbSession):
     maintenance.set_threshold(db, unit_id, data.service_threshold, user.id)
+    return rentals.get_unit(db, unit_id)
+
+
+@router.put("/rental-units/{unit_id}/interval", response_model=RentalUnitOut)
+def set_unit_interval(unit_id: uuid.UUID, data: UnitIntervalIn, user: AdminUser, db: DbSession):
+    """Cada cuántos días toca la revisión periódica de la unidad."""
+    maintenance.set_interval(db, unit_id, data.service_interval_days, user.id)
     return rentals.get_unit(db, unit_id)
 
 

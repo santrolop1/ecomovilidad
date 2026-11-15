@@ -75,17 +75,27 @@ export interface DeliveryEvent {
 export interface CustomerDelivery {
   status: DeliveryStatus;
   trackingToken: string;
+  /** Quién lo lleva: un domiciliario o un dron. */
+  carrier?: DeliveryCarrier;
   confirmationCode?: string;
   qrImage?: string;
   courierName?: string;
   deliveredAt?: string;
   failureReason?: string;
+  /** Dron: cuándo liberó el paquete y a cuántos metros del punto de entrega. */
+  droppedAt?: string;
+  dropDistanceM?: number;
+  /** El dron dejó el paquete: el cliente confirma que lo recibió. */
+  canConfirmReceipt?: boolean;
   events: DeliveryEvent[];
 }
+
+export type DeliveryCarrier = "domiciliario" | "dron";
 
 /** Seguimiento público por enlace: sin datos personales. */
 export interface DeliveryTracking {
   status: DeliveryStatus;
+  carrier?: DeliveryCarrier;
   courierFirstName?: string;
   city?: string;
   branchName: string;

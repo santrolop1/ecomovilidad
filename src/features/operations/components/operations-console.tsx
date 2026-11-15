@@ -59,6 +59,13 @@ function AssetDetail({ asset, hub, positionLabel }: { asset: FleetAsset; hub?: H
           {asset.code} <span className="text-muted-foreground">{assetKindLabels[asset.kind]}</span>
         </p>
       </div>
+      {asset.ownerName && <p className="mt-1 text-xs text-muted-foreground">{asset.ownerName}</p>}
+      {asset.activity && <p className="mt-2 text-sm">{asset.activity}</p>}
+      {asset.deliveryId && (
+        <Link href={`/admin/domicilios/${asset.deliveryId}`} className="mt-1 inline-block text-xs underline">
+          Abrir el domicilio
+        </Link>
+      )}
       <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2">
         <div>
           <dt className="text-xs text-muted-foreground">Estado</dt>
@@ -256,9 +263,10 @@ export function OperationsConsole({ hubs, live = false }: { hubs: Hub[]; live?: 
                   <span className="min-w-0 flex-1">
                     <span className="block font-medium">{asset.code}</span>
                     <span className="block truncate text-xs text-muted-foreground">
-                      {assetKindLabels[asset.kind]}
-                      {asset.hubId && hubsById.get(asset.hubId) ? `, ${hubsById.get(asset.hubId)?.city}` : ""}
+                      {asset.ownerName ?? assetKindLabels[asset.kind]}
+                      {!asset.ownerName && asset.hubId && hubsById.get(asset.hubId) ? `, ${hubsById.get(asset.hubId)?.city}` : ""}
                     </span>
+                    {asset.activity && <span className="block truncate text-xs">{asset.activity}</span>}
                   </span>
                   <span className="shrink-0 text-right text-xs">
                     <span className="block">{assetStatusLabels[asset.status]}</span>

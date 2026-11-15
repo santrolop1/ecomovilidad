@@ -36,6 +36,16 @@ class DeliveryStatus(StrEnum):
 class DeliveryProof(StrEnum):
     QR = "qr"
     SIGNATURE = "firma"
+    # Dron: el GPS del dron confirma que liberó el paquete en el punto de entrega
+    # y el cliente confirma que lo recibió (o vence el plazo para reclamar).
+    DRONE = "dron"
+
+
+class DeliveryCarrier(StrEnum):
+    """Quién lleva el domicilio."""
+
+    COURIER = "domiciliario"
+    DRONE = "dron"
 
 
 class MovementKind(StrEnum):

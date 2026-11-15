@@ -10,7 +10,23 @@ from app.modules.admin import repository as repo
 from app.modules.admin.common import PAGE_SIZE
 from app.modules.admin.schemas import Page
 from app.modules.domicilios.schemas import AdminDeliveryOut, AdminDeliverySummaryOut, DeliveryEventOut
-from app.modules.domicilios.service import ASSIGNABLE, TRANSITIONS
+from app.modules.domicilios.service import (
+    ASSIGNABLE,
+    TRANSITIONS,
+    can_close_with_drone_evidence,
+    can_record_drop,
+    can_validate,
+)
+
+
+def _carrier_name(delivery: Delivery) -> str | None:
+    if delivery.courier:
+        return delivery.courier.name
+    return f"Dron {delivery.drone.code}" if delivery.drone else None
+
+
+def _float(value) -> float | None:
+    return float(value) if value is not None else None
 
 
 def _summary(delivery: Delivery) -> AdminDeliverySummaryOut:
@@ -19,7 +35,8 @@ def _summary(delivery: Delivery) -> AdminDeliverySummaryOut:
         id=delivery.id,
         order_id=delivery.order_id,
         status=delivery.status,
-        courier_name=delivery.courier.name if delivery.courier else None,
+        carrier=delivery.carrier,
+        courier_name=_carrier_name(delivery),
         contact_name=order.contact_name,
         delivery_city=order.delivery_city,
         branch_name=order.branch.name,
@@ -70,6 +87,16 @@ def get_delivery(db: Session, delivery_id: uuid.UUID) -> AdminDeliveryOut:
         delivered_at=delivery.delivered_at,
         events=[DeliveryEventOut(status=e.status, note=e.note, created_at=e.created_at) for e in delivery.events],
         allowed_transitions=sorted(TRANSITIONS[status]),
-        can_validate=status == DeliveryStatus.IN_TRANSIT,
+        can_validate=can_validate(delivery),
         can_assign=status in ASSIGNABLE,
+        drone_device_id=delivery.drone_device_id,
+        destination_latitude=_float(delivery.destination_latitude),
+        destination_longitude=_float(delivery.destination_longitude),
+        drop_latitude=_float(delivery.drop_latitude),
+        drop_longitude=_float(delivery.drop_longitude),
+        drop_distance_m=delivery.drop_distance_m,
+        dropped_at=delivery.dropped_at,
+        customer_confirmed_at=delivery.customer_confirmed_at,
+        can_record_drop=can_record_drop(delivery),
+        can_close_with_drone_evidence=can_close_with_drone_evidence(delivery),
     )

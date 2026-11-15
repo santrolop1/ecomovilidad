@@ -4,6 +4,7 @@ import { rentalStatusTone, StatusBadge } from "@/components/shared/status-badge"
 import { AdminPageHeader } from "@/features/admin/components/admin-page-header";
 import { PaymentAttempts } from "@/features/admin/components/payment-attempts";
 import { RefundRequestCard } from "@/features/admin/components/refund-request-card";
+import { RentalBranchLog } from "@/features/admin/components/rental-branch-log";
 import { RentalStatusActions } from "@/features/admin/components/rental-status-actions";
 import { getAdminUser } from "@/features/admin/lib/guard";
 import { rentalStatusLabels } from "@/features/admin/lib/labels";
@@ -61,12 +62,20 @@ export default async function AdminRentalPage({ params }: PageProps<"/admin/alqu
               </Field>
             </dl>
           </section>
-          <section aria-labelledby="acciones" className="rounded-2xl border border-border bg-card p-5">
-            <h2 id="acciones" className="font-display-tight mb-3 text-lg">
-              Acciones
+          <section aria-labelledby="sucursal" className="rounded-2xl border border-border bg-card p-5">
+            <h2 id="sucursal" className="font-display-tight mb-3 text-lg">
+              Salida y entrada en la sucursal
             </h2>
-            <RentalStatusActions rentalId={rental.id} transitions={rental.allowedTransitions} />
+            <RentalBranchLog key={`${rental.status}-${rental.returnedAt ?? ""}`} rental={rental} />
           </section>
+          {rental.allowedTransitions.includes("cancelled") && (
+            <section aria-labelledby="acciones" className="rounded-2xl border border-border bg-card p-5">
+              <h2 id="acciones" className="font-display-tight mb-3 text-lg">
+                Acciones
+              </h2>
+              <RentalStatusActions rentalId={rental.id} transitions={["cancelled"]} />
+            </section>
+          )}
         </div>
         <div className="space-y-6">
           {rental.refundRequest && <RefundRequestCard kind="alquiler" id={rental.id} request={rental.refundRequest} />}

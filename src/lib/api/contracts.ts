@@ -97,6 +97,8 @@ export interface OrdersApi {
   cancelOrder(id: string): Promise<CustomerOrder>;
   /** POST /orders/:id/refund-request — pagado y sin entregar (CU-15) */
   requestOrderRefund(id: string, reason: string): Promise<RefundRequest>;
+  /** POST /orders/:id/delivery/confirm — el cliente confirma que recibió el paquete del dron (CU-08) */
+  confirmDeliveryReceipt(id: string): Promise<CustomerOrder>;
   /** GET /tracking/:token — seguimiento público (CU-07); null si el enlace no existe. */
   getTracking(token: string): Promise<DeliveryTracking | null>;
 }

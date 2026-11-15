@@ -396,6 +396,17 @@ class AdminRentalOut(ApiModel):
     invoice: InvoiceRefOut | None = None
     refund_request: RefundRequestOut | None = None
     allowed_transitions: list[RentalStatus] = []
+    # Registro de la sucursal: salida y entrada del vehículo.
+    usage_unit: str | None = None
+    checked_out_at: datetime | None = None
+    checked_out_by_name: str | None = None
+    returned_at: datetime | None = None
+    returned_by_name: str | None = None
+    return_usage: float | None = None
+    can_check_out: bool = False
+    can_check_in: bool = False
+    # Si no puede salir, por qué (unidad en taller o aún afuera con otro cliente).
+    check_out_blocker: str | None = None
 
 
 class RentalStatusIn(ApiModel):

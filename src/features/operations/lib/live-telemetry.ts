@@ -24,7 +24,13 @@ export function createLiveTelemetry(intervalMs = LIVE_INTERVAL_MS): TelemetrySou
             at: fleet.at,
             openAlerts: fleet.openAlerts,
             zones: fleet.zones,
-            assets: fleet.assets,
+            assets: fleet.assets.map((asset) => ({
+              ...asset,
+              destination: asset.destination ?? undefined,
+              ownerName: asset.ownerName ?? undefined,
+              activity: asset.activity ?? undefined,
+              deliveryId: asset.deliveryId ?? undefined,
+            })),
           };
           listener(snapshot);
         } catch {

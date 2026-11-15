@@ -63,14 +63,17 @@ export async function relayWompiEvent(request: Request): Promise<Response> {
   }
 }
 
-/** Reenvía a FastAPI la posición de un dispositivo GPS, con su token. */
-export async function relayTelemetry(request: Request): Promise<Response> {
+/**
+ * Reenvía a FastAPI lo que reporta un dispositivo GPS, con su token: su posición
+ * o, si es un dron de domicilios, el aviso de que liberó el paquete.
+ */
+export async function relayTelemetry(request: Request, endpoint: "positions" | "drops" = "positions"): Promise<Response> {
   if (serverEnv.apiMode !== "real" || !serverEnv.apiBaseUrl) return new Response(null, { status: 503 });
   const body = await request.text();
   if (body.length > 1_000) return new Response(null, { status: 413 });
   const authorization = request.headers.get("authorization");
   try {
-    const upstream = await fetch(`${serverEnv.apiBaseUrl.replace(/\/$/, "")}/telemetry/positions`, {
+    const upstream = await fetch(`${serverEnv.apiBaseUrl.replace(/\/$/, "")}/telemetry/${endpoint}`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(authorization ? { Authorization: authorization } : {}) },
       body,

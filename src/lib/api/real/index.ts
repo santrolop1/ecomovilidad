@@ -179,6 +179,8 @@ export function createRealApi(http: HttpClient): ApiClient {
       listOrders: () => http.request(endpoints.orders, { schema: z.array(customerOrderSchema), auth: true }),
       cancelOrder: (id) =>
         http.request(`${endpoints.order(id)}/cancel`, { method: "POST", schema: customerOrderSchema, auth: true }),
+      confirmDeliveryReceipt: (id) =>
+        http.request(`${endpoints.order(id)}/delivery/confirm`, { method: "POST", schema: customerOrderSchema, auth: true }),
       requestOrderRefund: (id, reason) =>
         http.request(`${endpoints.order(id)}/refund-request`, {
           method: "POST",

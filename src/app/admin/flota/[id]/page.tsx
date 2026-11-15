@@ -1,9 +1,11 @@
 import { Wrench } from "lucide-react";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { EmptyState } from "@/components/shared/empty-state";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { AdminPageHeader } from "@/features/admin/components/admin-page-header";
 import { type Column, DataTable } from "@/features/admin/components/data-table";
+import { UnitAvailability, UnitNextService } from "@/features/admin/components/unit-availability";
 import { UnitMaintenance } from "@/features/admin/components/unit-maintenance";
 import { UnitUsage } from "@/features/admin/components/unit-usage";
 import { getAdminUser } from "@/features/admin/lib/guard";
@@ -49,6 +51,28 @@ export default async function AdminFleetUnitPage({ params }: PageProps<"/admin/f
             <StatusBadge tone={unit.status === "operativo" ? "success" : "warning"}>{rentalUnitStatusLabels[unit.status]}</StatusBadge>
           </div>
           <UnitUsage unit={unit} />
+          <dl className="grid gap-3 pt-2 text-sm sm:grid-cols-2">
+            <div>
+              <dt className="text-xs text-muted-foreground">Dónde está</dt>
+              <dd className="mt-1">
+                <UnitAvailability unit={unit} />
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs text-muted-foreground">Próxima revisión periódica</dt>
+              <dd className="mt-1">
+                <UnitNextService unit={unit} />
+              </dd>
+            </div>
+          </dl>
+          {unit.availability === "fuera" && unit.currentRentalId && (
+            <p className="text-sm">
+              <Link href={`/admin/alquileres/${unit.currentRentalId}`} className="underline">
+                Ver el alquiler en curso
+              </Link>{" "}
+              para registrar su entrada.
+            </p>
+          )}
           {unit.nextRentalStart && unit.status !== "operativo" && (
             <p className="text-sm font-medium text-destructive">
               Tiene un alquiler reservado para el {formatDateTime(unit.nextRentalStart)}: reasígnalo o cancélalo.
@@ -57,7 +81,7 @@ export default async function AdminFleetUnitPage({ params }: PageProps<"/admin/f
         </section>
         <section className="rounded-2xl border border-border bg-card p-5">
           <h2 className="mb-3 font-display-tight text-lg">Mantenimiento</h2>
-          <UnitMaintenance key={`${unit.status}-${unit.serviceThreshold}`} unit={unit} />
+          <UnitMaintenance key={`${unit.status}-${unit.serviceThreshold}-${unit.serviceIntervalDays}`} unit={unit} />
         </section>
       </div>
       <h2 className="font-display-tight text-lg">Bitácora</h2>
