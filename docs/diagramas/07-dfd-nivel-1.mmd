@@ -1,0 +1,34 @@
+flowchart TB
+    accTitle: DFD nivel 1
+    accDescr: Descomposición lógica balanceada con nivel 0; almacenes agrupan tablas de una única base PostgreSQL, no bases independientes.
+    C[Cliente] -->|Cuenta y credenciales| P1((1. Autenticar))
+    P1 <-->|Usuarios, sesiones y consentimientos| D1[(D1 Identidad)]
+    P1 -->|Sesión / error| C
+    C -->|Consulta| P2((2. Explorar oferta))
+    P2 <-->|Catálogo, sucursales e inventario| D2[(D2 Oferta y existencias)]
+    P2 -->|Catálogo y disponibilidad| C
+    MAP[Mapas] -->|Teselas| P2
+    C -->|Carrito, pedido, reserva y agenda| P3((3. Reservar y vender))
+    P3 <-->|Reservar / liberar / descontar| D2
+    P3 <-->|Carrito, pedido y alquiler| D3[(D3 Transacciones)]
+    P3 -->|Pendiente y referencia| P4((4. Cobrar y facturar))
+    P4 -->|Solicitud / consulta| PAY[Pasarela]
+    PAY -->|Estado verificado| P4
+    P4 <-->|Pago, evento, factura y reembolso| D4[(D4 Pagos)]
+    P4 -->|Resultado| P3
+    P4 -->|Factura / estado| C
+    P4 -->|Correo| MAIL[SMTP]
+    MAIL -->|Aceptación / error| P4
+    P4 -->|Pedido pagado a domicilio| P5((5. Gestionar entrega))
+    C -->|QR, firma o confirmación de recepción| P5
+    P5 <-->|Domicilios, historial y evidencia| D5[(D5 Entregas)]
+    P5 -->|Seguimiento| C
+    GPS[GPS] -->|Posiciones| P6((6. Supervisar flota))
+    GPS -->|Liberación del dron| P5
+    P6 <-->|GPS, zonas, alertas y mantenimiento| D6[(D6 Operación)]
+    P6 -->|Posición útil para seguimiento| P5
+    A[Administrador] -->|Cambios de operación| P3 & P5 & P6
+    A -->|Contenidos, productos, sucursales e inventario| P2
+    A -->|Usuarios| P1
+    A -->|Pagos manuales / reembolsos| P4
+    P3 & P4 & P5 & P6 -->|Estado de negocio y alertas| A

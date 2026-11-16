@@ -1,0 +1,122 @@
+erDiagram
+    accTitle: DER ampliado: alquiler
+    accDescr: Vista parcial con atributos completos para facilitar lectura. Las relaciones entre dominios aparecen en el DER completo y en el diccionario de datos.
+    direction LR
+    users {
+        uuid id PK
+        datetime created_at
+        datetime updated_at
+        str email UK
+        str password_hash
+        str first_name
+        str last_name
+        str phone
+        str document_number "nullable"
+        bool is_active
+        bool is_admin
+    }
+    products {
+        uuid id PK
+        datetime created_at
+        datetime updated_at
+        uuid category_id FK
+        str name
+        str slug UK
+        str sku UK
+        str short_description
+        str description
+        str brand
+        int price
+        int compare_at_price "nullable"
+        json specifications
+        json highlights
+        str image_url "nullable"
+        bool is_featured
+        bool is_active
+    }
+    branches {
+        uuid id PK
+        datetime created_at
+        datetime updated_at
+        str slug UK
+        str name
+        str address
+        str neighborhood
+        str city
+        str phone
+        Decimal latitude
+        Decimal longitude
+        geography location
+        json opening_hours
+        json services
+        int slot_capacity
+        bool is_demo
+        bool is_active
+    }
+    rental_units {
+        uuid id PK
+        datetime created_at
+        datetime updated_at
+        uuid product_id FK
+        uuid branch_id FK
+        str code UK
+        str status
+        bool is_demo
+        str usage_unit
+        Decimal usage_value
+        int service_threshold
+        int service_interval_days
+        datetime last_service_at
+    }
+    rental_rates {
+        uuid id PK
+        uuid product_id FK
+        str unit
+        int price
+    }
+    rentals {
+        uuid id PK
+        datetime created_at
+        datetime updated_at
+        uuid user_id FK
+        uuid product_id FK
+        uuid branch_id FK
+        uuid rental_unit_id FK "nullable"
+        datetime start_at
+        datetime end_at
+        tstzrange period
+        str status
+        int price
+        datetime payment_expires_at "nullable"
+        str contact_name "nullable"
+        str contact_email "nullable"
+        str contact_phone "nullable"
+        str document_type "nullable"
+        str document_number "nullable"
+        datetime checked_out_at "nullable"
+        uuid checked_out_by FK "nullable"
+        datetime returned_at "nullable"
+        uuid returned_by FK "nullable"
+        Decimal return_usage "nullable"
+    }
+    maintenance_logs {
+        uuid id PK
+        uuid unit_id FK
+        str kind
+        Decimal usage_delta "nullable"
+        Decimal usage_after
+        str note "nullable"
+        uuid user_id FK "nullable"
+        datetime created_at
+    }
+    products ||--o{ rental_units : "product_id"
+    branches ||--o{ rental_units : "branch_id"
+    products ||--o{ rental_rates : "product_id"
+    users ||--o{ rentals : "user_id"
+    products ||--o{ rentals : "product_id"
+    branches ||--o{ rentals : "branch_id"
+    rental_units |o--o{ rentals : "rental_unit_id"
+    users |o--o{ rentals : "checked_out_by"
+    users |o--o{ rentals : "returned_by"
+    rental_units ||--o{ maintenance_logs : "unit_id"
+    users |o--o{ maintenance_logs : "user_id"

@@ -1,0 +1,13 @@
+flowchart LR
+    accTitle: DFD nivel 0
+    accDescr: DFD de contexto: no muestra almacenes internos. El pago manual sustituye el intercambio externo por la confirmación del administrador.
+    C[Cliente] -->|Cuenta, carrito, pedido, reserva y evidencia| S((0. EcoMovilidad))
+    S -->|Sesión, catálogo, disponibilidad, factura y seguimiento| C
+    A[Administrador] -->|Cambios de operación y confirmaciones| S
+    S -->|Estado de negocio y alertas| A
+    GPS[GPS] -->|Posición y evidencia del dron| S
+    S -->|Cobro, validación de transacción| P[Pasarela]
+    P -->|Estado del pago| S
+    S -->|Mensaje transaccional| M[SMTP]
+    M -->|Aceptación / error de envío| S
+    MAP[Proveedor de mapas] -->|Teselas / datos cartográficos| S

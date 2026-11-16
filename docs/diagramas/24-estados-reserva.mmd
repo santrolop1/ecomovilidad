@@ -1,0 +1,19 @@
+stateDiagram-v2
+    accTitle: Estados: reserva de alquiler
+    accDescr: Reserva de alquiler, no la reserva temporal del carrito. El carrito aparta 15 min y elimina la reserva al vencer o transferirla al pedido; no posee columna status equivalente.
+    [*] --> pending: Crear reserva válida
+    pending --> confirmed: Pago aprobado y aplicado
+    pending --> cancelled: Cancelación o vencimiento sin pago
+    confirmed --> active: Administrador registra salida
+    active --> completed: Administrador registra devolución
+    confirmed --> cancelled: Reembolso registrado según reglas
+    completed --> [*]
+    cancelled --> [*]
+    note right of pending
+      Unidad ocupada en calendario en pending,
+      confirmed y active; exclusión GiST.
+    end note
+    note right of confirmed
+      No se cancela desde cambio de estado:
+      requiere flujo de reembolso.
+    end note

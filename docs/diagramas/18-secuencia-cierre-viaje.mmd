@@ -1,0 +1,28 @@
+sequenceDiagram
+    accTitle: Secuencia: cierre del viaje / devolución
+    accDescr: Cierre de viaje se interpreta como devolución del alquiler: no hay cierre autónomo desde app del cliente ni medición de uso automática por GPS.
+    actor C as Cliente
+    actor O as Administrador en sucursal
+    participant N as Next.js panel
+    participant A as admin.rentals
+    participant M as alquiler.maintenance
+    participant D as PostgreSQL
+    C->>O: Devolver físicamente la unidad
+    O->>N: Registrar entrada y km / horas de uso
+    N->>A: Solicitar check_in autenticado como admin
+    A->>D: Bloquear alquiler
+    alt Estado distinto de active
+      A-->>N: 409: no se puede recibir
+    else Alquiler activo
+      A->>D: completed, returned_at, returned_by, return_usage
+      opt Uso mayor que cero
+        A->>M: add_usage con unidad bloqueada
+        M->>D: Actualizar uso y bitácora
+        opt Uso alcanza 90 por ciento del umbral
+          M->>D: Marcar mantenimiento y registrar bloqueo
+        end
+      end
+      A->>D: Commit
+      A-->>N: Entrada registrada
+      N-->>O: Alquiler devuelto y disponibilidad actualizada
+    end

@@ -1,0 +1,28 @@
+flowchart TB
+    accTitle: Diagrama de componentes
+    accDescr: Componentes lógicos de un monolito modular; las flechas muestran dependencias principales, no procesos desplegados por separado.
+    UI[Tienda y panel React] --> ACTION[Server Actions / Route Handlers Next.js]
+    ACTION --> CONTRACT[Contratos y adaptador real server-only]
+    CONTRACT --> ROUTES[FastAPI routers y dependencias
+CurrentUser / AdminUser / CSRF]
+    ROUTES --> AUTH[Autenticación
+Sesiones, Argon2, consentimiento]
+    ROUTES --> CAT[Catálogo / sucursales]
+    ROUTES --> CART[Carrito y reservas]
+    ROUTES --> ORDER[Pedidos y agenda]
+    ROUTES --> RENT[Alquiler y mantenimiento]
+    ROUTES --> PAY[Pagos e invoices]
+    ROUTES --> DELIVERY[Domicilios]
+    ROUTES --> GPS[Telemetría y geocercas]
+    ROUTES --> CMS[Contenidos / contacto / admin]
+    CART --> STOCK[Inventario / reservas / movimientos]
+    ORDER --> STOCK
+    PAY --> ORDER & RENT & DELIVERY
+    REF[Reembolsos] --> ORDER & RENT & DELIVERY
+    ROUTES --> REF
+    DELIVERY --> GPS
+    AUTH & CAT & STOCK & RENT & PAY & DELIVERY & GPS & CMS --> DB[(PostgreSQL / PostGIS)]
+    PAY --> GATE[PaymentGateway
+Wompi / simulated / manual]
+    PAY --> EMAIL[EmailSender
+SMTP / desarrollo]

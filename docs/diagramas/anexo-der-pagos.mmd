@@ -1,0 +1,136 @@
+erDiagram
+    accTitle: DER ampliado: pagos
+    accDescr: Vista parcial con atributos completos para facilitar lectura. Las relaciones entre dominios aparecen en el DER completo y en el diccionario de datos.
+    direction LR
+    users {
+        uuid id PK
+        datetime created_at
+        datetime updated_at
+        str email UK
+        str password_hash
+        str first_name
+        str last_name
+        str phone
+        str document_number "nullable"
+        bool is_active
+        bool is_admin
+    }
+    orders {
+        uuid id PK
+        datetime created_at
+        datetime updated_at
+        uuid user_id FK
+        str status
+        int subtotal
+        int shipping_cost
+        int total
+        uuid branch_id FK
+        str fulfillment_method
+        str delivery_address "nullable"
+        str delivery_city "nullable"
+        date scheduled_date
+        str time_slot
+        str payment_method "nullable"
+        datetime payment_expires_at "nullable"
+        datetime stock_settled_at "nullable"
+        str contact_name
+        str contact_email
+        str contact_phone
+        str document_type
+        str document_number
+    }
+    rentals {
+        uuid id PK
+        datetime created_at
+        datetime updated_at
+        uuid user_id FK
+        uuid product_id FK
+        uuid branch_id FK
+        uuid rental_unit_id FK "nullable"
+        datetime start_at
+        datetime end_at
+        tstzrange period
+        str status
+        int price
+        datetime payment_expires_at "nullable"
+        str contact_name "nullable"
+        str contact_email "nullable"
+        str contact_phone "nullable"
+        str document_type "nullable"
+        str document_number "nullable"
+        datetime checked_out_at "nullable"
+        uuid checked_out_by FK "nullable"
+        datetime returned_at "nullable"
+        uuid returned_by FK "nullable"
+        Decimal return_usage "nullable"
+    }
+    payments {
+        uuid id PK
+        datetime created_at
+        datetime updated_at
+        uuid user_id FK
+        uuid order_id FK "nullable"
+        uuid rental_id FK "nullable"
+        str provider
+        str reference UK
+        int amount_in_cents
+        str currency
+        str status
+        str provider_transaction_id UK "nullable"
+        str payment_method_type "nullable"
+        str status_message "nullable"
+        bool requires_refund
+        datetime approved_at "nullable"
+    }
+    payment_events {
+        uuid id PK
+        str checksum UK
+        str event
+        str transaction_id "nullable"
+        str status "nullable"
+        json payload
+        datetime received_at
+    }
+    invoices {
+        uuid id PK
+        int number UK
+        str prefix
+        uuid payment_id FK
+        uuid order_id FK "nullable"
+        uuid rental_id FK "nullable"
+        uuid user_id FK
+        str buyer_name
+        str buyer_document_type
+        str buyer_document_number
+        str buyer_email
+        int subtotal
+        int vat
+        int total
+        bytes pdf
+        str xml
+        datetime issued_at
+    }
+    refund_requests {
+        uuid id PK
+        uuid user_id FK
+        uuid order_id FK "nullable"
+        uuid rental_id FK "nullable"
+        str reason
+        str status
+        datetime created_at
+        datetime resolved_at "nullable"
+    }
+    users ||--o{ orders : "user_id"
+    users ||--o{ rentals : "user_id"
+    users |o--o{ rentals : "checked_out_by"
+    users |o--o{ rentals : "returned_by"
+    users ||--o{ payments : "user_id"
+    orders |o--o{ payments : "order_id"
+    rentals |o--o{ payments : "rental_id"
+    payments ||--o| invoices : "payment_id"
+    orders |o--o| invoices : "order_id"
+    rentals |o--o| invoices : "rental_id"
+    users ||--o{ invoices : "user_id"
+    users ||--o{ refund_requests : "user_id"
+    orders |o--o{ refund_requests : "order_id"
+    rentals |o--o{ refund_requests : "rental_id"

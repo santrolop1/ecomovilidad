@@ -1,0 +1,13 @@
+flowchart LR
+    accTitle: Contexto del SRS
+    accDescr: Sistema lógico completo; las teselas se consumen desde el navegador. Operador y domiciliario no tienen roles de acceso independientes.
+    C[Cliente / visitante] -->|Datos de cuenta, consultas, compra y alquiler| S((EcoMovilidad))
+    S -->|Catálogo, disponibilidad, factura y seguimiento| C
+    A[Administrador: operación actual] -->|Inventario, contenidos, asignaciones y mantenimiento| S
+    S -->|Pedidos, flota y alertas| A
+    D[Domiciliario sin sesión propia] -.->|Entrega y evidencia comunicadas al operador| A
+    G[Dispositivo GPS / simulador] -->|Token, posición, batería y liberación de paquete| S
+    S -->|Solicitud de cobro| P[Pasarela configurada: pruebas / manual / Wompi]
+    P -->|Resultado verificado / confirmación administrativa| S
+    S -->|Correo transaccional si SMTP configurado| M[Proveedor SMTP]
+    O[OpenStreetMap / Google Maps opcional] -->|Teselas / servicio de mapas| S

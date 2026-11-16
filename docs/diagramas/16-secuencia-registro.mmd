@@ -1,0 +1,21 @@
+sequenceDiagram
+    accTitle: Secuencia: registro
+    accDescr: El registro inicia sesión; la política de datos debe aceptarse. No hay verificación de correo obligatoria en este flujo.
+    actor C as Cliente
+    participant N as Next.js / Server Action
+    participant A as FastAPI auth.register
+    participant D as PostgreSQL
+    C->>N: Formulario, contraseña y consentimiento
+    N->>A: POST /api/v1/auth/register
+    A->>A: Validar esquema y versión de política
+    A->>D: Consultar correo único
+    alt Correo existente / datos inválidos
+      A-->>N: Error de validación o conflicto
+      N-->>C: Corregir formulario
+    else Registro válido
+      A->>A: Hash Argon2 de contraseña
+      A->>D: Crear User, ConsentRecord y UserSession
+      D-->>A: Commit
+      A-->>N: Usuario y cookies sesión httpOnly / CSRF
+      N-->>C: Propagar cookies e iniciar sesión
+    end

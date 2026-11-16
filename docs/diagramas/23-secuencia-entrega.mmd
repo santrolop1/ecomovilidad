@@ -1,0 +1,43 @@
+sequenceDiagram
+    accTitle: Secuencia: entrega a domicilio
+    accDescr: Participante Domicilios resume acciones y API; todo navegador/GPS entra por Next.js. Tras 30 min se habilita cierre con evidencia; el diagrama no presupone un cierre autónomo por temporizador.
+    participant P as Pagos
+    participant S as Domicilios
+    participant D as PostgreSQL
+    actor A as Administrador
+    actor C as Cliente
+    participant G as GPS del dron
+    P->>S: Pedido pagado con modalidad domicilio
+    S->>D: Crear Delivery creado, código y tracking_token
+    A->>S: Asignar domiciliario o dron con destino
+    S->>D: asignado e historial
+    A->>S: Registrar en_recogida y en_transito
+    S->>D: Eventos y estado validados
+    loop Cada 15 segundos
+      C->>S: Consultar enlace público vía Next.js
+      S-->>C: Estado y posición permitida, sin datos personales
+    end
+    alt Domiciliario
+      C->>A: Mostrar QR / código o firmar
+      A->>S: Validar código o firma
+      S->>D: entregado con prueba y Order completed
+    else Dron
+      G->>S: Reportar liberación vía Next.js con token
+      S->>D: Validar tránsito, dispositivo y distancia menor o igual a 50 m
+      alt Liberación válida
+        S->>D: Guardar evidencia, sigue en_transito
+        alt Cliente confirma recepción
+          C->>S: Confirmar desde cuenta propia vía Next.js
+          S->>D: entregado con prueba dron, pedido completed
+        else Pasan 30 min sin confirmación ni fallo
+          A->>S: Validar con evidencia dron
+          S->>D: Comprobar plazo y cerrar entrega
+        end
+      else Destino incorrecto / evidencia inválida
+        S-->>G: Rechazar evidencia, no entregar
+      end
+    end
+    opt Fallo antes de completar
+      A->>S: Registrar fallido con motivo
+      S->>D: Evento, reprogramable a creado
+    end

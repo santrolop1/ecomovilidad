@@ -1,0 +1,14 @@
+flowchart LR
+    accTitle: Casos de uso: operador
+    accDescr: Describe tareas operativas implementadas bajo users.is_admin. No existe autorización diferenciada para operador.
+    O[Operación: acceso actual como administrador] --> P([Administrar productos y categorías])
+    O --> I([Ajustar inventario con motivo])
+    O --> R([Registrar salida y entrada del alquiler])
+    O --> M([Registrar uso y mantenimiento de unidad])
+    O --> D([Asignar domiciliario cercano o dron])
+    O --> E([Actualizar estados y validar QR / firma])
+    O --> G([Registrar GPS / zonas y consultar alertas])
+    O --> C([Gestionar contenidos y contactos])
+    O --> U([Gestionar usuarios y sucursales])
+    O --> Q([Confirmar pago manual / registrar reembolso])
+    N[Rol operador independiente: pendiente] -.-> O

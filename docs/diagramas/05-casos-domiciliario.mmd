@@ -1,0 +1,17 @@
+flowchart LR
+    accTitle: Casos de uso: domiciliario
+    accDescr: Distingue actividad física y registro en el sistema; el token GPS no autentica al domiciliario como usuario.
+    D[Domiciliario: persona sin cuenta de acceso] --> R([Recoger pedido en sucursal])
+    D --> T([Transportar pedido])
+    D --> E([Solicitar QR o firma al cliente])
+    D --> F([Comunicar entrega o fallo al operador])
+    A[Administrador autenticado] --> AS([Asignar domiciliario])
+    A --> ST([Registrar recogida y tránsito])
+    A --> VA([Validar entrega o registrar motivo de fallo])
+    AS -.-> R
+    T -.-> ST
+    E -.-> VA
+    F -.-> VA
+    GPS[GPS asociado al domiciliario: token de dispositivo] --> P([Reportar posición])
+    P -.-> S([Actualizar seguimiento público])
+    N[App / sesión propia de domiciliario: no implementada] -.-> D

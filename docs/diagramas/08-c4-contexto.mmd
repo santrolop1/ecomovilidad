@@ -1,0 +1,23 @@
+flowchart LR
+    accTitle: C4: contexto
+    accDescr: Semántica C4 expresada con flowchart: personas, sistema de interés y sistemas externos. No representa microservicios.
+    C[Persona: Cliente / visitante]
+    A[Persona: Administrador]
+    D[Persona: Domiciliario sin acceso web propio]
+    S[Software System: EcoMovilidad
+Tienda, alquileres y operación de flota]
+    P[Software System externo: Pasarela
+Wompi / pruebas; manual según configuración]
+    M[Software System externo: SMTP]
+    GPS[Software System externo: GPS / simulador]
+    MAP[Software System externo: OpenStreetMap
+Google Maps opcional]
+    C -->|Compra, alquila y sigue su entrega| S
+    A -->|Administra y opera| S
+    D -.->|Comunica avance / evidencia| A
+    S <-->|Cobro y verificación| P
+    S -->|Correo transaccional| M
+    GPS -->|Posiciones y prueba de liberación| S
+    MAP -->|Cartografía al navegador| S
+    classDef system fill:#e4f1eb,stroke:#17664d,color:#193449
+    class S system

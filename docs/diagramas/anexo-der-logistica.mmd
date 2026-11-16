@@ -1,0 +1,118 @@
+erDiagram
+    accTitle: DER ampliado: logistica
+    accDescr: Vista parcial con atributos completos para facilitar lectura. Las relaciones entre dominios aparecen en el DER completo y en el diccionario de datos.
+    direction LR
+    orders {
+        uuid id PK
+        datetime created_at
+        datetime updated_at
+        uuid user_id FK
+        str status
+        int subtotal
+        int shipping_cost
+        int total
+        uuid branch_id FK
+        str fulfillment_method
+        str delivery_address "nullable"
+        str delivery_city "nullable"
+        date scheduled_date
+        str time_slot
+        str payment_method "nullable"
+        datetime payment_expires_at "nullable"
+        datetime stock_settled_at "nullable"
+        str contact_name
+        str contact_email
+        str contact_phone
+        str document_type
+        str document_number
+    }
+    couriers {
+        uuid id PK
+        datetime created_at
+        datetime updated_at
+        str name
+        str phone
+        bool is_active
+    }
+    deliveries {
+        uuid id PK
+        datetime created_at
+        datetime updated_at
+        uuid order_id FK
+        uuid courier_id FK "nullable"
+        str status
+        str tracking_token UK
+        str confirmation_code
+        str proof_method "nullable"
+        str signer_name "nullable"
+        str signature_image "nullable"
+        str failure_reason "nullable"
+        datetime delivered_at "nullable"
+        str carrier
+        uuid drone_device_id FK "nullable"
+        Decimal destination_latitude "nullable"
+        Decimal destination_longitude "nullable"
+        Decimal drop_latitude "nullable"
+        Decimal drop_longitude "nullable"
+        int drop_distance_m "nullable"
+        datetime dropped_at "nullable"
+        datetime customer_confirmed_at "nullable"
+    }
+    delivery_events {
+        uuid id PK
+        uuid delivery_id FK
+        str status
+        str note "nullable"
+        uuid user_id FK "nullable"
+        datetime created_at
+    }
+    gps_devices {
+        uuid id PK
+        datetime created_at
+        datetime updated_at
+        str code UK
+        str kind
+        str token_hash UK
+        uuid branch_id FK "nullable"
+        uuid courier_id FK "nullable"
+        uuid rental_unit_id FK "nullable"
+        bool is_active
+        Decimal last_latitude "nullable"
+        Decimal last_longitude "nullable"
+        int last_battery_pct "nullable"
+        datetime last_seen_at "nullable"
+    }
+    gps_positions {
+        uuid id PK
+        uuid device_id FK
+        Decimal latitude
+        Decimal longitude
+        int battery_pct "nullable"
+        datetime recorded_at
+    }
+    geofences {
+        uuid id PK
+        datetime created_at
+        datetime updated_at
+        str name UK
+        Decimal latitude
+        Decimal longitude
+        int radius_m
+        bool is_active
+        geography location
+    }
+    geofence_alerts {
+        uuid id PK
+        uuid device_id FK
+        Decimal latitude
+        Decimal longitude
+        datetime opened_at
+        datetime closed_at "nullable"
+    }
+    orders ||--o| deliveries : "order_id"
+    couriers |o--o{ deliveries : "courier_id"
+    gps_devices |o--o{ deliveries : "drone_device_id"
+    deliveries ||--o{ delivery_events : "delivery_id"
+    couriers |o--o{ gps_devices : "courier_id"
+    gps_devices ||--o{ gps_positions : "device_id"
+    gps_devices ||--o{ geofence_alerts : "device_id"

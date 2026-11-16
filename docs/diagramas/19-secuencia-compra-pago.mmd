@@ -1,0 +1,38 @@
+sequenceDiagram
+    accTitle: Secuencia: compra y pago
+    accDescr: Factura de venta PDF/XML sin validación DIAN. El checkout no acepta precios enviados por el cliente. El proveedor concreto depende de configuración.
+    actor C as Cliente
+    participant N as Next.js
+    participant O as Pedidos / inventario
+    participant P as Pagos
+    participant G as Pasarela configurada
+    participant D as PostgreSQL
+    C->>N: Carrito autenticado, franja y modalidad
+    N->>O: Crear pedido
+    O->>D: Bloquear existencias y validar cupo
+    alt Reserva vencida / sin stock / sin cupo
+      O-->>N: 409, no crear pedido
+      N-->>C: Actualizar selección
+    else Datos y reserva válidos
+      O->>D: Transferir reserva del carrito a Order pending
+      O-->>N: Pedido, total y plazo de pago
+      C->>N: Pagar
+      N->>P: start_payment
+      P->>D: Guardar referencia y monto calculado en servidor
+      P-->>C: Checkout a través de Next.js
+      C->>G: Autorizar pago fuera de EcoMovilidad
+      G->>P: Resultado vía retorno / webhook y Next.js
+      P->>G: Verificar transacción cuando aplica
+      P->>D: Bloquear pago y validar referencia, monto y estado
+      alt Aprobado, único y pedido pendiente
+        P->>O: settle_order_stock
+        O->>D: Registrar venta y descontar unidades reservadas
+        P->>D: paid, factura y domicilio si corresponde
+        P-->>C: Confirmación y factura vía Next.js
+      else Rechazado / error
+        P-->>C: Estado de pago, permite reintento según reglas
+      else Duplicado o destino ya cancelado
+        P->>D: No duplicar venta, marcar requires_refund si aplica
+      end
+    end
+    Note over P,G: En modo manual el administrador confirma, en pruebas no hay cobro real.

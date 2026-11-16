@@ -1,0 +1,21 @@
+flowchart TB
+    accTitle: C4: contenedores
+    accDescr: Vista en modo API_MODE=real. En mock, Next.js usa adaptadores de demostración. Worker pertenece al despliegue previsto; producción aún no publicada.
+    C[Cliente / administrador] -->|HTTPS| UI[Aplicación cliente
+React 19, Tailwind, Leaflet]
+    subgraph S[Software System: EcoMovilidad]
+        UI -->|Mismo origen: navegación, acciones y rutas API| WEB[Aplicación web / BFF
+Next.js 16: Server Components y Server Actions]
+        WEB -->|HTTP REST privado /api/v1| API[Aplicación API
+Python / FastAPI / SQLAlchemy]
+        API -->|SQL / PostGIS| DB[(Base de datos
+PostgreSQL 16 + PostGIS)]
+        WORK[Tarea housekeeping
+Python CLI cada 5 min] --> DB
+    end
+    GPS[GPS / simulador] -->|HTTPS /api/telemetry/* vía Next.js| WEB
+    GW[Wompi si configurado] <-->|Web Checkout / retorno| UI
+    GW -->|Webhook vía Next.js| WEB
+    API <-->|Verificar transacción| GW
+    API -->|Correo si configurado| SMTP[SMTP]
+    MAP[OpenStreetMap / Google Maps opcional] -->|Teselas / SDK| UI

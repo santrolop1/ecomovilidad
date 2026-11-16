@@ -1,0 +1,28 @@
+sequenceDiagram
+    accTitle: Secuencia: inicio y cierre de sesión
+    accDescr: Límites: 5 fallos por cuenta y 30 por IP en 15 min. Cerrar sesión no cierra un alquiler ni devuelve un vehículo.
+    actor C as Cliente / administrador
+    participant N as Next.js
+    participant A as FastAPI autenticación
+    participant D as PostgreSQL
+    C->>N: Correo y contraseña
+    N->>A: POST /auth/login con IP de cliente
+    A->>D: Consultar intentos recientes y usuario
+    alt Límite alcanzado
+      A-->>C: 429 a través de Next.js
+    else Credenciales inválidas o usuario inactivo
+      A->>D: Registrar intento fallido
+      A-->>C: Error uniforme a través de Next.js
+    else Credenciales válidas
+      A->>A: Verificar Argon2
+      A->>D: Registrar intento y sesión con hashes
+      A-->>N: Cookies sesión / CSRF
+      N-->>C: Acceso autenticado
+    end
+    opt Cerrar sesión
+      C->>N: Salir
+      N->>A: POST /auth/logout con sesión y CSRF
+      A->>D: Revocar sesión actual
+      A-->>N: 204 y borrar cookies
+      N-->>C: Sesión terminada
+    end

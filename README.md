@@ -140,6 +140,7 @@ Sin AWS ni dominio: Cloudflare Tunnel hacia Next.js en este Mac, que debe seguir
 
 ## Documentos
 
+- [Atlas de diagramas](docs/diagramas/README.md): 27 diagramas, cinco ampliaciones del DER, diccionario de datos y visor sin conexión (`docs/diagramas/index.html`).
 - [DOCUMENTACION.md](DOCUMENTACION.md): arquitectura, base de datos, API, autenticación, panel, ejecución y pruebas.
 - [REQUISITOS.md](REQUISITOS.md): requisitos del SRS con su estado.
 - [ESTADO.md](ESTADO.md): estado por área.

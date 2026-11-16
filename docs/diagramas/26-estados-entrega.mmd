@@ -1,0 +1,22 @@
+stateDiagram-v2
+    accTitle: Estados: entrega
+    accDescr: Entregado es terminal; se alcanza mediante validación, no mediante un cambio de estado arbitrario.
+    [*] --> creado: Pedido pagado con domicilio
+    creado --> asignado: Asignar domiciliario o dron
+    asignado --> asignado: Reasignar responsable
+    asignado --> en_recogida: Registrar recogida
+    en_recogida --> en_transito: Registrar salida
+    en_transito --> entregado: QR o firma válidos
+    en_transito --> entregado: Dron liberó y cliente confirma
+    en_transito --> entregado: Evidencia dron y plazo de 30 min cumplido
+    creado --> fallido: Motivo de fallo / reembolso
+    asignado --> fallido: Motivo de fallo / reembolso
+    en_recogida --> fallido: Motivo de fallo / reembolso
+    en_transito --> fallido: Motivo de fallo
+    fallido --> creado: Reprogramar pedido no cancelado
+    entregado --> [*]
+    note right of en_transito
+      Soltar paquete con dron no cambia el estado.
+      La evidencia se guarda en dropped_at.
+      Entregado siempre exige prueba.
+    end note

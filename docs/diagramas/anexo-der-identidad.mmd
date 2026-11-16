@@ -1,0 +1,52 @@
+erDiagram
+    accTitle: DER ampliado: identidad
+    accDescr: Vista parcial con atributos completos para facilitar lectura. Las relaciones entre dominios aparecen en el DER completo y en el diccionario de datos.
+    direction LR
+    users {
+        uuid id PK
+        datetime created_at
+        datetime updated_at
+        str email UK
+        str password_hash
+        str first_name
+        str last_name
+        str phone
+        str document_number "nullable"
+        bool is_active
+        bool is_admin
+    }
+    user_sessions {
+        uuid id PK
+        uuid user_id FK
+        str token_hash UK
+        str csrf_token_hash
+        datetime expires_at
+        datetime created_at
+    }
+    password_reset_tokens {
+        uuid id PK
+        uuid user_id FK
+        str token_hash UK
+        datetime expires_at
+        datetime used_at "nullable"
+        datetime created_at
+    }
+    login_attempts {
+        uuid id PK
+        str email_hash
+        str ip_address
+        bool succeeded
+        datetime created_at
+    }
+    consent_records {
+        uuid id PK
+        uuid user_id FK
+        str purpose
+        str policy_version
+        uuid order_id FK "nullable"
+        uuid rental_id FK "nullable"
+        datetime accepted_at
+    }
+    users ||--o{ user_sessions : "user_id"
+    users ||--o{ password_reset_tokens : "user_id"
+    users ||--o{ consent_records : "user_id"

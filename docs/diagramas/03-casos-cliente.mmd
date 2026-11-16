@@ -1,0 +1,17 @@
+flowchart LR
+    accTitle: Casos de uso: cliente
+    accDescr: El visitante usa carrito local sin reserva de stock; el pago no se completa directamente en el navegador de EcoMovilidad.
+    C[Cliente] --> A([Registrarse / iniciar y cerrar sesión])
+    C --> B([Editar perfil / cambiar o recuperar contraseña])
+    C --> D([Consultar catálogo, sucursales y ofertas])
+    C --> E([Agregar al carrito y reservar inventario])
+    C --> F([Comprar / elegir franja y modalidad])
+    C --> G([Alquilar / elegir sucursal y periodo])
+    F -.->|incluye| P([Pagar en proveedor configurado])
+    G -.->|incluye| P
+    C --> H([Consultar pedidos, alquileres y facturas])
+    C --> I([Seguir entrega / mostrar QR o firmar])
+    C --> J([Confirmar recepción del dron])
+    C --> K([Cancelar lo no pagado / solicitar reembolso])
+    E -.-> L[Reserva de 15 min solo con sesión]
+    I -.-> M[Enlace público; consulta cada 15 s]

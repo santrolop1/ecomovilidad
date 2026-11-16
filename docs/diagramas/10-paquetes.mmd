@@ -1,0 +1,28 @@
+flowchart LR
+    accTitle: Diagrama de paquetes
+    accDescr: Paquetes reales; algunas reglas consultan SQLAlchemy directamente y no todos los módulos tienen repository.py.
+    APP[src/app
+Rutas tienda, admin, API] --> FEAT[src/features
+Componentes, acciones y lógica de dominio]
+    APP --> UI[src/components
+UI, layout y elementos compartidos]
+    FEAT --> UI
+    APP --> API[src/lib/api
+Contratos, Zod, modo mock / real]
+    FEAT --> API
+    API --> MOCK[src/mocks]
+    API --> HTTP[src/lib/api/real
+HTTP server-only]
+    API --> TYPES[src/types]
+    HTTP --> ROUTER[backend/app/api
+Router, dependencias y autorización]
+    ROUTER --> MOD[backend/app/modules
+Routers y servicios por dominio]
+    MOD --> CORE[backend/app/core
+Configuración, seguridad y correo]
+    MOD --> DB[backend/app/db y app/models
+SQLAlchemy y enums]
+    MOD --> REPO[Repositorios por módulo cuando existen]
+    REPO --> DB
+    MIG[backend/alembic
+Migraciones] --> DB

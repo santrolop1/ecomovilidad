@@ -1,0 +1,32 @@
+sequenceDiagram
+    accTitle: Secuencia: alertas de vehículos
+    accDescr: El GPS puede reportar como máximo una posición por segundo. Sin zonas activas no se generan alertas por geocerca.
+    participant G as GPS / simulador
+    participant N as Next.js route handler
+    participant T as Telemetría
+    participant D as PostgreSQL / PostGIS
+    actor A as Administrador
+    G->>N: Posición, batería y token de dispositivo
+    N->>T: Reenviar posición a FastAPI
+    T->>D: Verificar hash de token, activo y bloqueo de dispositivo
+    alt Token inválido / demasiado frecuente
+      T-->>G: Error de autenticación o 429 vía Next.js
+    else Reporte aceptado
+      T->>D: Guardar GpsPosition y última posición
+      T->>D: ST_DWithin contra geocercas activas
+      alt Fuera de todas las zonas y sin alerta abierta
+        T->>D: Crear GeofenceAlert
+      else Dentro de alguna zona o sin zonas activas
+        T->>D: Cerrar alerta abierta si existe
+      else Sigue afuera con alerta abierta
+        T->>D: Conservar alerta sin duplicar
+      end
+      T->>D: Commit
+      T-->>G: ACK y outside_zone vía Next.js
+    end
+    loop Cada 3 segundos desde el panel
+      A->>N: Consultar telemetría y alertas
+      N->>T: Obtener snapshot
+      T-->>A: Estado actual vía Next.js
+    end
+    Note over T,A: Sin aparatos reales: simulación identificada. No hay WebSockets ni avisos push.

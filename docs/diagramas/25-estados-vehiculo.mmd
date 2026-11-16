@@ -1,0 +1,21 @@
+stateDiagram-v2
+    accTitle: Estados: vehículo
+    accDescr: Separa mantenimiento persistido de disponibilidad calculada. Revisión periódica por defecto: 90 días; drones se siembran con 60 días.
+    [*] --> operativo: Alta de unidad
+    operativo --> mantenimiento: Uso alcanza 90% o revisión vencida
+    operativo --> mantenimiento: Cambio administrativo sin alquiler vigente
+    mantenimiento --> operativo: Mantenimiento registrado y unidad apta
+    operativo --> retirado: Administrador sin alquiler vigente
+    mantenimiento --> retirado: Administrador sin alquiler vigente
+    retirado --> operativo: Reactivar solo si uso y revisión permiten operar
+    retirado --> mantenimiento: Cambio administrativo sin alquiler vigente
+    note left of operativo
+      Estado persistido: operativo.
+      Estar reservado o afuera se deriva
+      de Rental; no son valores de status.
+    end note
+    note right of mantenimiento
+      Retorno a operativo exige uso menor
+      al 90% y revisión no vencida.
+      El mantenimiento reinicia el uso.
+    end note

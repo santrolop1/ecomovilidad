@@ -1,0 +1,26 @@
+flowchart TB
+    accTitle: Diagrama de nodos / despliegue
+    accDescr: Topología declarada, aún no desplegada en producción. web, api y db no publican puertos al host. No hay réplicas ni clúster.
+    B[Navegador / dispositivo GPS / proveedor de pagos] -->|HTTPS 443| CADDY
+    subgraph HOST[Servidor único: diseño de producción en Docker Compose]
+      CADDY[Contenedor Caddy
+Único ingreso: puertos 80 / 443] -->|HTTP :3000| WEB[Contenedor web
+Next.js]
+      WEB -->|HTTP :8000 /api/v1| API[Contenedor API
+FastAPI / uvicorn]
+      API -->|PostgreSQL :5432| DB[(Contenedor db
+PostgreSQL / PostGIS)]
+      API -->|Inicio| MIG[Alembic upgrade head
+check-production previo]
+      WORK[Contenedor worker
+Housekeeping cada 300 s] --> DB
+      BACK[Contenedor backup
+pg_dump diario] --> DB
+      DB --> VOL[(Volumen db-data)]
+      BACK --> FILE[(Directorio backups
+Retención: 14 días)]
+      CADDY --> CERT[(Volúmenes caddy-data / config)]
+    end
+    API --> SMTP[SMTP externo]
+    API --> WOMPI[Wompi externo, si configurado]
+    B --> MAP[Proveedor de mapas]

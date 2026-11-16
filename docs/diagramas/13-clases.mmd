@@ -1,0 +1,451 @@
+classDiagram
+    accTitle: Diagrama de clases persistentes
+    accDescr: Todas las clases ORM con tabla propia: atributos persistentes y asociaciones por FK. No se inventan métodos de negocio en entidades; los servicios son funciones. created_at y updated_at comunes se omiten aquí y aparecen en el DER.
+direction LR
+class RentalRate {
+  <<SQLAlchemy>>
+  +uuid id
+  +uuid product_id
+  +str unit
+  +int price
+}
+class RentalUnit {
+  <<SQLAlchemy>>
+  +uuid id
+  +uuid product_id
+  +uuid branch_id
+  +str code
+  +str status
+  +bool is_demo
+  +str usage_unit
+  +Decimal usage_value
+  +int service_threshold
+  +int service_interval_days
+  +datetime last_service_at
+}
+class MaintenanceLog {
+  <<SQLAlchemy>>
+  +uuid id
+  +uuid unit_id
+  +str kind
+  +Decimal usage_delta
+  +Decimal usage_after
+  +str note
+  +uuid user_id
+}
+class Rental {
+  <<SQLAlchemy>>
+  +uuid id
+  +uuid user_id
+  +uuid product_id
+  +uuid branch_id
+  +uuid rental_unit_id
+  +datetime start_at
+  +datetime end_at
+  +tstzrange period
+  +str status
+  +int price
+  +datetime payment_expires_at
+  +str contact_name
+  +str contact_email
+  +str contact_phone
+  +str document_type
+  +str document_number
+  +datetime checked_out_at
+  +uuid checked_out_by
+  +datetime returned_at
+  +uuid returned_by
+  +Decimal return_usage
+}
+class User {
+  <<SQLAlchemy>>
+  +uuid id
+  +str email
+  +str password_hash
+  +str first_name
+  +str last_name
+  +str phone
+  +str document_number
+  +bool is_active
+  +bool is_admin
+}
+class UserSession {
+  <<SQLAlchemy>>
+  +uuid id
+  +uuid user_id
+  +str token_hash
+  +str csrf_token_hash
+  +datetime expires_at
+}
+class PasswordResetToken {
+  <<SQLAlchemy>>
+  +uuid id
+  +uuid user_id
+  +str token_hash
+  +datetime expires_at
+  +datetime used_at
+}
+class LoginAttempt {
+  <<SQLAlchemy>>
+  +uuid id
+  +str email_hash
+  +str ip_address
+  +bool succeeded
+}
+class ConsentRecord {
+  <<SQLAlchemy>>
+  +uuid id
+  +uuid user_id
+  +str purpose
+  +str policy_version
+  +uuid order_id
+  +uuid rental_id
+  +datetime accepted_at
+}
+class Cart {
+  <<SQLAlchemy>>
+  +uuid id
+  +uuid user_id
+  +str status
+}
+class CartItem {
+  <<SQLAlchemy>>
+  +uuid id
+  +uuid cart_id
+  +uuid product_id
+  +int quantity
+  +int unit_price
+}
+class Category {
+  <<SQLAlchemy>>
+  +uuid id
+  +str name
+  +str slug
+  +str description
+}
+class Product {
+  <<SQLAlchemy>>
+  +uuid id
+  +uuid category_id
+  +str name
+  +str slug
+  +str sku
+  +str short_description
+  +str description
+  +str brand
+  +int price
+  +int compare_at_price
+  +json specifications
+  +json highlights
+  +str image_url
+  +bool is_featured
+  +bool is_active
+}
+class ContactMessage {
+  <<SQLAlchemy>>
+  +uuid id
+  +str full_name
+  +str email
+  +str phone
+  +str topic
+  +str message
+  +str status
+  +str policy_version
+  +str ip_hash
+}
+class ValueProposition {
+  <<SQLAlchemy>>
+  +uuid id
+  +str title
+  +str description
+  +str icon
+  +int position
+  +bool is_active
+}
+class Banner {
+  <<SQLAlchemy>>
+  +uuid id
+  +str title
+  +str description
+  +str cta_label
+  +str cta_href
+  +datetime starts_at
+  +datetime ends_at
+  +bool is_active
+}
+class NewsItem {
+  <<SQLAlchemy>>
+  +uuid id
+  +str slug
+  +str title
+  +str excerpt
+  +datetime published_at
+  +bool is_published
+}
+class Courier {
+  <<SQLAlchemy>>
+  +uuid id
+  +str name
+  +str phone
+  +bool is_active
+}
+class Delivery {
+  <<SQLAlchemy>>
+  +uuid id
+  +uuid order_id
+  +uuid courier_id
+  +str status
+  +str tracking_token
+  +str confirmation_code
+  +str proof_method
+  +str signer_name
+  +str signature_image
+  +str failure_reason
+  +datetime delivered_at
+  +str carrier
+  +uuid drone_device_id
+  +Decimal destination_latitude
+  +Decimal destination_longitude
+  +Decimal drop_latitude
+  +Decimal drop_longitude
+  +int drop_distance_m
+  +datetime dropped_at
+  +datetime customer_confirmed_at
+}
+class DeliveryEvent {
+  <<SQLAlchemy>>
+  +uuid id
+  +uuid delivery_id
+  +str status
+  +str note
+  +uuid user_id
+}
+class Inventory {
+  <<SQLAlchemy>>
+  +uuid id
+  +uuid product_id
+  +uuid branch_id
+  +int available_quantity
+  +int reserved_quantity
+  +int total_quantity
+}
+class InventoryMovement {
+  <<SQLAlchemy>>
+  +uuid id
+  +uuid inventory_id
+  +str kind
+  +int quantity
+  +int balance_after
+  +str reason
+  +uuid order_id
+  +uuid user_id
+}
+class CartReservation {
+  <<SQLAlchemy>>
+  +uuid id
+  +uuid cart_item_id
+  +uuid inventory_id
+  +int quantity
+  +datetime expires_at
+}
+class Payment {
+  <<SQLAlchemy>>
+  +uuid id
+  +uuid user_id
+  +uuid order_id
+  +uuid rental_id
+  +str provider
+  +str reference
+  +int amount_in_cents
+  +str currency
+  +str status
+  +str provider_transaction_id
+  +str payment_method_type
+  +str status_message
+  +bool requires_refund
+  +datetime approved_at
+}
+class PaymentEvent {
+  <<SQLAlchemy>>
+  +uuid id
+  +str checksum
+  +str event
+  +str transaction_id
+  +str status
+  +json payload
+  +datetime received_at
+}
+class Invoice {
+  <<SQLAlchemy>>
+  +uuid id
+  +int number
+  +str prefix
+  +uuid payment_id
+  +uuid order_id
+  +uuid rental_id
+  +uuid user_id
+  +str buyer_name
+  +str buyer_document_type
+  +str buyer_document_number
+  +str buyer_email
+  +int subtotal
+  +int vat
+  +int total
+  +bytes pdf
+  +str xml
+  +datetime issued_at
+}
+class RefundRequest {
+  <<SQLAlchemy>>
+  +uuid id
+  +uuid user_id
+  +uuid order_id
+  +uuid rental_id
+  +str reason
+  +str status
+  +datetime resolved_at
+}
+class Order {
+  <<SQLAlchemy>>
+  +uuid id
+  +uuid user_id
+  +str status
+  +int subtotal
+  +int shipping_cost
+  +int total
+  +uuid branch_id
+  +str fulfillment_method
+  +str delivery_address
+  +str delivery_city
+  +date scheduled_date
+  +str time_slot
+  +str payment_method
+  +datetime payment_expires_at
+  +datetime stock_settled_at
+  +str contact_name
+  +str contact_email
+  +str contact_phone
+  +str document_type
+  +str document_number
+}
+class OrderItem {
+  <<SQLAlchemy>>
+  +uuid id
+  +uuid order_id
+  +uuid product_id
+  +int quantity
+  +int unit_price
+  +int subtotal
+}
+class Branch {
+  <<SQLAlchemy>>
+  +uuid id
+  +str slug
+  +str name
+  +str address
+  +str neighborhood
+  +str city
+  +str phone
+  +Decimal latitude
+  +Decimal longitude
+  +geography location
+  +json opening_hours
+  +json services
+  +int slot_capacity
+  +bool is_demo
+  +bool is_active
+}
+class GpsDevice {
+  <<SQLAlchemy>>
+  +uuid id
+  +str code
+  +str kind
+  +str token_hash
+  +uuid branch_id
+  +uuid courier_id
+  +uuid rental_unit_id
+  +bool is_active
+  +Decimal last_latitude
+  +Decimal last_longitude
+  +int last_battery_pct
+  +datetime last_seen_at
+}
+class GpsPosition {
+  <<SQLAlchemy>>
+  +uuid id
+  +uuid device_id
+  +Decimal latitude
+  +Decimal longitude
+  +int battery_pct
+  +datetime recorded_at
+}
+class Geofence {
+  <<SQLAlchemy>>
+  +uuid id
+  +str name
+  +Decimal latitude
+  +Decimal longitude
+  +int radius_m
+  +bool is_active
+  +geography location
+}
+class GeofenceAlert {
+  <<SQLAlchemy>>
+  +uuid id
+  +uuid device_id
+  +Decimal latitude
+  +Decimal longitude
+  +datetime opened_at
+  +datetime closed_at
+}
+Product "1" <-- "0..*" RentalRate : product_id
+Product "1" <-- "0..*" RentalUnit : product_id
+Branch "1" <-- "0..*" RentalUnit : branch_id
+RentalUnit "1" <-- "0..*" MaintenanceLog : unit_id
+User "0..1" <-- "0..*" MaintenanceLog : user_id
+User "1" <-- "0..*" Rental : user_id
+Product "1" <-- "0..*" Rental : product_id
+Branch "1" <-- "0..*" Rental : branch_id
+RentalUnit "0..1" <-- "0..*" Rental : rental_unit_id
+User "0..1" <-- "0..*" Rental : checked_out_by
+User "0..1" <-- "0..*" Rental : returned_by
+User "1" <-- "0..*" UserSession : user_id
+User "1" <-- "0..*" PasswordResetToken : user_id
+User "1" <-- "0..*" ConsentRecord : user_id
+Order "0..1" <-- "0..*" ConsentRecord : order_id
+Rental "0..1" <-- "0..*" ConsentRecord : rental_id
+User "1" <-- "0..*" Cart : user_id
+Cart "1" <-- "0..*" CartItem : cart_id
+Product "1" <-- "0..*" CartItem : product_id
+Category "1" <-- "0..*" Product : category_id
+Order "1" <-- "0..1" Delivery : order_id
+Courier "0..1" <-- "0..*" Delivery : courier_id
+GpsDevice "0..1" <-- "0..*" Delivery : drone_device_id
+Delivery "1" <-- "0..*" DeliveryEvent : delivery_id
+User "0..1" <-- "0..*" DeliveryEvent : user_id
+Product "1" <-- "0..*" Inventory : product_id
+Branch "1" <-- "0..*" Inventory : branch_id
+Inventory "1" <-- "0..*" InventoryMovement : inventory_id
+Order "0..1" <-- "0..*" InventoryMovement : order_id
+User "0..1" <-- "0..*" InventoryMovement : user_id
+CartItem "1" <-- "0..*" CartReservation : cart_item_id
+Inventory "1" <-- "0..*" CartReservation : inventory_id
+User "1" <-- "0..*" Payment : user_id
+Order "0..1" <-- "0..*" Payment : order_id
+Rental "0..1" <-- "0..*" Payment : rental_id
+Payment "1" <-- "0..1" Invoice : payment_id
+Order "0..1" <-- "0..1" Invoice : order_id
+Rental "0..1" <-- "0..1" Invoice : rental_id
+User "1" <-- "0..*" Invoice : user_id
+User "1" <-- "0..*" RefundRequest : user_id
+Order "0..1" <-- "0..*" RefundRequest : order_id
+Rental "0..1" <-- "0..*" RefundRequest : rental_id
+User "1" <-- "0..*" Order : user_id
+Branch "1" <-- "0..*" Order : branch_id
+Order "1" <-- "0..*" OrderItem : order_id
+Product "1" <-- "0..*" OrderItem : product_id
+Branch "0..1" <-- "0..*" GpsDevice : branch_id
+Courier "0..1" <-- "0..*" GpsDevice : courier_id
+RentalUnit "0..1" <-- "0..*" GpsDevice : rental_unit_id
+GpsDevice "1" <-- "0..*" GpsPosition : device_id
+GpsDevice "1" <-- "0..*" GeofenceAlert : device_id

@@ -1,0 +1,38 @@
+sequenceDiagram
+    accTitle: Secuencia: alquiler y pago
+    accDescr: La entrega del alquiler se hace en sucursal. Un pago tardío sobre alquiler no pendiente requiere revisión de reembolso.
+    actor C as Cliente
+    participant N as Next.js
+    participant R as Alquiler
+    participant P as Pagos
+    participant G as Pasarela
+    participant D as PostgreSQL
+    actor A as Administrador
+    C->>N: Producto, sucursal, inicio y fin
+    N->>R: Cotizar y crear alquiler
+    R->>D: Revisar tarifas, horarios y mantenimiento
+    R->>D: Elegir unidad, excluir periodos cruzados
+    alt Sin unidad operativa / cruce concurrente
+      R-->>C: Sin disponibilidad vía Next.js
+    else Unidad válida
+      R->>D: Rental pending con plazo de pago
+      R-->>N: Precio y reserva
+      C->>N: Pagar alquiler
+      N->>P: start_payment
+      P->>D: Guardar Payment
+      P-->>C: Checkout vía Next.js
+      C->>G: Pagar
+      G->>P: Resultado verificado vía Next.js
+      alt Aprobado para alquiler pendiente
+        P->>D: confirmed y factura
+      else No aprobado / vencido
+        P->>D: Mantener pendiente o cancelar al vencer
+      end
+    end
+    opt Recogida del alquiler pagado
+      A->>N: Registrar salida
+      N->>R: admin.check_out
+      R->>D: Verificar estado, mantenimiento y devolución previa
+      R->>D: active y checked_out_at
+    end
+    Note over R,D: Exclusión GiST en estados pending / confirmed / active.

@@ -1,0 +1,56 @@
+classDiagram
+    accTitle: Diagrama de clases BCE
+    accDescr: BCE es una clasificación lógica: las cajas Control representan módulos Python con funciones, no clases Python declaradas. Boundary agrupa componente React y routers HTTP.
+    direction LR
+    class CheckoutForm {
+      <<Boundary>>
+      datosCliente
+      entregaYFranja
+    }
+    class ApiRouter {
+      <<Boundary>>
+      validarEntrada()
+      CurrentUser
+      AdminUser
+    }
+    class PedidosService {
+      <<Control>>
+      create_order()
+      settle_order_stock()
+    }
+    class PagosService {
+      <<Control>>
+      start_payment()
+      apply_transaction()
+    }
+    class AlquilerService {
+      <<Control>>
+      create_rental()
+    }
+    class DomiciliosService {
+      <<Control>>
+      assign_courier()
+      validate_delivery()
+      confirm_receipt()
+    }
+    class User { <<Entity>> }
+    class Order { <<Entity>> }
+    class Rental { <<Entity>> }
+    class Payment { <<Entity>> }
+    class Invoice { <<Entity>> }
+    class Delivery { <<Entity>> }
+    class Inventory { <<Entity>> }
+    CheckoutForm --> ApiRouter : Server Action y adaptador real
+    ApiRouter --> PedidosService
+    ApiRouter --> PagosService
+    ApiRouter --> AlquilerService
+    ApiRouter --> DomiciliosService
+    PedidosService --> User
+    PedidosService --> Order
+    PedidosService --> Inventory
+    PagosService --> Payment
+    PagosService --> Invoice
+    PagosService --> PedidosService
+    PagosService --> DomiciliosService
+    AlquilerService --> Rental
+    DomiciliosService --> Delivery

@@ -1,0 +1,22 @@
+flowchart LR
+    accTitle: Casos de uso: general
+    accDescr: Notación de casos de uso con actores rectangulares y óvalos; líneas de inclusión conceptuales, no dependencias de código.
+    V[Visitante] --> UC02([CU-02 Consultar catálogo])
+    V --> UC01([CU-01 Registrarse / iniciar sesión])
+    C[Cliente autenticado] --> UC03([CU-03 Comprar])
+    C --> UC04([CU-04 Alquilar])
+    C --> UC06([CU-06 Agendar entrega / recogida])
+    C --> UC07([CU-07 Seguir domicilio])
+    C --> UC08([CU-08 Aportar QR / firma o confirmar dron])
+    C --> UC15([CU-15 Cancelar / solicitar reembolso])
+    UC03 -.->|incluye| UC05([CU-05 Pagar])
+    UC04 -.->|incluye| UC05
+    A[Administrador] --> UC09([CU-09 Gestionar contenidos])
+    A --> UC10([CU-10 Monitorear flota])
+    A --> UC11([CU-11 Gestionar geocercas / alertas])
+    A --> UC12([CU-12 Registrar mantenimiento])
+    A --> UC13([CU-13 Ajustar inventario])
+    A --> UC14([CU-14 Asignar y gestionar domicilios])
+    A --> UC15
+    D[Domiciliario: actor físico] -.->|ejecuta entrega; registro por administrador| UC14
+    P[Pasarela] --> UC05

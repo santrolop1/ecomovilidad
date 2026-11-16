@@ -1,0 +1,27 @@
+sequenceDiagram
+    accTitle: Secuencia: desbloqueo remoto propuesto
+    accDescr: Propuesta de diseño separada de la implementación. Hoy solo existe salida de sucursal por administrador; antes de implementar se requieren hardware, protocolo, auditoría, reintentos e idempotencia.
+    actor C as Cliente
+    participant UI as Interfaz futura
+    participant API as Endpoint futuro de desbloqueo
+    participant R as Alquiler / pago existentes
+    participant IOT as Adaptador IoT futuro
+    participant L as Cerradura futura
+    Note over C,L: PROPUESTA: no existe endpoint, cerradura ni protocolo implementado.
+    C->>UI: Solicitar desbloqueo de unidad asignada
+    UI->>API: Solicitud autenticada con clave idempotente
+    API->>R: Verificar dueño, pago, periodo y unidad operativa
+    alt Sin autorización / unidad no elegible
+      API-->>UI: Denegar sin enviar comando
+    else Elegible
+      API->>IOT: Emitir comando firmado de corta vigencia
+      IOT->>L: Desbloquear con identificador único
+      alt Confirmación física recibida
+        L-->>IOT: ACK de cerradura
+        IOT-->>API: Resultado verificable
+        API-->>UI: Desbloqueo confirmado
+      else Timeout / dispositivo sin conexión
+        IOT-->>API: Resultado desconocido
+        API-->>UI: No confirmar, conciliar estado y pedir asistencia
+      end
+    end

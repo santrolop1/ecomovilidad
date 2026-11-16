@@ -1,0 +1,956 @@
+{
+  "base_commit": "993b14f5b3b2e9e5f91afbb8892c83689bfe1444",
+  "date": "2026-11-16",
+  "diagrams": [
+    {
+      "id": "01-contexto-srs",
+      "title": "Contexto del SRS",
+      "group": "Análisis",
+      "status": "Implementado",
+      "note": "Sistema lógico completo; las teselas se consumen desde el navegador. Operador y domiciliario no tienen roles de acceso independientes.",
+      "source": "flowchart LR\n    accTitle: Contexto del SRS\n    accDescr: Sistema lógico completo; las teselas se consumen desde el navegador. Operador y domiciliario no tienen roles de acceso independientes.\n    C[Cliente / visitante] -->|Datos de cuenta, consultas, compra y alquiler| S((EcoMovilidad))\n    S -->|Catálogo, disponibilidad, factura y seguimiento| C\n    A[Administrador: operación actual] -->|Inventario, contenidos, asignaciones y mantenimiento| S\n    S -->|Pedidos, flota y alertas| A\n    D[Domiciliario sin sesión propia] -.->|Entrega y evidencia comunicadas al operador| A\n    G[Dispositivo GPS / simulador] -->|Token, posición, batería y liberación de paquete| S\n    S -->|Solicitud de cobro| P[Pasarela configurada: pruebas / manual / Wompi]\n    P -->|Resultado verificado / confirmación administrativa| S\n    S -->|Correo transaccional si SMTP configurado| M[Proveedor SMTP]\n    O[OpenStreetMap / Google Maps opcional] -->|Teselas / servicio de mapas| S\n",
+      "evidence": [
+        {
+          "path": "README.md",
+          "line": 1
+        },
+        {
+          "path": "src/lib/api/index.ts",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/pagos/gateway.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/domicilios/models.py",
+          "line": 19
+        }
+      ]
+    },
+    {
+      "id": "02-casos-general",
+      "title": "Casos de uso: general",
+      "group": "Análisis",
+      "status": "Implementado",
+      "note": "Notación de casos de uso con actores rectangulares y óvalos; líneas de inclusión conceptuales, no dependencias de código.",
+      "source": "flowchart LR\n    accTitle: Casos de uso: general\n    accDescr: Notación de casos de uso con actores rectangulares y óvalos; líneas de inclusión conceptuales, no dependencias de código.\n    V[Visitante] --> UC02([CU-02 Consultar catálogo])\n    V --> UC01([CU-01 Registrarse / iniciar sesión])\n    C[Cliente autenticado] --> UC03([CU-03 Comprar])\n    C --> UC04([CU-04 Alquilar])\n    C --> UC06([CU-06 Agendar entrega / recogida])\n    C --> UC07([CU-07 Seguir domicilio])\n    C --> UC08([CU-08 Aportar QR / firma o confirmar dron])\n    C --> UC15([CU-15 Cancelar / solicitar reembolso])\n    UC03 -.->|incluye| UC05([CU-05 Pagar])\n    UC04 -.->|incluye| UC05\n    A[Administrador] --> UC09([CU-09 Gestionar contenidos])\n    A --> UC10([CU-10 Monitorear flota])\n    A --> UC11([CU-11 Gestionar geocercas / alertas])\n    A --> UC12([CU-12 Registrar mantenimiento])\n    A --> UC13([CU-13 Ajustar inventario])\n    A --> UC14([CU-14 Asignar y gestionar domicilios])\n    A --> UC15\n    D[Domiciliario: actor físico] -.->|ejecuta entrega; registro por administrador| UC14\n    P[Pasarela] --> UC05\n",
+      "evidence": [
+        {
+          "path": "REQUISITOS.md",
+          "line": 107
+        },
+        {
+          "path": "backend/app/api/deps.py",
+          "line": 1
+        }
+      ]
+    },
+    {
+      "id": "03-casos-cliente",
+      "title": "Casos de uso: cliente",
+      "group": "Análisis",
+      "status": "Implementado",
+      "note": "El visitante usa carrito local sin reserva de stock; el pago no se completa directamente en el navegador de EcoMovilidad.",
+      "source": "flowchart LR\n    accTitle: Casos de uso: cliente\n    accDescr: El visitante usa carrito local sin reserva de stock; el pago no se completa directamente en el navegador de EcoMovilidad.\n    C[Cliente] --> A([Registrarse / iniciar y cerrar sesión])\n    C --> B([Editar perfil / cambiar o recuperar contraseña])\n    C --> D([Consultar catálogo, sucursales y ofertas])\n    C --> E([Agregar al carrito y reservar inventario])\n    C --> F([Comprar / elegir franja y modalidad])\n    C --> G([Alquilar / elegir sucursal y periodo])\n    F -.->|incluye| P([Pagar en proveedor configurado])\n    G -.->|incluye| P\n    C --> H([Consultar pedidos, alquileres y facturas])\n    C --> I([Seguir entrega / mostrar QR o firmar])\n    C --> J([Confirmar recepción del dron])\n    C --> K([Cancelar lo no pagado / solicitar reembolso])\n    E -.-> L[Reserva de 15 min solo con sesión]\n    I -.-> M[Enlace público; consulta cada 15 s]\n",
+      "evidence": [
+        {
+          "path": "backend/app/modules/autenticacion/router.py",
+          "line": 1
+        },
+        {
+          "path": "src/app/(sitio)/cuenta/page.tsx",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/inventario/reservations.py",
+          "line": 1
+        }
+      ]
+    },
+    {
+      "id": "04-casos-operador",
+      "title": "Casos de uso: operador",
+      "group": "Análisis",
+      "status": "Implementado con rol administrador",
+      "note": "Describe tareas operativas implementadas bajo users.is_admin. No existe autorización diferenciada para operador.",
+      "source": "flowchart LR\n    accTitle: Casos de uso: operador\n    accDescr: Describe tareas operativas implementadas bajo users.is_admin. No existe autorización diferenciada para operador.\n    O[Operación: acceso actual como administrador] --> P([Administrar productos y categorías])\n    O --> I([Ajustar inventario con motivo])\n    O --> R([Registrar salida y entrada del alquiler])\n    O --> M([Registrar uso y mantenimiento de unidad])\n    O --> D([Asignar domiciliario cercano o dron])\n    O --> E([Actualizar estados y validar QR / firma])\n    O --> G([Registrar GPS / zonas y consultar alertas])\n    O --> C([Gestionar contenidos y contactos])\n    O --> U([Gestionar usuarios y sucursales])\n    O --> Q([Confirmar pago manual / registrar reembolso])\n    N[Rol operador independiente: pendiente] -.-> O\n",
+      "evidence": [
+        {
+          "path": "backend/app/modules/admin/router.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/admin/rentals.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/domicilios/service.py",
+          "line": 1
+        }
+      ]
+    },
+    {
+      "id": "05-casos-domiciliario",
+      "title": "Casos de uso: domiciliario",
+      "group": "Análisis",
+      "status": "Proceso asistido; rol propio pendiente",
+      "note": "Distingue actividad física y registro en el sistema; el token GPS no autentica al domiciliario como usuario.",
+      "source": "flowchart LR\n    accTitle: Casos de uso: domiciliario\n    accDescr: Distingue actividad física y registro en el sistema; el token GPS no autentica al domiciliario como usuario.\n    D[Domiciliario: persona sin cuenta de acceso] --> R([Recoger pedido en sucursal])\n    D --> T([Transportar pedido])\n    D --> E([Solicitar QR o firma al cliente])\n    D --> F([Comunicar entrega o fallo al operador])\n    A[Administrador autenticado] --> AS([Asignar domiciliario])\n    A --> ST([Registrar recogida y tránsito])\n    A --> VA([Validar entrega o registrar motivo de fallo])\n    AS -.-> R\n    T -.-> ST\n    E -.-> VA\n    F -.-> VA\n    GPS[GPS asociado al domiciliario: token de dispositivo] --> P([Reportar posición])\n    P -.-> S([Actualizar seguimiento público])\n    N[App / sesión propia de domiciliario: no implementada] -.-> D\n",
+      "evidence": [
+        {
+          "path": "backend/app/modules/domicilios/models.py",
+          "line": 19
+        },
+        {
+          "path": "backend/app/modules/domicilios/service.py",
+          "line": 204
+        },
+        {
+          "path": "backend/app/modules/telemetria/models.py",
+          "line": 28
+        }
+      ]
+    },
+    {
+      "id": "06-dfd-nivel-0",
+      "title": "DFD nivel 0",
+      "group": "Análisis",
+      "status": "Implementado",
+      "note": "DFD de contexto: no muestra almacenes internos. El pago manual sustituye el intercambio externo por la confirmación del administrador.",
+      "source": "flowchart LR\n    accTitle: DFD nivel 0\n    accDescr: DFD de contexto: no muestra almacenes internos. El pago manual sustituye el intercambio externo por la confirmación del administrador.\n    C[Cliente] -->|Cuenta, carrito, pedido, reserva y evidencia| S((0. EcoMovilidad))\n    S -->|Sesión, catálogo, disponibilidad, factura y seguimiento| C\n    A[Administrador] -->|Cambios de operación y confirmaciones| S\n    S -->|Estado de negocio y alertas| A\n    GPS[GPS] -->|Posición y evidencia del dron| S\n    S -->|Cobro, validación de transacción| P[Pasarela]\n    P -->|Estado del pago| S\n    S -->|Mensaje transaccional| M[SMTP]\n    M -->|Aceptación / error de envío| S\n    MAP[Proveedor de mapas] -->|Teselas / datos cartográficos| S\n",
+      "evidence": [
+        {
+          "path": "backend/app/modules/pagos/service.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/telemetria/router.py",
+          "line": 1
+        },
+        {
+          "path": "src/features/branches/components/service-map.tsx",
+          "line": 1
+        }
+      ]
+    },
+    {
+      "id": "07-dfd-nivel-1",
+      "title": "DFD nivel 1",
+      "group": "Análisis",
+      "status": "Implementado",
+      "note": "Descomposición lógica balanceada con nivel 0; almacenes agrupan tablas de una única base PostgreSQL, no bases independientes.",
+      "source": "flowchart TB\n    accTitle: DFD nivel 1\n    accDescr: Descomposición lógica balanceada con nivel 0; almacenes agrupan tablas de una única base PostgreSQL, no bases independientes.\n    C[Cliente] -->|Cuenta y credenciales| P1((1. Autenticar))\n    P1 <-->|Usuarios, sesiones y consentimientos| D1[(D1 Identidad)]\n    P1 -->|Sesión / error| C\n    C -->|Consulta| P2((2. Explorar oferta))\n    P2 <-->|Catálogo, sucursales e inventario| D2[(D2 Oferta y existencias)]\n    P2 -->|Catálogo y disponibilidad| C\n    MAP[Mapas] -->|Teselas| P2\n    C -->|Carrito, pedido, reserva y agenda| P3((3. Reservar y vender))\n    P3 <-->|Reservar / liberar / descontar| D2\n    P3 <-->|Carrito, pedido y alquiler| D3[(D3 Transacciones)]\n    P3 -->|Pendiente y referencia| P4((4. Cobrar y facturar))\n    P4 -->|Solicitud / consulta| PAY[Pasarela]\n    PAY -->|Estado verificado| P4\n    P4 <-->|Pago, evento, factura y reembolso| D4[(D4 Pagos)]\n    P4 -->|Resultado| P3\n    P4 -->|Factura / estado| C\n    P4 -->|Correo| MAIL[SMTP]\n    MAIL -->|Aceptación / error| P4\n    P4 -->|Pedido pagado a domicilio| P5((5. Gestionar entrega))\n    C -->|QR, firma o confirmación de recepción| P5\n    P5 <-->|Domicilios, historial y evidencia| D5[(D5 Entregas)]\n    P5 -->|Seguimiento| C\n    GPS[GPS] -->|Posiciones| P6((6. Supervisar flota))\n    GPS -->|Liberación del dron| P5\n    P6 <-->|GPS, zonas, alertas y mantenimiento| D6[(D6 Operación)]\n    P6 -->|Posición útil para seguimiento| P5\n    A[Administrador] -->|Cambios de operación| P3 & P5 & P6\n    A -->|Contenidos, productos, sucursales e inventario| P2\n    A -->|Usuarios| P1\n    A -->|Pagos manuales / reembolsos| P4\n    P3 & P4 & P5 & P6 -->|Estado de negocio y alertas| A\n",
+      "evidence": [
+        {
+          "path": "backend/app/api/router.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/pedidos/service.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/domicilios/service.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/telemetria/service.py",
+          "line": 1
+        }
+      ]
+    },
+    {
+      "id": "08-c4-contexto",
+      "title": "C4: contexto",
+      "group": "Arquitectura y diseño",
+      "status": "Implementado",
+      "note": "Semántica C4 expresada con flowchart: personas, sistema de interés y sistemas externos. No representa microservicios.",
+      "source": "flowchart LR\n    accTitle: C4: contexto\n    accDescr: Semántica C4 expresada con flowchart: personas, sistema de interés y sistemas externos. No representa microservicios.\n    C[Persona: Cliente / visitante]\n    A[Persona: Administrador]\n    D[Persona: Domiciliario sin acceso web propio]\n    S[Software System: EcoMovilidad\nTienda, alquileres y operación de flota]\n    P[Software System externo: Pasarela\nWompi / pruebas; manual según configuración]\n    M[Software System externo: SMTP]\n    GPS[Software System externo: GPS / simulador]\n    MAP[Software System externo: OpenStreetMap\nGoogle Maps opcional]\n    C -->|Compra, alquila y sigue su entrega| S\n    A -->|Administra y opera| S\n    D -.->|Comunica avance / evidencia| A\n    S <-->|Cobro y verificación| P\n    S -->|Correo transaccional| M\n    GPS -->|Posiciones y prueba de liberación| S\n    MAP -->|Cartografía al navegador| S\n    classDef system fill:#e4f1eb,stroke:#17664d,color:#193449\n    class S system\n",
+      "evidence": [
+        {
+          "path": "README.md",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/pagos/gateway.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/telemetria/router.py",
+          "line": 1
+        }
+      ]
+    },
+    {
+      "id": "09-c4-contenedores",
+      "title": "C4: contenedores",
+      "group": "Arquitectura y diseño",
+      "status": "Implementado",
+      "note": "Vista en modo API_MODE=real. En mock, Next.js usa adaptadores de demostración. Worker pertenece al despliegue previsto; producción aún no publicada.",
+      "source": "flowchart TB\n    accTitle: C4: contenedores\n    accDescr: Vista en modo API_MODE=real. En mock, Next.js usa adaptadores de demostración. Worker pertenece al despliegue previsto; producción aún no publicada.\n    C[Cliente / administrador] -->|HTTPS| UI[Aplicación cliente\nReact 19, Tailwind, Leaflet]\n    subgraph S[Software System: EcoMovilidad]\n        UI -->|Mismo origen: navegación, acciones y rutas API| WEB[Aplicación web / BFF\nNext.js 16: Server Components y Server Actions]\n        WEB -->|HTTP REST privado /api/v1| API[Aplicación API\nPython / FastAPI / SQLAlchemy]\n        API -->|SQL / PostGIS| DB[(Base de datos\nPostgreSQL 16 + PostGIS)]\n        WORK[Tarea housekeeping\nPython CLI cada 5 min] --> DB\n    end\n    GPS[GPS / simulador] -->|HTTPS /api/telemetry/* vía Next.js| WEB\n    GW[Wompi si configurado] <-->|Web Checkout / retorno| UI\n    GW -->|Webhook vía Next.js| WEB\n    API <-->|Verificar transacción| GW\n    API -->|Correo si configurado| SMTP[SMTP]\n    MAP[OpenStreetMap / Google Maps opcional] -->|Teselas / SDK| UI\n",
+      "evidence": [
+        {
+          "path": "src/lib/api/http-client.ts",
+          "line": 1
+        },
+        {
+          "path": "src/app/api/telemetry/positions/route.ts",
+          "line": 1
+        },
+        {
+          "path": "src/app/api/webhooks/wompi/route.ts",
+          "line": 1
+        },
+        {
+          "path": "docker-compose.prod.yml",
+          "line": 1
+        }
+      ]
+    },
+    {
+      "id": "10-paquetes",
+      "title": "Diagrama de paquetes",
+      "group": "Arquitectura y diseño",
+      "status": "Implementado",
+      "note": "Paquetes reales; algunas reglas consultan SQLAlchemy directamente y no todos los módulos tienen repository.py.",
+      "source": "flowchart LR\n    accTitle: Diagrama de paquetes\n    accDescr: Paquetes reales; algunas reglas consultan SQLAlchemy directamente y no todos los módulos tienen repository.py.\n    APP[src/app\nRutas tienda, admin, API] --> FEAT[src/features\nComponentes, acciones y lógica de dominio]\n    APP --> UI[src/components\nUI, layout y elementos compartidos]\n    FEAT --> UI\n    APP --> API[src/lib/api\nContratos, Zod, modo mock / real]\n    FEAT --> API\n    API --> MOCK[src/mocks]\n    API --> HTTP[src/lib/api/real\nHTTP server-only]\n    API --> TYPES[src/types]\n    HTTP --> ROUTER[backend/app/api\nRouter, dependencias y autorización]\n    ROUTER --> MOD[backend/app/modules\nRouters y servicios por dominio]\n    MOD --> CORE[backend/app/core\nConfiguración, seguridad y correo]\n    MOD --> DB[backend/app/db y app/models\nSQLAlchemy y enums]\n    MOD --> REPO[Repositorios por módulo cuando existen]\n    REPO --> DB\n    MIG[backend/alembic\nMigraciones] --> DB\n",
+      "evidence": [
+        {
+          "path": "src/lib/api/index.ts",
+          "line": 1
+        },
+        {
+          "path": "backend/app/api/router.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/models/__init__.py",
+          "line": 1
+        }
+      ]
+    },
+    {
+      "id": "11-componentes",
+      "title": "Diagrama de componentes",
+      "group": "Arquitectura y diseño",
+      "status": "Implementado",
+      "note": "Componentes lógicos de un monolito modular; las flechas muestran dependencias principales, no procesos desplegados por separado.",
+      "source": "flowchart TB\n    accTitle: Diagrama de componentes\n    accDescr: Componentes lógicos de un monolito modular; las flechas muestran dependencias principales, no procesos desplegados por separado.\n    UI[Tienda y panel React] --> ACTION[Server Actions / Route Handlers Next.js]\n    ACTION --> CONTRACT[Contratos y adaptador real server-only]\n    CONTRACT --> ROUTES[FastAPI routers y dependencias\nCurrentUser / AdminUser / CSRF]\n    ROUTES --> AUTH[Autenticación\nSesiones, Argon2, consentimiento]\n    ROUTES --> CAT[Catálogo / sucursales]\n    ROUTES --> CART[Carrito y reservas]\n    ROUTES --> ORDER[Pedidos y agenda]\n    ROUTES --> RENT[Alquiler y mantenimiento]\n    ROUTES --> PAY[Pagos e invoices]\n    ROUTES --> DELIVERY[Domicilios]\n    ROUTES --> GPS[Telemetría y geocercas]\n    ROUTES --> CMS[Contenidos / contacto / admin]\n    CART --> STOCK[Inventario / reservas / movimientos]\n    ORDER --> STOCK\n    PAY --> ORDER & RENT & DELIVERY\n    REF[Reembolsos] --> ORDER & RENT & DELIVERY\n    ROUTES --> REF\n    DELIVERY --> GPS\n    AUTH & CAT & STOCK & RENT & PAY & DELIVERY & GPS & CMS --> DB[(PostgreSQL / PostGIS)]\n    PAY --> GATE[PaymentGateway\nWompi / simulated / manual]\n    PAY --> EMAIL[EmailSender\nSMTP / desarrollo]\n",
+      "evidence": [
+        {
+          "path": "backend/app/api/router.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/pagos/service.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/domicilios/service.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/reembolsos/service.py",
+          "line": 1
+        }
+      ]
+    },
+    {
+      "id": "12-despliegue",
+      "title": "Diagrama de nodos / despliegue",
+      "group": "Arquitectura y diseño",
+      "status": "Configuración de despliegue preparada",
+      "note": "Topología declarada, aún no desplegada en producción. web, api y db no publican puertos al host. No hay réplicas ni clúster.",
+      "source": "flowchart TB\n    accTitle: Diagrama de nodos / despliegue\n    accDescr: Topología declarada, aún no desplegada en producción. web, api y db no publican puertos al host. No hay réplicas ni clúster.\n    B[Navegador / dispositivo GPS / proveedor de pagos] -->|HTTPS 443| CADDY\n    subgraph HOST[Servidor único: diseño de producción en Docker Compose]\n      CADDY[Contenedor Caddy\nÚnico ingreso: puertos 80 / 443] -->|HTTP :3000| WEB[Contenedor web\nNext.js]\n      WEB -->|HTTP :8000 /api/v1| API[Contenedor API\nFastAPI / uvicorn]\n      API -->|PostgreSQL :5432| DB[(Contenedor db\nPostgreSQL / PostGIS)]\n      API -->|Inicio| MIG[Alembic upgrade head\ncheck-production previo]\n      WORK[Contenedor worker\nHousekeeping cada 300 s] --> DB\n      BACK[Contenedor backup\npg_dump diario] --> DB\n      DB --> VOL[(Volumen db-data)]\n      BACK --> FILE[(Directorio backups\nRetención: 14 días)]\n      CADDY --> CERT[(Volúmenes caddy-data / config)]\n    end\n    API --> SMTP[SMTP externo]\n    API --> WOMPI[Wompi externo, si configurado]\n    B --> MAP[Proveedor de mapas]\n",
+      "evidence": [
+        {
+          "path": "docker-compose.prod.yml",
+          "line": 1
+        },
+        {
+          "path": "deploy/Caddyfile",
+          "line": 1
+        },
+        {
+          "path": "docs/DESPLIEGUE.md",
+          "line": 1
+        }
+      ]
+    },
+    {
+      "id": "13-clases",
+      "title": "Diagrama de clases persistentes",
+      "group": "Estructurales",
+      "status": "Implementado",
+      "note": "Todas las clases ORM con tabla propia: atributos persistentes y asociaciones por FK. No se inventan métodos de negocio en entidades; los servicios son funciones. created_at y updated_at comunes se omiten aquí y aparecen en el DER.",
+      "source": "classDiagram\n    accTitle: Diagrama de clases persistentes\n    accDescr: Todas las clases ORM con tabla propia: atributos persistentes y asociaciones por FK. No se inventan métodos de negocio en entidades; los servicios son funciones. created_at y updated_at comunes se omiten aquí y aparecen en el DER.\ndirection LR\nclass RentalRate {\n  <<SQLAlchemy>>\n  +uuid id\n  +uuid product_id\n  +str unit\n  +int price\n}\nclass RentalUnit {\n  <<SQLAlchemy>>\n  +uuid id\n  +uuid product_id\n  +uuid branch_id\n  +str code\n  +str status\n  +bool is_demo\n  +str usage_unit\n  +Decimal usage_value\n  +int service_threshold\n  +int service_interval_days\n  +datetime last_service_at\n}\nclass MaintenanceLog {\n  <<SQLAlchemy>>\n  +uuid id\n  +uuid unit_id\n  +str kind\n  +Decimal usage_delta\n  +Decimal usage_after\n  +str note\n  +uuid user_id\n}\nclass Rental {\n  <<SQLAlchemy>>\n  +uuid id\n  +uuid user_id\n  +uuid product_id\n  +uuid branch_id\n  +uuid rental_unit_id\n  +datetime start_at\n  +datetime end_at\n  +tstzrange period\n  +str status\n  +int price\n  +datetime payment_expires_at\n  +str contact_name\n  +str contact_email\n  +str contact_phone\n  +str document_type\n  +str document_number\n  +datetime checked_out_at\n  +uuid checked_out_by\n  +datetime returned_at\n  +uuid returned_by\n  +Decimal return_usage\n}\nclass User {\n  <<SQLAlchemy>>\n  +uuid id\n  +str email\n  +str password_hash\n  +str first_name\n  +str last_name\n  +str phone\n  +str document_number\n  +bool is_active\n  +bool is_admin\n}\nclass UserSession {\n  <<SQLAlchemy>>\n  +uuid id\n  +uuid user_id\n  +str token_hash\n  +str csrf_token_hash\n  +datetime expires_at\n}\nclass PasswordResetToken {\n  <<SQLAlchemy>>\n  +uuid id\n  +uuid user_id\n  +str token_hash\n  +datetime expires_at\n  +datetime used_at\n}\nclass LoginAttempt {\n  <<SQLAlchemy>>\n  +uuid id\n  +str email_hash\n  +str ip_address\n  +bool succeeded\n}\nclass ConsentRecord {\n  <<SQLAlchemy>>\n  +uuid id\n  +uuid user_id\n  +str purpose\n  +str policy_version\n  +uuid order_id\n  +uuid rental_id\n  +datetime accepted_at\n}\nclass Cart {\n  <<SQLAlchemy>>\n  +uuid id\n  +uuid user_id\n  +str status\n}\nclass CartItem {\n  <<SQLAlchemy>>\n  +uuid id\n  +uuid cart_id\n  +uuid product_id\n  +int quantity\n  +int unit_price\n}\nclass Category {\n  <<SQLAlchemy>>\n  +uuid id\n  +str name\n  +str slug\n  +str description\n}\nclass Product {\n  <<SQLAlchemy>>\n  +uuid id\n  +uuid category_id\n  +str name\n  +str slug\n  +str sku\n  +str short_description\n  +str description\n  +str brand\n  +int price\n  +int compare_at_price\n  +json specifications\n  +json highlights\n  +str image_url\n  +bool is_featured\n  +bool is_active\n}\nclass ContactMessage {\n  <<SQLAlchemy>>\n  +uuid id\n  +str full_name\n  +str email\n  +str phone\n  +str topic\n  +str message\n  +str status\n  +str policy_version\n  +str ip_hash\n}\nclass ValueProposition {\n  <<SQLAlchemy>>\n  +uuid id\n  +str title\n  +str description\n  +str icon\n  +int position\n  +bool is_active\n}\nclass Banner {\n  <<SQLAlchemy>>\n  +uuid id\n  +str title\n  +str description\n  +str cta_label\n  +str cta_href\n  +datetime starts_at\n  +datetime ends_at\n  +bool is_active\n}\nclass NewsItem {\n  <<SQLAlchemy>>\n  +uuid id\n  +str slug\n  +str title\n  +str excerpt\n  +datetime published_at\n  +bool is_published\n}\nclass Courier {\n  <<SQLAlchemy>>\n  +uuid id\n  +str name\n  +str phone\n  +bool is_active\n}\nclass Delivery {\n  <<SQLAlchemy>>\n  +uuid id\n  +uuid order_id\n  +uuid courier_id\n  +str status\n  +str tracking_token\n  +str confirmation_code\n  +str proof_method\n  +str signer_name\n  +str signature_image\n  +str failure_reason\n  +datetime delivered_at\n  +str carrier\n  +uuid drone_device_id\n  +Decimal destination_latitude\n  +Decimal destination_longitude\n  +Decimal drop_latitude\n  +Decimal drop_longitude\n  +int drop_distance_m\n  +datetime dropped_at\n  +datetime customer_confirmed_at\n}\nclass DeliveryEvent {\n  <<SQLAlchemy>>\n  +uuid id\n  +uuid delivery_id\n  +str status\n  +str note\n  +uuid user_id\n}\nclass Inventory {\n  <<SQLAlchemy>>\n  +uuid id\n  +uuid product_id\n  +uuid branch_id\n  +int available_quantity\n  +int reserved_quantity\n  +int total_quantity\n}\nclass InventoryMovement {\n  <<SQLAlchemy>>\n  +uuid id\n  +uuid inventory_id\n  +str kind\n  +int quantity\n  +int balance_after\n  +str reason\n  +uuid order_id\n  +uuid user_id\n}\nclass CartReservation {\n  <<SQLAlchemy>>\n  +uuid id\n  +uuid cart_item_id\n  +uuid inventory_id\n  +int quantity\n  +datetime expires_at\n}\nclass Payment {\n  <<SQLAlchemy>>\n  +uuid id\n  +uuid user_id\n  +uuid order_id\n  +uuid rental_id\n  +str provider\n  +str reference\n  +int amount_in_cents\n  +str currency\n  +str status\n  +str provider_transaction_id\n  +str payment_method_type\n  +str status_message\n  +bool requires_refund\n  +datetime approved_at\n}\nclass PaymentEvent {\n  <<SQLAlchemy>>\n  +uuid id\n  +str checksum\n  +str event\n  +str transaction_id\n  +str status\n  +json payload\n  +datetime received_at\n}\nclass Invoice {\n  <<SQLAlchemy>>\n  +uuid id\n  +int number\n  +str prefix\n  +uuid payment_id\n  +uuid order_id\n  +uuid rental_id\n  +uuid user_id\n  +str buyer_name\n  +str buyer_document_type\n  +str buyer_document_number\n  +str buyer_email\n  +int subtotal\n  +int vat\n  +int total\n  +bytes pdf\n  +str xml\n  +datetime issued_at\n}\nclass RefundRequest {\n  <<SQLAlchemy>>\n  +uuid id\n  +uuid user_id\n  +uuid order_id\n  +uuid rental_id\n  +str reason\n  +str status\n  +datetime resolved_at\n}\nclass Order {\n  <<SQLAlchemy>>\n  +uuid id\n  +uuid user_id\n  +str status\n  +int subtotal\n  +int shipping_cost\n  +int total\n  +uuid branch_id\n  +str fulfillment_method\n  +str delivery_address\n  +str delivery_city\n  +date scheduled_date\n  +str time_slot\n  +str payment_method\n  +datetime payment_expires_at\n  +datetime stock_settled_at\n  +str contact_name\n  +str contact_email\n  +str contact_phone\n  +str document_type\n  +str document_number\n}\nclass OrderItem {\n  <<SQLAlchemy>>\n  +uuid id\n  +uuid order_id\n  +uuid product_id\n  +int quantity\n  +int unit_price\n  +int subtotal\n}\nclass Branch {\n  <<SQLAlchemy>>\n  +uuid id\n  +str slug\n  +str name\n  +str address\n  +str neighborhood\n  +str city\n  +str phone\n  +Decimal latitude\n  +Decimal longitude\n  +geography location\n  +json opening_hours\n  +json services\n  +int slot_capacity\n  +bool is_demo\n  +bool is_active\n}\nclass GpsDevice {\n  <<SQLAlchemy>>\n  +uuid id\n  +str code\n  +str kind\n  +str token_hash\n  +uuid branch_id\n  +uuid courier_id\n  +uuid rental_unit_id\n  +bool is_active\n  +Decimal last_latitude\n  +Decimal last_longitude\n  +int last_battery_pct\n  +datetime last_seen_at\n}\nclass GpsPosition {\n  <<SQLAlchemy>>\n  +uuid id\n  +uuid device_id\n  +Decimal latitude\n  +Decimal longitude\n  +int battery_pct\n  +datetime recorded_at\n}\nclass Geofence {\n  <<SQLAlchemy>>\n  +uuid id\n  +str name\n  +Decimal latitude\n  +Decimal longitude\n  +int radius_m\n  +bool is_active\n  +geography location\n}\nclass GeofenceAlert {\n  <<SQLAlchemy>>\n  +uuid id\n  +uuid device_id\n  +Decimal latitude\n  +Decimal longitude\n  +datetime opened_at\n  +datetime closed_at\n}\nProduct \"1\" <-- \"0..*\" RentalRate : product_id\nProduct \"1\" <-- \"0..*\" RentalUnit : product_id\nBranch \"1\" <-- \"0..*\" RentalUnit : branch_id\nRentalUnit \"1\" <-- \"0..*\" MaintenanceLog : unit_id\nUser \"0..1\" <-- \"0..*\" MaintenanceLog : user_id\nUser \"1\" <-- \"0..*\" Rental : user_id\nProduct \"1\" <-- \"0..*\" Rental : product_id\nBranch \"1\" <-- \"0..*\" Rental : branch_id\nRentalUnit \"0..1\" <-- \"0..*\" Rental : rental_unit_id\nUser \"0..1\" <-- \"0..*\" Rental : checked_out_by\nUser \"0..1\" <-- \"0..*\" Rental : returned_by\nUser \"1\" <-- \"0..*\" UserSession : user_id\nUser \"1\" <-- \"0..*\" PasswordResetToken : user_id\nUser \"1\" <-- \"0..*\" ConsentRecord : user_id\nOrder \"0..1\" <-- \"0..*\" ConsentRecord : order_id\nRental \"0..1\" <-- \"0..*\" ConsentRecord : rental_id\nUser \"1\" <-- \"0..*\" Cart : user_id\nCart \"1\" <-- \"0..*\" CartItem : cart_id\nProduct \"1\" <-- \"0..*\" CartItem : product_id\nCategory \"1\" <-- \"0..*\" Product : category_id\nOrder \"1\" <-- \"0..1\" Delivery : order_id\nCourier \"0..1\" <-- \"0..*\" Delivery : courier_id\nGpsDevice \"0..1\" <-- \"0..*\" Delivery : drone_device_id\nDelivery \"1\" <-- \"0..*\" DeliveryEvent : delivery_id\nUser \"0..1\" <-- \"0..*\" DeliveryEvent : user_id\nProduct \"1\" <-- \"0..*\" Inventory : product_id\nBranch \"1\" <-- \"0..*\" Inventory : branch_id\nInventory \"1\" <-- \"0..*\" InventoryMovement : inventory_id\nOrder \"0..1\" <-- \"0..*\" InventoryMovement : order_id\nUser \"0..1\" <-- \"0..*\" InventoryMovement : user_id\nCartItem \"1\" <-- \"0..*\" CartReservation : cart_item_id\nInventory \"1\" <-- \"0..*\" CartReservation : inventory_id\nUser \"1\" <-- \"0..*\" Payment : user_id\nOrder \"0..1\" <-- \"0..*\" Payment : order_id\nRental \"0..1\" <-- \"0..*\" Payment : rental_id\nPayment \"1\" <-- \"0..1\" Invoice : payment_id\nOrder \"0..1\" <-- \"0..1\" Invoice : order_id\nRental \"0..1\" <-- \"0..1\" Invoice : rental_id\nUser \"1\" <-- \"0..*\" Invoice : user_id\nUser \"1\" <-- \"0..*\" RefundRequest : user_id\nOrder \"0..1\" <-- \"0..*\" RefundRequest : order_id\nRental \"0..1\" <-- \"0..*\" RefundRequest : rental_id\nUser \"1\" <-- \"0..*\" Order : user_id\nBranch \"1\" <-- \"0..*\" Order : branch_id\nOrder \"1\" <-- \"0..*\" OrderItem : order_id\nProduct \"1\" <-- \"0..*\" OrderItem : product_id\nBranch \"0..1\" <-- \"0..*\" GpsDevice : branch_id\nCourier \"0..1\" <-- \"0..*\" GpsDevice : courier_id\nRentalUnit \"0..1\" <-- \"0..*\" GpsDevice : rental_unit_id\nGpsDevice \"1\" <-- \"0..*\" GpsPosition : device_id\nGpsDevice \"1\" <-- \"0..*\" GeofenceAlert : device_id\n",
+      "evidence": [
+        {
+          "path": "backend/app/modules/alquiler/models.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/autenticacion/models.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/autenticacion/security_records.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/carrito/models.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/catalogo/models.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/contacto/models.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/contenidos/models.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/domicilios/models.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/inventario/models.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/inventario/reservation_models.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/pagos/models.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/pedidos/models.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/sucursales/models.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/telemetria/models.py",
+          "line": 1
+        }
+      ]
+    },
+    {
+      "id": "14-clases-bce",
+      "title": "Diagrama de clases BCE",
+      "group": "Estructurales",
+      "status": "Implementado",
+      "note": "BCE es una clasificación lógica: las cajas Control representan módulos Python con funciones, no clases Python declaradas. Boundary agrupa componente React y routers HTTP.",
+      "source": "classDiagram\n    accTitle: Diagrama de clases BCE\n    accDescr: BCE es una clasificación lógica: las cajas Control representan módulos Python con funciones, no clases Python declaradas. Boundary agrupa componente React y routers HTTP.\n    direction LR\n    class CheckoutForm {\n      <<Boundary>>\n      datosCliente\n      entregaYFranja\n    }\n    class ApiRouter {\n      <<Boundary>>\n      validarEntrada()\n      CurrentUser\n      AdminUser\n    }\n    class PedidosService {\n      <<Control>>\n      create_order()\n      settle_order_stock()\n    }\n    class PagosService {\n      <<Control>>\n      start_payment()\n      apply_transaction()\n    }\n    class AlquilerService {\n      <<Control>>\n      create_rental()\n    }\n    class DomiciliosService {\n      <<Control>>\n      assign_courier()\n      validate_delivery()\n      confirm_receipt()\n    }\n    class User { <<Entity>> }\n    class Order { <<Entity>> }\n    class Rental { <<Entity>> }\n    class Payment { <<Entity>> }\n    class Invoice { <<Entity>> }\n    class Delivery { <<Entity>> }\n    class Inventory { <<Entity>> }\n    CheckoutForm --> ApiRouter : Server Action y adaptador real\n    ApiRouter --> PedidosService\n    ApiRouter --> PagosService\n    ApiRouter --> AlquilerService\n    ApiRouter --> DomiciliosService\n    PedidosService --> User\n    PedidosService --> Order\n    PedidosService --> Inventory\n    PagosService --> Payment\n    PagosService --> Invoice\n    PagosService --> PedidosService\n    PagosService --> DomiciliosService\n    AlquilerService --> Rental\n    DomiciliosService --> Delivery\n",
+      "evidence": [
+        {
+          "path": "src/features/checkout/components/checkout-form.tsx",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/pedidos/service.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/pagos/service.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/alquiler/service.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/domicilios/service.py",
+          "line": 1
+        }
+      ]
+    },
+    {
+      "id": "15-modelo-datos",
+      "title": "Modelo de datos / DER completo",
+      "group": "Estructurales",
+      "status": "Implementado",
+      "note": "DER derivado por AST de todos los modelos con __tablename__, incluidas tablas de seguridad. PK, FK y UK simples corresponden al código; índices parciales, CHECK y restricciones compuestas se explican en el diccionario de datos. Nullable es opcionalidad de columna, no del proceso de negocio.",
+      "source": "erDiagram\n    accTitle: Modelo de datos / DER completo\n    accDescr: DER derivado por AST de todos los modelos con __tablename__, incluidas tablas de seguridad. PK, FK y UK simples corresponden al código; índices parciales, CHECK y restricciones compuestas se explican en el diccionario de datos. Nullable es opcionalidad de columna, no del proceso de negocio.\n    direction LR\n    rental_rates {\n        uuid id PK\n        uuid product_id FK\n        str unit\n        int price\n    }\n    rental_units {\n        uuid id PK\n        datetime created_at\n        datetime updated_at\n        uuid product_id FK\n        uuid branch_id FK\n        str code UK\n        str status\n        bool is_demo\n        str usage_unit\n        Decimal usage_value\n        int service_threshold\n        int service_interval_days\n        datetime last_service_at\n    }\n    maintenance_logs {\n        uuid id PK\n        uuid unit_id FK\n        str kind\n        Decimal usage_delta \"nullable\"\n        Decimal usage_after\n        str note \"nullable\"\n        uuid user_id FK \"nullable\"\n        datetime created_at\n    }\n    rentals {\n        uuid id PK\n        datetime created_at\n        datetime updated_at\n        uuid user_id FK\n        uuid product_id FK\n        uuid branch_id FK\n        uuid rental_unit_id FK \"nullable\"\n        datetime start_at\n        datetime end_at\n        tstzrange period\n        str status\n        int price\n        datetime payment_expires_at \"nullable\"\n        str contact_name \"nullable\"\n        str contact_email \"nullable\"\n        str contact_phone \"nullable\"\n        str document_type \"nullable\"\n        str document_number \"nullable\"\n        datetime checked_out_at \"nullable\"\n        uuid checked_out_by FK \"nullable\"\n        datetime returned_at \"nullable\"\n        uuid returned_by FK \"nullable\"\n        Decimal return_usage \"nullable\"\n    }\n    users {\n        uuid id PK\n        datetime created_at\n        datetime updated_at\n        str email UK\n        str password_hash\n        str first_name\n        str last_name\n        str phone\n        str document_number \"nullable\"\n        bool is_active\n        bool is_admin\n    }\n    user_sessions {\n        uuid id PK\n        uuid user_id FK\n        str token_hash UK\n        str csrf_token_hash\n        datetime expires_at\n        datetime created_at\n    }\n    password_reset_tokens {\n        uuid id PK\n        uuid user_id FK\n        str token_hash UK\n        datetime expires_at\n        datetime used_at \"nullable\"\n        datetime created_at\n    }\n    login_attempts {\n        uuid id PK\n        str email_hash\n        str ip_address\n        bool succeeded\n        datetime created_at\n    }\n    consent_records {\n        uuid id PK\n        uuid user_id FK\n        str purpose\n        str policy_version\n        uuid order_id FK \"nullable\"\n        uuid rental_id FK \"nullable\"\n        datetime accepted_at\n    }\n    carts {\n        uuid id PK\n        datetime created_at\n        datetime updated_at\n        uuid user_id FK\n        str status\n    }\n    cart_items {\n        uuid id PK\n        datetime created_at\n        datetime updated_at\n        uuid cart_id FK\n        uuid product_id FK\n        int quantity\n        int unit_price\n    }\n    categories {\n        uuid id PK\n        str name UK\n        str slug UK\n        str description\n    }\n    products {\n        uuid id PK\n        datetime created_at\n        datetime updated_at\n        uuid category_id FK\n        str name\n        str slug UK\n        str sku UK\n        str short_description\n        str description\n        str brand\n        int price\n        int compare_at_price \"nullable\"\n        json specifications\n        json highlights\n        str image_url \"nullable\"\n        bool is_featured\n        bool is_active\n    }\n    contact_messages {\n        uuid id PK\n        str full_name\n        str email\n        str phone \"nullable\"\n        str topic\n        str message\n        str status\n        str policy_version\n        str ip_hash \"nullable\"\n        datetime created_at\n    }\n    value_propositions {\n        uuid id PK\n        datetime created_at\n        datetime updated_at\n        str title\n        str description\n        str icon\n        int position\n        bool is_active\n    }\n    banners {\n        uuid id PK\n        datetime created_at\n        datetime updated_at\n        str title\n        str description\n        str cta_label\n        str cta_href\n        datetime starts_at\n        datetime ends_at\n        bool is_active\n    }\n    news_items {\n        uuid id PK\n        datetime created_at\n        datetime updated_at\n        str slug UK\n        str title\n        str excerpt\n        datetime published_at\n        bool is_published\n    }\n    couriers {\n        uuid id PK\n        datetime created_at\n        datetime updated_at\n        str name\n        str phone\n        bool is_active\n    }\n    deliveries {\n        uuid id PK\n        datetime created_at\n        datetime updated_at\n        uuid order_id FK\n        uuid courier_id FK \"nullable\"\n        str status\n        str tracking_token UK\n        str confirmation_code\n        str proof_method \"nullable\"\n        str signer_name \"nullable\"\n        str signature_image \"nullable\"\n        str failure_reason \"nullable\"\n        datetime delivered_at \"nullable\"\n        str carrier\n        uuid drone_device_id FK \"nullable\"\n        Decimal destination_latitude \"nullable\"\n        Decimal destination_longitude \"nullable\"\n        Decimal drop_latitude \"nullable\"\n        Decimal drop_longitude \"nullable\"\n        int drop_distance_m \"nullable\"\n        datetime dropped_at \"nullable\"\n        datetime customer_confirmed_at \"nullable\"\n    }\n    delivery_events {\n        uuid id PK\n        uuid delivery_id FK\n        str status\n        str note \"nullable\"\n        uuid user_id FK \"nullable\"\n        datetime created_at\n    }\n    inventory {\n        uuid id PK\n        uuid product_id FK\n        uuid branch_id FK\n        int available_quantity\n        int reserved_quantity\n        int total_quantity\n        datetime updated_at\n    }\n    inventory_movements {\n        uuid id PK\n        uuid inventory_id FK\n        str kind\n        int quantity\n        int balance_after\n        str reason \"nullable\"\n        uuid order_id FK \"nullable\"\n        uuid user_id FK \"nullable\"\n        datetime created_at\n    }\n    cart_reservations {\n        uuid id PK\n        uuid cart_item_id FK\n        uuid inventory_id FK\n        int quantity\n        datetime expires_at\n        datetime created_at\n    }\n    payments {\n        uuid id PK\n        datetime created_at\n        datetime updated_at\n        uuid user_id FK\n        uuid order_id FK \"nullable\"\n        uuid rental_id FK \"nullable\"\n        str provider\n        str reference UK\n        int amount_in_cents\n        str currency\n        str status\n        str provider_transaction_id UK \"nullable\"\n        str payment_method_type \"nullable\"\n        str status_message \"nullable\"\n        bool requires_refund\n        datetime approved_at \"nullable\"\n    }\n    payment_events {\n        uuid id PK\n        str checksum UK\n        str event\n        str transaction_id \"nullable\"\n        str status \"nullable\"\n        json payload\n        datetime received_at\n    }\n    invoices {\n        uuid id PK\n        int number UK\n        str prefix\n        uuid payment_id FK\n        uuid order_id FK \"nullable\"\n        uuid rental_id FK \"nullable\"\n        uuid user_id FK\n        str buyer_name\n        str buyer_document_type\n        str buyer_document_number\n        str buyer_email\n        int subtotal\n        int vat\n        int total\n        bytes pdf\n        str xml\n        datetime issued_at\n    }\n    refund_requests {\n        uuid id PK\n        uuid user_id FK\n        uuid order_id FK \"nullable\"\n        uuid rental_id FK \"nullable\"\n        str reason\n        str status\n        datetime created_at\n        datetime resolved_at \"nullable\"\n    }\n    orders {\n        uuid id PK\n        datetime created_at\n        datetime updated_at\n        uuid user_id FK\n        str status\n        int subtotal\n        int shipping_cost\n        int total\n        uuid branch_id FK\n        str fulfillment_method\n        str delivery_address \"nullable\"\n        str delivery_city \"nullable\"\n        date scheduled_date\n        str time_slot\n        str payment_method \"nullable\"\n        datetime payment_expires_at \"nullable\"\n        datetime stock_settled_at \"nullable\"\n        str contact_name\n        str contact_email\n        str contact_phone\n        str document_type\n        str document_number\n    }\n    order_items {\n        uuid id PK\n        uuid order_id FK\n        uuid product_id FK\n        int quantity\n        int unit_price\n        int subtotal\n    }\n    branches {\n        uuid id PK\n        datetime created_at\n        datetime updated_at\n        str slug UK\n        str name\n        str address\n        str neighborhood\n        str city\n        str phone\n        Decimal latitude\n        Decimal longitude\n        geography location\n        json opening_hours\n        json services\n        int slot_capacity\n        bool is_demo\n        bool is_active\n    }\n    gps_devices {\n        uuid id PK\n        datetime created_at\n        datetime updated_at\n        str code UK\n        str kind\n        str token_hash UK\n        uuid branch_id FK \"nullable\"\n        uuid courier_id FK \"nullable\"\n        uuid rental_unit_id FK \"nullable\"\n        bool is_active\n        Decimal last_latitude \"nullable\"\n        Decimal last_longitude \"nullable\"\n        int last_battery_pct \"nullable\"\n        datetime last_seen_at \"nullable\"\n    }\n    gps_positions {\n        uuid id PK\n        uuid device_id FK\n        Decimal latitude\n        Decimal longitude\n        int battery_pct \"nullable\"\n        datetime recorded_at\n    }\n    geofences {\n        uuid id PK\n        datetime created_at\n        datetime updated_at\n        str name UK\n        Decimal latitude\n        Decimal longitude\n        int radius_m\n        bool is_active\n        geography location\n    }\n    geofence_alerts {\n        uuid id PK\n        uuid device_id FK\n        Decimal latitude\n        Decimal longitude\n        datetime opened_at\n        datetime closed_at \"nullable\"\n    }\n    products ||--o{ rental_rates : \"product_id\"\n    products ||--o{ rental_units : \"product_id\"\n    branches ||--o{ rental_units : \"branch_id\"\n    rental_units ||--o{ maintenance_logs : \"unit_id\"\n    users |o--o{ maintenance_logs : \"user_id\"\n    users ||--o{ rentals : \"user_id\"\n    products ||--o{ rentals : \"product_id\"\n    branches ||--o{ rentals : \"branch_id\"\n    rental_units |o--o{ rentals : \"rental_unit_id\"\n    users |o--o{ rentals : \"checked_out_by\"\n    users |o--o{ rentals : \"returned_by\"\n    users ||--o{ user_sessions : \"user_id\"\n    users ||--o{ password_reset_tokens : \"user_id\"\n    users ||--o{ consent_records : \"user_id\"\n    orders |o--o{ consent_records : \"order_id\"\n    rentals |o--o{ consent_records : \"rental_id\"\n    users ||--o{ carts : \"user_id\"\n    carts ||--o{ cart_items : \"cart_id\"\n    products ||--o{ cart_items : \"product_id\"\n    categories ||--o{ products : \"category_id\"\n    orders ||--o| deliveries : \"order_id\"\n    couriers |o--o{ deliveries : \"courier_id\"\n    gps_devices |o--o{ deliveries : \"drone_device_id\"\n    deliveries ||--o{ delivery_events : \"delivery_id\"\n    users |o--o{ delivery_events : \"user_id\"\n    products ||--o{ inventory : \"product_id\"\n    branches ||--o{ inventory : \"branch_id\"\n    inventory ||--o{ inventory_movements : \"inventory_id\"\n    orders |o--o{ inventory_movements : \"order_id\"\n    users |o--o{ inventory_movements : \"user_id\"\n    cart_items ||--o{ cart_reservations : \"cart_item_id\"\n    inventory ||--o{ cart_reservations : \"inventory_id\"\n    users ||--o{ payments : \"user_id\"\n    orders |o--o{ payments : \"order_id\"\n    rentals |o--o{ payments : \"rental_id\"\n    payments ||--o| invoices : \"payment_id\"\n    orders |o--o| invoices : \"order_id\"\n    rentals |o--o| invoices : \"rental_id\"\n    users ||--o{ invoices : \"user_id\"\n    users ||--o{ refund_requests : \"user_id\"\n    orders |o--o{ refund_requests : \"order_id\"\n    rentals |o--o{ refund_requests : \"rental_id\"\n    users ||--o{ orders : \"user_id\"\n    branches ||--o{ orders : \"branch_id\"\n    orders ||--o{ order_items : \"order_id\"\n    products ||--o{ order_items : \"product_id\"\n    branches |o--o{ gps_devices : \"branch_id\"\n    couriers |o--o{ gps_devices : \"courier_id\"\n    rental_units |o--o{ gps_devices : \"rental_unit_id\"\n    gps_devices ||--o{ gps_positions : \"device_id\"\n    gps_devices ||--o{ geofence_alerts : \"device_id\"\n",
+      "evidence": [
+        {
+          "path": "backend/app/modules/alquiler/models.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/autenticacion/models.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/autenticacion/security_records.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/carrito/models.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/catalogo/models.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/contacto/models.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/contenidos/models.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/domicilios/models.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/inventario/models.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/inventario/reservation_models.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/pagos/models.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/pedidos/models.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/sucursales/models.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/telemetria/models.py",
+          "line": 1
+        }
+      ]
+    },
+    {
+      "id": "16-secuencia-registro",
+      "title": "Secuencia: registro",
+      "group": "Comportamiento",
+      "status": "Implementado",
+      "note": "El registro inicia sesión; la política de datos debe aceptarse. No hay verificación de correo obligatoria en este flujo.",
+      "source": "sequenceDiagram\n    accTitle: Secuencia: registro\n    accDescr: El registro inicia sesión; la política de datos debe aceptarse. No hay verificación de correo obligatoria en este flujo.\n    actor C as Cliente\n    participant N as Next.js / Server Action\n    participant A as FastAPI auth.register\n    participant D as PostgreSQL\n    C->>N: Formulario, contraseña y consentimiento\n    N->>A: POST /api/v1/auth/register\n    A->>A: Validar esquema y versión de política\n    A->>D: Consultar correo único\n    alt Correo existente / datos inválidos\n      A-->>N: Error de validación o conflicto\n      N-->>C: Corregir formulario\n    else Registro válido\n      A->>A: Hash Argon2 de contraseña\n      A->>D: Crear User, ConsentRecord y UserSession\n      D-->>A: Commit\n      A-->>N: Usuario y cookies sesión httpOnly / CSRF\n      N-->>C: Propagar cookies e iniciar sesión\n    end\n",
+      "evidence": [
+        {
+          "path": "backend/app/modules/autenticacion/router.py",
+          "line": 47
+        },
+        {
+          "path": "backend/app/modules/autenticacion/service.py",
+          "line": 51
+        },
+        {
+          "path": "src/features/auth/actions.ts",
+          "line": 1
+        }
+      ]
+    },
+    {
+      "id": "17-secuencia-login",
+      "title": "Secuencia: inicio y cierre de sesión",
+      "group": "Comportamiento",
+      "status": "Implementado",
+      "note": "Límites: 5 fallos por cuenta y 30 por IP en 15 min. Cerrar sesión no cierra un alquiler ni devuelve un vehículo.",
+      "source": "sequenceDiagram\n    accTitle: Secuencia: inicio y cierre de sesión\n    accDescr: Límites: 5 fallos por cuenta y 30 por IP en 15 min. Cerrar sesión no cierra un alquiler ni devuelve un vehículo.\n    actor C as Cliente / administrador\n    participant N as Next.js\n    participant A as FastAPI autenticación\n    participant D as PostgreSQL\n    C->>N: Correo y contraseña\n    N->>A: POST /auth/login con IP de cliente\n    A->>D: Consultar intentos recientes y usuario\n    alt Límite alcanzado\n      A-->>C: 429 a través de Next.js\n    else Credenciales inválidas o usuario inactivo\n      A->>D: Registrar intento fallido\n      A-->>C: Error uniforme a través de Next.js\n    else Credenciales válidas\n      A->>A: Verificar Argon2\n      A->>D: Registrar intento y sesión con hashes\n      A-->>N: Cookies sesión / CSRF\n      N-->>C: Acceso autenticado\n    end\n    opt Cerrar sesión\n      C->>N: Salir\n      N->>A: POST /auth/logout con sesión y CSRF\n      A->>D: Revocar sesión actual\n      A-->>N: 204 y borrar cookies\n      N-->>C: Sesión terminada\n    end\n",
+      "evidence": [
+        {
+          "path": "backend/app/modules/autenticacion/router.py",
+          "line": 54
+        },
+        {
+          "path": "backend/app/modules/autenticacion/service.py",
+          "line": 73
+        },
+        {
+          "path": "backend/app/modules/autenticacion/login_guard.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/api/deps.py",
+          "line": 1
+        }
+      ]
+    },
+    {
+      "id": "18-secuencia-cierre-viaje",
+      "title": "Secuencia: cierre del viaje / devolución",
+      "group": "Comportamiento",
+      "status": "Implementado",
+      "note": "Cierre de viaje se interpreta como devolución del alquiler: no hay cierre autónomo desde app del cliente ni medición de uso automática por GPS.",
+      "source": "sequenceDiagram\n    accTitle: Secuencia: cierre del viaje / devolución\n    accDescr: Cierre de viaje se interpreta como devolución del alquiler: no hay cierre autónomo desde app del cliente ni medición de uso automática por GPS.\n    actor C as Cliente\n    actor O as Administrador en sucursal\n    participant N as Next.js panel\n    participant A as admin.rentals\n    participant M as alquiler.maintenance\n    participant D as PostgreSQL\n    C->>O: Devolver físicamente la unidad\n    O->>N: Registrar entrada y km / horas de uso\n    N->>A: Solicitar check_in autenticado como admin\n    A->>D: Bloquear alquiler\n    alt Estado distinto de active\n      A-->>N: 409: no se puede recibir\n    else Alquiler activo\n      A->>D: completed, returned_at, returned_by, return_usage\n      opt Uso mayor que cero\n        A->>M: add_usage con unidad bloqueada\n        M->>D: Actualizar uso y bitácora\n        opt Uso alcanza 90 por ciento del umbral\n          M->>D: Marcar mantenimiento y registrar bloqueo\n        end\n      end\n      A->>D: Commit\n      A-->>N: Entrada registrada\n      N-->>O: Alquiler devuelto y disponibilidad actualizada\n    end\n",
+      "evidence": [
+        {
+          "path": "backend/app/modules/admin/rentals.py",
+          "line": 143
+        },
+        {
+          "path": "backend/app/modules/alquiler/maintenance.py",
+          "line": 1
+        }
+      ]
+    },
+    {
+      "id": "19-secuencia-compra-pago",
+      "title": "Secuencia: compra y pago",
+      "group": "Comportamiento",
+      "status": "Implementado",
+      "note": "Factura de venta PDF/XML sin validación DIAN. El checkout no acepta precios enviados por el cliente. El proveedor concreto depende de configuración.",
+      "source": "sequenceDiagram\n    accTitle: Secuencia: compra y pago\n    accDescr: Factura de venta PDF/XML sin validación DIAN. El checkout no acepta precios enviados por el cliente. El proveedor concreto depende de configuración.\n    actor C as Cliente\n    participant N as Next.js\n    participant O as Pedidos / inventario\n    participant P as Pagos\n    participant G as Pasarela configurada\n    participant D as PostgreSQL\n    C->>N: Carrito autenticado, franja y modalidad\n    N->>O: Crear pedido\n    O->>D: Bloquear existencias y validar cupo\n    alt Reserva vencida / sin stock / sin cupo\n      O-->>N: 409, no crear pedido\n      N-->>C: Actualizar selección\n    else Datos y reserva válidos\n      O->>D: Transferir reserva del carrito a Order pending\n      O-->>N: Pedido, total y plazo de pago\n      C->>N: Pagar\n      N->>P: start_payment\n      P->>D: Guardar referencia y monto calculado en servidor\n      P-->>C: Checkout a través de Next.js\n      C->>G: Autorizar pago fuera de EcoMovilidad\n      G->>P: Resultado vía retorno / webhook y Next.js\n      P->>G: Verificar transacción cuando aplica\n      P->>D: Bloquear pago y validar referencia, monto y estado\n      alt Aprobado, único y pedido pendiente\n        P->>O: settle_order_stock\n        O->>D: Registrar venta y descontar unidades reservadas\n        P->>D: paid, factura y domicilio si corresponde\n        P-->>C: Confirmación y factura vía Next.js\n      else Rechazado / error\n        P-->>C: Estado de pago, permite reintento según reglas\n      else Duplicado o destino ya cancelado\n        P->>D: No duplicar venta, marcar requires_refund si aplica\n      end\n    end\n    Note over P,G: En modo manual el administrador confirma, en pruebas no hay cobro real.\n",
+      "evidence": [
+        {
+          "path": "backend/app/modules/pedidos/service.py",
+          "line": 155
+        },
+        {
+          "path": "backend/app/modules/pagos/service.py",
+          "line": 184
+        }
+      ]
+    },
+    {
+      "id": "20-secuencia-alquiler-pago",
+      "title": "Secuencia: alquiler y pago",
+      "group": "Comportamiento",
+      "status": "Implementado",
+      "note": "La entrega del alquiler se hace en sucursal. Un pago tardío sobre alquiler no pendiente requiere revisión de reembolso.",
+      "source": "sequenceDiagram\n    accTitle: Secuencia: alquiler y pago\n    accDescr: La entrega del alquiler se hace en sucursal. Un pago tardío sobre alquiler no pendiente requiere revisión de reembolso.\n    actor C as Cliente\n    participant N as Next.js\n    participant R as Alquiler\n    participant P as Pagos\n    participant G as Pasarela\n    participant D as PostgreSQL\n    actor A as Administrador\n    C->>N: Producto, sucursal, inicio y fin\n    N->>R: Cotizar y crear alquiler\n    R->>D: Revisar tarifas, horarios y mantenimiento\n    R->>D: Elegir unidad, excluir periodos cruzados\n    alt Sin unidad operativa / cruce concurrente\n      R-->>C: Sin disponibilidad vía Next.js\n    else Unidad válida\n      R->>D: Rental pending con plazo de pago\n      R-->>N: Precio y reserva\n      C->>N: Pagar alquiler\n      N->>P: start_payment\n      P->>D: Guardar Payment\n      P-->>C: Checkout vía Next.js\n      C->>G: Pagar\n      G->>P: Resultado verificado vía Next.js\n      alt Aprobado para alquiler pendiente\n        P->>D: confirmed y factura\n      else No aprobado / vencido\n        P->>D: Mantener pendiente o cancelar al vencer\n      end\n    end\n    opt Recogida del alquiler pagado\n      A->>N: Registrar salida\n      N->>R: admin.check_out\n      R->>D: Verificar estado, mantenimiento y devolución previa\n      R->>D: active y checked_out_at\n    end\n    Note over R,D: Exclusión GiST en estados pending / confirmed / active.\n",
+      "evidence": [
+        {
+          "path": "backend/app/modules/alquiler/service.py",
+          "line": 265
+        },
+        {
+          "path": "backend/app/modules/alquiler/models.py",
+          "line": 36
+        },
+        {
+          "path": "backend/app/modules/pagos/service.py",
+          "line": 172
+        },
+        {
+          "path": "backend/app/modules/admin/rentals.py",
+          "line": 129
+        }
+      ]
+    },
+    {
+      "id": "21-secuencia-desbloqueo",
+      "title": "Secuencia: desbloqueo remoto propuesto",
+      "group": "Comportamiento",
+      "status": "Propuesto; no implementado",
+      "note": "Propuesta de diseño separada de la implementación. Hoy solo existe salida de sucursal por administrador; antes de implementar se requieren hardware, protocolo, auditoría, reintentos e idempotencia.",
+      "source": "sequenceDiagram\n    accTitle: Secuencia: desbloqueo remoto propuesto\n    accDescr: Propuesta de diseño separada de la implementación. Hoy solo existe salida de sucursal por administrador; antes de implementar se requieren hardware, protocolo, auditoría, reintentos e idempotencia.\n    actor C as Cliente\n    participant UI as Interfaz futura\n    participant API as Endpoint futuro de desbloqueo\n    participant R as Alquiler / pago existentes\n    participant IOT as Adaptador IoT futuro\n    participant L as Cerradura futura\n    Note over C,L: PROPUESTA: no existe endpoint, cerradura ni protocolo implementado.\n    C->>UI: Solicitar desbloqueo de unidad asignada\n    UI->>API: Solicitud autenticada con clave idempotente\n    API->>R: Verificar dueño, pago, periodo y unidad operativa\n    alt Sin autorización / unidad no elegible\n      API-->>UI: Denegar sin enviar comando\n    else Elegible\n      API->>IOT: Emitir comando firmado de corta vigencia\n      IOT->>L: Desbloquear con identificador único\n      alt Confirmación física recibida\n        L-->>IOT: ACK de cerradura\n        IOT-->>API: Resultado verificable\n        API-->>UI: Desbloqueo confirmado\n      else Timeout / dispositivo sin conexión\n        IOT-->>API: Resultado desconocido\n        API-->>UI: No confirmar, conciliar estado y pedir asistencia\n      end\n    end\n",
+      "evidence": [
+        {
+          "path": "backend/app/api/router.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/alquiler/models.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/admin/rentals.py",
+          "line": 61
+        }
+      ]
+    },
+    {
+      "id": "22-secuencia-alertas",
+      "title": "Secuencia: alertas de vehículos",
+      "group": "Comportamiento",
+      "status": "Implementado",
+      "note": "El GPS puede reportar como máximo una posición por segundo. Sin zonas activas no se generan alertas por geocerca.",
+      "source": "sequenceDiagram\n    accTitle: Secuencia: alertas de vehículos\n    accDescr: El GPS puede reportar como máximo una posición por segundo. Sin zonas activas no se generan alertas por geocerca.\n    participant G as GPS / simulador\n    participant N as Next.js route handler\n    participant T as Telemetría\n    participant D as PostgreSQL / PostGIS\n    actor A as Administrador\n    G->>N: Posición, batería y token de dispositivo\n    N->>T: Reenviar posición a FastAPI\n    T->>D: Verificar hash de token, activo y bloqueo de dispositivo\n    alt Token inválido / demasiado frecuente\n      T-->>G: Error de autenticación o 429 vía Next.js\n    else Reporte aceptado\n      T->>D: Guardar GpsPosition y última posición\n      T->>D: ST_DWithin contra geocercas activas\n      alt Fuera de todas las zonas y sin alerta abierta\n        T->>D: Crear GeofenceAlert\n      else Dentro de alguna zona o sin zonas activas\n        T->>D: Cerrar alerta abierta si existe\n      else Sigue afuera con alerta abierta\n        T->>D: Conservar alerta sin duplicar\n      end\n      T->>D: Commit\n      T-->>G: ACK y outside_zone vía Next.js\n    end\n    loop Cada 3 segundos desde el panel\n      A->>N: Consultar telemetría y alertas\n      N->>T: Obtener snapshot\n      T-->>A: Estado actual vía Next.js\n    end\n    Note over T,A: Sin aparatos reales: simulación identificada. No hay WebSockets ni avisos push.\n",
+      "evidence": [
+        {
+          "path": "backend/app/modules/telemetria/service.py",
+          "line": 76
+        },
+        {
+          "path": "src/features/operations/lib/use-telemetry.ts",
+          "line": 1
+        }
+      ]
+    },
+    {
+      "id": "23-secuencia-entrega",
+      "title": "Secuencia: entrega a domicilio",
+      "group": "Comportamiento",
+      "status": "Implementado",
+      "note": "Participante Domicilios resume acciones y API; todo navegador/GPS entra por Next.js. Tras 30 min se habilita cierre con evidencia; el diagrama no presupone un cierre autónomo por temporizador.",
+      "source": "sequenceDiagram\n    accTitle: Secuencia: entrega a domicilio\n    accDescr: Participante Domicilios resume acciones y API; todo navegador/GPS entra por Next.js. Tras 30 min se habilita cierre con evidencia; el diagrama no presupone un cierre autónomo por temporizador.\n    participant P as Pagos\n    participant S as Domicilios\n    participant D as PostgreSQL\n    actor A as Administrador\n    actor C as Cliente\n    participant G as GPS del dron\n    P->>S: Pedido pagado con modalidad domicilio\n    S->>D: Crear Delivery creado, código y tracking_token\n    A->>S: Asignar domiciliario o dron con destino\n    S->>D: asignado e historial\n    A->>S: Registrar en_recogida y en_transito\n    S->>D: Eventos y estado validados\n    loop Cada 15 segundos\n      C->>S: Consultar enlace público vía Next.js\n      S-->>C: Estado y posición permitida, sin datos personales\n    end\n    alt Domiciliario\n      C->>A: Mostrar QR / código o firmar\n      A->>S: Validar código o firma\n      S->>D: entregado con prueba y Order completed\n    else Dron\n      G->>S: Reportar liberación vía Next.js con token\n      S->>D: Validar tránsito, dispositivo y distancia menor o igual a 50 m\n      alt Liberación válida\n        S->>D: Guardar evidencia, sigue en_transito\n        alt Cliente confirma recepción\n          C->>S: Confirmar desde cuenta propia vía Next.js\n          S->>D: entregado con prueba dron, pedido completed\n        else Pasan 30 min sin confirmación ni fallo\n          A->>S: Validar con evidencia dron\n          S->>D: Comprobar plazo y cerrar entrega\n        end\n      else Destino incorrecto / evidencia inválida\n        S-->>G: Rechazar evidencia, no entregar\n      end\n    end\n    opt Fallo antes de completar\n      A->>S: Registrar fallido con motivo\n      S->>D: Evento, reprogramable a creado\n    end\n",
+      "evidence": [
+        {
+          "path": "backend/app/modules/domicilios/service.py",
+          "line": 111
+        },
+        {
+          "path": "backend/app/modules/domicilios/service.py",
+          "line": 359
+        },
+        {
+          "path": "backend/app/modules/domicilios/service.py",
+          "line": 387
+        }
+      ]
+    },
+    {
+      "id": "24-estados-reserva",
+      "title": "Estados: reserva de alquiler",
+      "group": "Comportamiento",
+      "status": "Implementado",
+      "note": "Reserva de alquiler, no la reserva temporal del carrito. El carrito aparta 15 min y elimina la reserva al vencer o transferirla al pedido; no posee columna status equivalente.",
+      "source": "stateDiagram-v2\n    accTitle: Estados: reserva de alquiler\n    accDescr: Reserva de alquiler, no la reserva temporal del carrito. El carrito aparta 15 min y elimina la reserva al vencer o transferirla al pedido; no posee columna status equivalente.\n    [*] --> pending: Crear reserva válida\n    pending --> confirmed: Pago aprobado y aplicado\n    pending --> cancelled: Cancelación o vencimiento sin pago\n    confirmed --> active: Administrador registra salida\n    active --> completed: Administrador registra devolución\n    confirmed --> cancelled: Reembolso registrado según reglas\n    completed --> [*]\n    cancelled --> [*]\n    note right of pending\n      Unidad ocupada en calendario en pending,\n      confirmed y active; exclusión GiST.\n    end note\n    note right of confirmed\n      No se cancela desde cambio de estado:\n      requiere flujo de reembolso.\n    end note\n",
+      "evidence": [
+        {
+          "path": "backend/app/modules/alquiler/models.py",
+          "line": 33
+        },
+        {
+          "path": "backend/app/modules/admin/rentals.py",
+          "line": 23
+        },
+        {
+          "path": "backend/app/modules/reembolsos/service.py",
+          "line": 1
+        }
+      ]
+    },
+    {
+      "id": "25-estados-vehiculo",
+      "title": "Estados: vehículo",
+      "group": "Comportamiento",
+      "status": "Implementado",
+      "note": "Separa mantenimiento persistido de disponibilidad calculada. Revisión periódica por defecto: 90 días; drones se siembran con 60 días.",
+      "source": "stateDiagram-v2\n    accTitle: Estados: vehículo\n    accDescr: Separa mantenimiento persistido de disponibilidad calculada. Revisión periódica por defecto: 90 días; drones se siembran con 60 días.\n    [*] --> operativo: Alta de unidad\n    operativo --> mantenimiento: Uso alcanza 90% o revisión vencida\n    operativo --> mantenimiento: Cambio administrativo sin alquiler vigente\n    mantenimiento --> operativo: Mantenimiento registrado y unidad apta\n    operativo --> retirado: Administrador sin alquiler vigente\n    mantenimiento --> retirado: Administrador sin alquiler vigente\n    retirado --> operativo: Reactivar solo si uso y revisión permiten operar\n    retirado --> mantenimiento: Cambio administrativo sin alquiler vigente\n    note left of operativo\n      Estado persistido: operativo.\n      Estar reservado o afuera se deriva\n      de Rental; no son valores de status.\n    end note\n    note right of mantenimiento\n      Retorno a operativo exige uso menor\n      al 90% y revisión no vencida.\n      El mantenimiento reinicia el uso.\n    end note\n",
+      "evidence": [
+        {
+          "path": "backend/app/models/enums.py",
+          "line": 94
+        },
+        {
+          "path": "backend/app/modules/alquiler/maintenance.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/admin/rentals.py",
+          "line": 253
+        }
+      ]
+    },
+    {
+      "id": "26-estados-entrega",
+      "title": "Estados: entrega",
+      "group": "Comportamiento",
+      "status": "Implementado",
+      "note": "Entregado es terminal; se alcanza mediante validación, no mediante un cambio de estado arbitrario.",
+      "source": "stateDiagram-v2\n    accTitle: Estados: entrega\n    accDescr: Entregado es terminal; se alcanza mediante validación, no mediante un cambio de estado arbitrario.\n    [*] --> creado: Pedido pagado con domicilio\n    creado --> asignado: Asignar domiciliario o dron\n    asignado --> asignado: Reasignar responsable\n    asignado --> en_recogida: Registrar recogida\n    en_recogida --> en_transito: Registrar salida\n    en_transito --> entregado: QR o firma válidos\n    en_transito --> entregado: Dron liberó y cliente confirma\n    en_transito --> entregado: Evidencia dron y plazo de 30 min cumplido\n    creado --> fallido: Motivo de fallo / reembolso\n    asignado --> fallido: Motivo de fallo / reembolso\n    en_recogida --> fallido: Motivo de fallo / reembolso\n    en_transito --> fallido: Motivo de fallo\n    fallido --> creado: Reprogramar pedido no cancelado\n    entregado --> [*]\n    note right of en_transito\n      Soltar paquete con dron no cambia el estado.\n      La evidencia se guarda en dropped_at.\n      Entregado siempre exige prueba.\n    end note\n",
+      "evidence": [
+        {
+          "path": "backend/app/modules/domicilios/service.py",
+          "line": 55
+        },
+        {
+          "path": "backend/app/modules/domicilios/service.py",
+          "line": 359
+        },
+        {
+          "path": "backend/app/modules/domicilios/models.py",
+          "line": 29
+        }
+      ]
+    },
+    {
+      "id": "27-matriz-riesgos",
+      "title": "Matriz de riesgos",
+      "group": "Gestión",
+      "status": "Evaluación propuesta",
+      "note": "Evaluación cualitativa propuesta para revisión del equipo, no estadística observada. Las posiciones se separan ligeramente por legibilidad; la tabla P x I es la valoración exacta.",
+      "source": "quadrantChart\n    accTitle: Matriz de riesgos\n    accDescr: Evaluación cualitativa propuesta para revisión del equipo, no estadística observada. Las posiciones se separan ligeramente por legibilidad; la tabla P x I es la valoración exacta.\n    title Valoración inicial propuesta, no medición de incidentes\n    x-axis Probabilidad baja --> Probabilidad alta\n    y-axis Impacto bajo --> Impacto alto\n    quadrant-1 Mitigar prioritariamente\n    quadrant-2 Proteger y ensayar recuperación\n    quadrant-3 Vigilar\n    quadrant-4 Reducir frecuencia\n    R1 Pago duplicado: [0.55, 0.76]\n    R2 Doble reserva: [0.24, 0.96]\n    R3 GPS ausente: [0.75, 0.55]\n    R4 Acceso indebido: [0.32, 0.88]\n    R5 Perdida BD: [0.36, 0.98]\n    R6 Entrega incorrecta: [0.64, 0.69]\n    R7 Mantenimiento: [0.28, 0.74]\n    R8 Servidor unico: [0.48, 0.81]\n    R9 Integraciones: [0.86, 0.48]\n    R10 Factura DIAN: [0.61, 0.92]\n",
+      "evidence": [
+        {
+          "path": "README.md",
+          "line": 1
+        },
+        {
+          "path": "backend/app/api/deps.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/alquiler/maintenance.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/domicilios/service.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/inventario/reservations.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/pagos/service.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/telemetria/service.py",
+          "line": 1
+        },
+        {
+          "path": "docker-compose.prod.yml",
+          "line": 1
+        }
+      ]
+    },
+    {
+      "id": "anexo-der-identidad",
+      "title": "DER ampliado: identidad",
+      "group": "Anexos",
+      "status": "Implementado",
+      "note": "Vista parcial con atributos completos para facilitar lectura. Las relaciones entre dominios aparecen en el DER completo y en el diccionario de datos.",
+      "source": "erDiagram\n    accTitle: DER ampliado: identidad\n    accDescr: Vista parcial con atributos completos para facilitar lectura. Las relaciones entre dominios aparecen en el DER completo y en el diccionario de datos.\n    direction LR\n    users {\n        uuid id PK\n        datetime created_at\n        datetime updated_at\n        str email UK\n        str password_hash\n        str first_name\n        str last_name\n        str phone\n        str document_number \"nullable\"\n        bool is_active\n        bool is_admin\n    }\n    user_sessions {\n        uuid id PK\n        uuid user_id FK\n        str token_hash UK\n        str csrf_token_hash\n        datetime expires_at\n        datetime created_at\n    }\n    password_reset_tokens {\n        uuid id PK\n        uuid user_id FK\n        str token_hash UK\n        datetime expires_at\n        datetime used_at \"nullable\"\n        datetime created_at\n    }\n    login_attempts {\n        uuid id PK\n        str email_hash\n        str ip_address\n        bool succeeded\n        datetime created_at\n    }\n    consent_records {\n        uuid id PK\n        uuid user_id FK\n        str purpose\n        str policy_version\n        uuid order_id FK \"nullable\"\n        uuid rental_id FK \"nullable\"\n        datetime accepted_at\n    }\n    users ||--o{ user_sessions : \"user_id\"\n    users ||--o{ password_reset_tokens : \"user_id\"\n    users ||--o{ consent_records : \"user_id\"\n",
+      "evidence": [
+        {
+          "path": "backend/app/modules/autenticacion/models.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/autenticacion/security_records.py",
+          "line": 1
+        }
+      ]
+    },
+    {
+      "id": "anexo-der-comercio",
+      "title": "DER ampliado: comercio",
+      "group": "Anexos",
+      "status": "Implementado",
+      "note": "Vista parcial con atributos completos para facilitar lectura. Las relaciones entre dominios aparecen en el DER completo y en el diccionario de datos.",
+      "source": "erDiagram\n    accTitle: DER ampliado: comercio\n    accDescr: Vista parcial con atributos completos para facilitar lectura. Las relaciones entre dominios aparecen en el DER completo y en el diccionario de datos.\n    direction LR\n    users {\n        uuid id PK\n        datetime created_at\n        datetime updated_at\n        str email UK\n        str password_hash\n        str first_name\n        str last_name\n        str phone\n        str document_number \"nullable\"\n        bool is_active\n        bool is_admin\n    }\n    categories {\n        uuid id PK\n        str name UK\n        str slug UK\n        str description\n    }\n    products {\n        uuid id PK\n        datetime created_at\n        datetime updated_at\n        uuid category_id FK\n        str name\n        str slug UK\n        str sku UK\n        str short_description\n        str description\n        str brand\n        int price\n        int compare_at_price \"nullable\"\n        json specifications\n        json highlights\n        str image_url \"nullable\"\n        bool is_featured\n        bool is_active\n    }\n    branches {\n        uuid id PK\n        datetime created_at\n        datetime updated_at\n        str slug UK\n        str name\n        str address\n        str neighborhood\n        str city\n        str phone\n        Decimal latitude\n        Decimal longitude\n        geography location\n        json opening_hours\n        json services\n        int slot_capacity\n        bool is_demo\n        bool is_active\n    }\n    inventory {\n        uuid id PK\n        uuid product_id FK\n        uuid branch_id FK\n        int available_quantity\n        int reserved_quantity\n        int total_quantity\n        datetime updated_at\n    }\n    inventory_movements {\n        uuid id PK\n        uuid inventory_id FK\n        str kind\n        int quantity\n        int balance_after\n        str reason \"nullable\"\n        uuid order_id FK \"nullable\"\n        uuid user_id FK \"nullable\"\n        datetime created_at\n    }\n    carts {\n        uuid id PK\n        datetime created_at\n        datetime updated_at\n        uuid user_id FK\n        str status\n    }\n    cart_items {\n        uuid id PK\n        datetime created_at\n        datetime updated_at\n        uuid cart_id FK\n        uuid product_id FK\n        int quantity\n        int unit_price\n    }\n    cart_reservations {\n        uuid id PK\n        uuid cart_item_id FK\n        uuid inventory_id FK\n        int quantity\n        datetime expires_at\n        datetime created_at\n    }\n    orders {\n        uuid id PK\n        datetime created_at\n        datetime updated_at\n        uuid user_id FK\n        str status\n        int subtotal\n        int shipping_cost\n        int total\n        uuid branch_id FK\n        str fulfillment_method\n        str delivery_address \"nullable\"\n        str delivery_city \"nullable\"\n        date scheduled_date\n        str time_slot\n        str payment_method \"nullable\"\n        datetime payment_expires_at \"nullable\"\n        datetime stock_settled_at \"nullable\"\n        str contact_name\n        str contact_email\n        str contact_phone\n        str document_type\n        str document_number\n    }\n    order_items {\n        uuid id PK\n        uuid order_id FK\n        uuid product_id FK\n        int quantity\n        int unit_price\n        int subtotal\n    }\n    categories ||--o{ products : \"category_id\"\n    products ||--o{ inventory : \"product_id\"\n    branches ||--o{ inventory : \"branch_id\"\n    inventory ||--o{ inventory_movements : \"inventory_id\"\n    orders |o--o{ inventory_movements : \"order_id\"\n    users |o--o{ inventory_movements : \"user_id\"\n    users ||--o{ carts : \"user_id\"\n    carts ||--o{ cart_items : \"cart_id\"\n    products ||--o{ cart_items : \"product_id\"\n    cart_items ||--o{ cart_reservations : \"cart_item_id\"\n    inventory ||--o{ cart_reservations : \"inventory_id\"\n    users ||--o{ orders : \"user_id\"\n    branches ||--o{ orders : \"branch_id\"\n    orders ||--o{ order_items : \"order_id\"\n    products ||--o{ order_items : \"product_id\"\n",
+      "evidence": [
+        {
+          "path": "backend/app/modules/autenticacion/models.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/carrito/models.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/catalogo/models.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/inventario/models.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/inventario/reservation_models.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/pedidos/models.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/sucursales/models.py",
+          "line": 1
+        }
+      ]
+    },
+    {
+      "id": "anexo-der-alquiler",
+      "title": "DER ampliado: alquiler",
+      "group": "Anexos",
+      "status": "Implementado",
+      "note": "Vista parcial con atributos completos para facilitar lectura. Las relaciones entre dominios aparecen en el DER completo y en el diccionario de datos.",
+      "source": "erDiagram\n    accTitle: DER ampliado: alquiler\n    accDescr: Vista parcial con atributos completos para facilitar lectura. Las relaciones entre dominios aparecen en el DER completo y en el diccionario de datos.\n    direction LR\n    users {\n        uuid id PK\n        datetime created_at\n        datetime updated_at\n        str email UK\n        str password_hash\n        str first_name\n        str last_name\n        str phone\n        str document_number \"nullable\"\n        bool is_active\n        bool is_admin\n    }\n    products {\n        uuid id PK\n        datetime created_at\n        datetime updated_at\n        uuid category_id FK\n        str name\n        str slug UK\n        str sku UK\n        str short_description\n        str description\n        str brand\n        int price\n        int compare_at_price \"nullable\"\n        json specifications\n        json highlights\n        str image_url \"nullable\"\n        bool is_featured\n        bool is_active\n    }\n    branches {\n        uuid id PK\n        datetime created_at\n        datetime updated_at\n        str slug UK\n        str name\n        str address\n        str neighborhood\n        str city\n        str phone\n        Decimal latitude\n        Decimal longitude\n        geography location\n        json opening_hours\n        json services\n        int slot_capacity\n        bool is_demo\n        bool is_active\n    }\n    rental_units {\n        uuid id PK\n        datetime created_at\n        datetime updated_at\n        uuid product_id FK\n        uuid branch_id FK\n        str code UK\n        str status\n        bool is_demo\n        str usage_unit\n        Decimal usage_value\n        int service_threshold\n        int service_interval_days\n        datetime last_service_at\n    }\n    rental_rates {\n        uuid id PK\n        uuid product_id FK\n        str unit\n        int price\n    }\n    rentals {\n        uuid id PK\n        datetime created_at\n        datetime updated_at\n        uuid user_id FK\n        uuid product_id FK\n        uuid branch_id FK\n        uuid rental_unit_id FK \"nullable\"\n        datetime start_at\n        datetime end_at\n        tstzrange period\n        str status\n        int price\n        datetime payment_expires_at \"nullable\"\n        str contact_name \"nullable\"\n        str contact_email \"nullable\"\n        str contact_phone \"nullable\"\n        str document_type \"nullable\"\n        str document_number \"nullable\"\n        datetime checked_out_at \"nullable\"\n        uuid checked_out_by FK \"nullable\"\n        datetime returned_at \"nullable\"\n        uuid returned_by FK \"nullable\"\n        Decimal return_usage \"nullable\"\n    }\n    maintenance_logs {\n        uuid id PK\n        uuid unit_id FK\n        str kind\n        Decimal usage_delta \"nullable\"\n        Decimal usage_after\n        str note \"nullable\"\n        uuid user_id FK \"nullable\"\n        datetime created_at\n    }\n    products ||--o{ rental_units : \"product_id\"\n    branches ||--o{ rental_units : \"branch_id\"\n    products ||--o{ rental_rates : \"product_id\"\n    users ||--o{ rentals : \"user_id\"\n    products ||--o{ rentals : \"product_id\"\n    branches ||--o{ rentals : \"branch_id\"\n    rental_units |o--o{ rentals : \"rental_unit_id\"\n    users |o--o{ rentals : \"checked_out_by\"\n    users |o--o{ rentals : \"returned_by\"\n    rental_units ||--o{ maintenance_logs : \"unit_id\"\n    users |o--o{ maintenance_logs : \"user_id\"\n",
+      "evidence": [
+        {
+          "path": "backend/app/modules/alquiler/models.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/autenticacion/models.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/catalogo/models.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/sucursales/models.py",
+          "line": 1
+        }
+      ]
+    },
+    {
+      "id": "anexo-der-pagos",
+      "title": "DER ampliado: pagos",
+      "group": "Anexos",
+      "status": "Implementado",
+      "note": "Vista parcial con atributos completos para facilitar lectura. Las relaciones entre dominios aparecen en el DER completo y en el diccionario de datos.",
+      "source": "erDiagram\n    accTitle: DER ampliado: pagos\n    accDescr: Vista parcial con atributos completos para facilitar lectura. Las relaciones entre dominios aparecen en el DER completo y en el diccionario de datos.\n    direction LR\n    users {\n        uuid id PK\n        datetime created_at\n        datetime updated_at\n        str email UK\n        str password_hash\n        str first_name\n        str last_name\n        str phone\n        str document_number \"nullable\"\n        bool is_active\n        bool is_admin\n    }\n    orders {\n        uuid id PK\n        datetime created_at\n        datetime updated_at\n        uuid user_id FK\n        str status\n        int subtotal\n        int shipping_cost\n        int total\n        uuid branch_id FK\n        str fulfillment_method\n        str delivery_address \"nullable\"\n        str delivery_city \"nullable\"\n        date scheduled_date\n        str time_slot\n        str payment_method \"nullable\"\n        datetime payment_expires_at \"nullable\"\n        datetime stock_settled_at \"nullable\"\n        str contact_name\n        str contact_email\n        str contact_phone\n        str document_type\n        str document_number\n    }\n    rentals {\n        uuid id PK\n        datetime created_at\n        datetime updated_at\n        uuid user_id FK\n        uuid product_id FK\n        uuid branch_id FK\n        uuid rental_unit_id FK \"nullable\"\n        datetime start_at\n        datetime end_at\n        tstzrange period\n        str status\n        int price\n        datetime payment_expires_at \"nullable\"\n        str contact_name \"nullable\"\n        str contact_email \"nullable\"\n        str contact_phone \"nullable\"\n        str document_type \"nullable\"\n        str document_number \"nullable\"\n        datetime checked_out_at \"nullable\"\n        uuid checked_out_by FK \"nullable\"\n        datetime returned_at \"nullable\"\n        uuid returned_by FK \"nullable\"\n        Decimal return_usage \"nullable\"\n    }\n    payments {\n        uuid id PK\n        datetime created_at\n        datetime updated_at\n        uuid user_id FK\n        uuid order_id FK \"nullable\"\n        uuid rental_id FK \"nullable\"\n        str provider\n        str reference UK\n        int amount_in_cents\n        str currency\n        str status\n        str provider_transaction_id UK \"nullable\"\n        str payment_method_type \"nullable\"\n        str status_message \"nullable\"\n        bool requires_refund\n        datetime approved_at \"nullable\"\n    }\n    payment_events {\n        uuid id PK\n        str checksum UK\n        str event\n        str transaction_id \"nullable\"\n        str status \"nullable\"\n        json payload\n        datetime received_at\n    }\n    invoices {\n        uuid id PK\n        int number UK\n        str prefix\n        uuid payment_id FK\n        uuid order_id FK \"nullable\"\n        uuid rental_id FK \"nullable\"\n        uuid user_id FK\n        str buyer_name\n        str buyer_document_type\n        str buyer_document_number\n        str buyer_email\n        int subtotal\n        int vat\n        int total\n        bytes pdf\n        str xml\n        datetime issued_at\n    }\n    refund_requests {\n        uuid id PK\n        uuid user_id FK\n        uuid order_id FK \"nullable\"\n        uuid rental_id FK \"nullable\"\n        str reason\n        str status\n        datetime created_at\n        datetime resolved_at \"nullable\"\n    }\n    users ||--o{ orders : \"user_id\"\n    users ||--o{ rentals : \"user_id\"\n    users |o--o{ rentals : \"checked_out_by\"\n    users |o--o{ rentals : \"returned_by\"\n    users ||--o{ payments : \"user_id\"\n    orders |o--o{ payments : \"order_id\"\n    rentals |o--o{ payments : \"rental_id\"\n    payments ||--o| invoices : \"payment_id\"\n    orders |o--o| invoices : \"order_id\"\n    rentals |o--o| invoices : \"rental_id\"\n    users ||--o{ invoices : \"user_id\"\n    users ||--o{ refund_requests : \"user_id\"\n    orders |o--o{ refund_requests : \"order_id\"\n    rentals |o--o{ refund_requests : \"rental_id\"\n",
+      "evidence": [
+        {
+          "path": "backend/app/modules/alquiler/models.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/autenticacion/models.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/pagos/models.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/pedidos/models.py",
+          "line": 1
+        }
+      ]
+    },
+    {
+      "id": "anexo-der-logistica",
+      "title": "DER ampliado: logistica",
+      "group": "Anexos",
+      "status": "Implementado",
+      "note": "Vista parcial con atributos completos para facilitar lectura. Las relaciones entre dominios aparecen en el DER completo y en el diccionario de datos.",
+      "source": "erDiagram\n    accTitle: DER ampliado: logistica\n    accDescr: Vista parcial con atributos completos para facilitar lectura. Las relaciones entre dominios aparecen en el DER completo y en el diccionario de datos.\n    direction LR\n    orders {\n        uuid id PK\n        datetime created_at\n        datetime updated_at\n        uuid user_id FK\n        str status\n        int subtotal\n        int shipping_cost\n        int total\n        uuid branch_id FK\n        str fulfillment_method\n        str delivery_address \"nullable\"\n        str delivery_city \"nullable\"\n        date scheduled_date\n        str time_slot\n        str payment_method \"nullable\"\n        datetime payment_expires_at \"nullable\"\n        datetime stock_settled_at \"nullable\"\n        str contact_name\n        str contact_email\n        str contact_phone\n        str document_type\n        str document_number\n    }\n    couriers {\n        uuid id PK\n        datetime created_at\n        datetime updated_at\n        str name\n        str phone\n        bool is_active\n    }\n    deliveries {\n        uuid id PK\n        datetime created_at\n        datetime updated_at\n        uuid order_id FK\n        uuid courier_id FK \"nullable\"\n        str status\n        str tracking_token UK\n        str confirmation_code\n        str proof_method \"nullable\"\n        str signer_name \"nullable\"\n        str signature_image \"nullable\"\n        str failure_reason \"nullable\"\n        datetime delivered_at \"nullable\"\n        str carrier\n        uuid drone_device_id FK \"nullable\"\n        Decimal destination_latitude \"nullable\"\n        Decimal destination_longitude \"nullable\"\n        Decimal drop_latitude \"nullable\"\n        Decimal drop_longitude \"nullable\"\n        int drop_distance_m \"nullable\"\n        datetime dropped_at \"nullable\"\n        datetime customer_confirmed_at \"nullable\"\n    }\n    delivery_events {\n        uuid id PK\n        uuid delivery_id FK\n        str status\n        str note \"nullable\"\n        uuid user_id FK \"nullable\"\n        datetime created_at\n    }\n    gps_devices {\n        uuid id PK\n        datetime created_at\n        datetime updated_at\n        str code UK\n        str kind\n        str token_hash UK\n        uuid branch_id FK \"nullable\"\n        uuid courier_id FK \"nullable\"\n        uuid rental_unit_id FK \"nullable\"\n        bool is_active\n        Decimal last_latitude \"nullable\"\n        Decimal last_longitude \"nullable\"\n        int last_battery_pct \"nullable\"\n        datetime last_seen_at \"nullable\"\n    }\n    gps_positions {\n        uuid id PK\n        uuid device_id FK\n        Decimal latitude\n        Decimal longitude\n        int battery_pct \"nullable\"\n        datetime recorded_at\n    }\n    geofences {\n        uuid id PK\n        datetime created_at\n        datetime updated_at\n        str name UK\n        Decimal latitude\n        Decimal longitude\n        int radius_m\n        bool is_active\n        geography location\n    }\n    geofence_alerts {\n        uuid id PK\n        uuid device_id FK\n        Decimal latitude\n        Decimal longitude\n        datetime opened_at\n        datetime closed_at \"nullable\"\n    }\n    orders ||--o| deliveries : \"order_id\"\n    couriers |o--o{ deliveries : \"courier_id\"\n    gps_devices |o--o{ deliveries : \"drone_device_id\"\n    deliveries ||--o{ delivery_events : \"delivery_id\"\n    couriers |o--o{ gps_devices : \"courier_id\"\n    gps_devices ||--o{ gps_positions : \"device_id\"\n    gps_devices ||--o{ geofence_alerts : \"device_id\"\n",
+      "evidence": [
+        {
+          "path": "backend/app/modules/domicilios/models.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/pedidos/models.py",
+          "line": 1
+        },
+        {
+          "path": "backend/app/modules/telemetria/models.py",
+          "line": 1
+        }
+      ]
+    }
+  ],
+  "risks": [
+    {
+      "id": "R1",
+      "risk": "Pago duplicado o tardío",
+      "probability": 3,
+      "impact": 4,
+      "existing_control": "Idempotencia, bloqueo de pago y requires_refund ya implementados.",
+      "next_action": "Conciliar pasarela y reembolso manual.",
+      "owner": "Operación / pagos",
+      "source": "backend/app/modules/pagos/service.py"
+    },
+    {
+      "id": "R2",
+      "risk": "Sobreventa / doble reserva de unidad",
+      "probability": 2,
+      "impact": 5,
+      "existing_control": "Bloqueos de inventario y exclusión GiST de periodos.",
+      "next_action": "Mantener pruebas concurrentes y revisar errores de integridad.",
+      "owner": "Backend",
+      "source": "backend/app/modules/inventario/reservations.py"
+    },
+    {
+      "id": "R3",
+      "risk": "GPS ausente o desactualizado",
+      "probability": 4,
+      "impact": 3,
+      "existing_control": "Marca de última posición y fallback de simulación.",
+      "next_action": "Integrar y probar aparatos físicos; alertar por desconexión.",
+      "owner": "Operación",
+      "source": "backend/app/modules/telemetria/service.py"
+    },
+    {
+      "id": "R4",
+      "risk": "Acceso indebido a datos personales",
+      "probability": 2,
+      "impact": 5,
+      "existing_control": "Sesiones httpOnly, CSRF, aislamiento por dueño y rol admin.",
+      "next_action": "Revisión de accesos y política legal antes de producción.",
+      "owner": "Seguridad",
+      "source": "backend/app/api/deps.py"
+    },
+    {
+      "id": "R5",
+      "risk": "Pérdida de base de datos",
+      "probability": 2,
+      "impact": 5,
+      "existing_control": "Backup diario y retención 14 días declarados en Compose.",
+      "next_action": "Desplegar, proteger copias externas y ensayar restauración.",
+      "owner": "Infraestructura",
+      "source": "docker-compose.prod.yml"
+    },
+    {
+      "id": "R6",
+      "risk": "Entrega incorrecta o sin evidencia",
+      "probability": 3,
+      "impact": 4,
+      "existing_control": "QR/firma; dron con destino, prueba GPS y confirmación.",
+      "next_action": "Probar hardware y revisar reclamaciones con evidencia.",
+      "owner": "Logística",
+      "source": "backend/app/modules/domicilios/service.py"
+    },
+    {
+      "id": "R7",
+      "risk": "Unidad usada sin mantenimiento",
+      "probability": 2,
+      "impact": 4,
+      "existing_control": "Bloqueo al 90% y por revisión vencida; bitácora.",
+      "next_action": "Capacitar registro de uso y revisar umbrales.",
+      "owner": "Taller",
+      "source": "backend/app/modules/alquiler/maintenance.py"
+    },
+    {
+      "id": "R8",
+      "risk": "No disponibilidad del servidor único",
+      "probability": 3,
+      "impact": 4,
+      "existing_control": "Healthchecks y reinicio declarados, sin réplicas.",
+      "next_action": "Medir disponibilidad y definir recuperación / redundancia.",
+      "owner": "Infraestructura",
+      "source": "docker-compose.prod.yml"
+    },
+    {
+      "id": "R9",
+      "risk": "Pasarela o correo sin configurar",
+      "probability": 4,
+      "impact": 3,
+      "existing_control": "Modos de prueba/manual y SMTP configurable.",
+      "next_action": "Configurar servicios y probar llaves reales en sandbox.",
+      "owner": "Operación / integraciones",
+      "source": "README.md"
+    },
+    {
+      "id": "R10",
+      "risk": "Factura presentada como DIAN",
+      "probability": 3,
+      "impact": 5,
+      "existing_control": "La documentación diferencia factura de venta de DIAN.",
+      "next_action": "Alinear textos comerciales y contratar proveedor si aplica.",
+      "owner": "Negocio / legal",
+      "source": "README.md"
+    }
+  ]
+}
