@@ -56,6 +56,7 @@ export const siteConfig = {
       items: [
         { label: "Nosotros", href: "/nosotros" },
         { label: "Centro de ayuda", href: "/ayuda" },
+        { label: "Instalar en mi celular", href: "/instalar" },
         { label: "Contacto", href: "/contacto" },
       ],
     },
