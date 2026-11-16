@@ -4,9 +4,14 @@ Tienda en línea, alquiler de flota, domicilios y panel de operación de **EcoMo
 
 Los 15 casos de uso del proyecto están implementados. Aún no está publicado: usa datos de demostración, una pasarela de pagos de pruebas y un simulador de GPS. Abajo está [lo que falta para salir a producción](#lo-que-falta).
 
-Esta versión con instalación móvil y atlas de diagramas está en la rama
-`frontend/diagramas-ecomovilidad`. Si tu copia está en `main`, cambia a esa rama
-antes de seguir la demostración de este README.
+**`main` reúne la versión completa:** tienda, panel, domicilios con dron,
+seguimiento, salida y entrada en sucursal, mantenimiento, mejoras de portada,
+instalación móvil y atlas de diagramas. Las ramas de trabajo ya están
+integradas; para clonar o demostrar el proyecto usa `main`.
+
+Colaboradores: [Santiago / santrolop1](https://github.com/santrolop1) y
+[elias2111](https://github.com/elias2111). La autoría de cada aporte se conserva
+en el [historial de commits](https://github.com/santrolop1/ecomovilidad/commits/main/).
 
 ## Capturas
 
@@ -281,7 +286,7 @@ Para evitar volver a introducir el historial anterior, conserva cualquier
 trabajo local y crea un clon actualizado en otra carpeta:
 
 ```bash
-git clone --branch frontend/diagramas-ecomovilidad https://github.com/santrolop1/ecomovilidad.git ecomovilidad-actualizado
+git clone --branch main https://github.com/santrolop1/ecomovilidad.git ecomovilidad-actualizado
 cd ecomovilidad-actualizado
 ```
 
