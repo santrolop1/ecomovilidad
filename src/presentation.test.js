@@ -47,7 +47,7 @@ describe("presentación de EcoMovilidad", () => {
     jump.dispatchEvent(new Event("change", { bubbles: true }));
     expect(document.getElementById("counter")?.textContent).toBe("14 / 16");
     const notes = document.getElementById("notes-content")?.textContent;
-    expect(notes).toContain("Santiago");
+    expect(notes).toContain("Santiago Cabezas");
     expect(notes).toContain("Elías");
     jump.dispatchEvent(new KeyboardEvent("keydown", { key: "n", bubbles: true }));
     expect(document.getElementById("notes").hidden).toBe(true);

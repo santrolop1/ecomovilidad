@@ -1,68 +1,68 @@
 # Guion de exposición — EcoMovilidad
 
-Propuesta para Santiago y Elías · 10–12 minutos, con una demo breve. La duración es orientativa; ensayar con cronómetro.
+Guion para Santiago Cabezas y Elías · 10–12 minutos, con una demo breve. La duración es orientativa; ensayar con cronómetro.
 
 **N** muestra u oculta el guion en el HTML; flechas navegan; **F** activa pantalla completa. Las notas se muestran en la misma pantalla, no en un monitor privado.
 
 ## 1. EcoMovilidad
-Expositor: Santiago · 40 s
+Expositor: Santiago Cabezas · 40 s
 
-**Santiago:** Buenos días. Somos Santiago y Elías y vamos a presentar EcoMovilidad. Es una plataforma que reúne la venta y el alquiler de vehículos, la entrega de pedidos y el trabajo de operación. El objetivo no es mostrar solamente una tienda: queremos explicar cómo se conectan las decisiones del cliente con el inventario, los pagos, los domicilios y el mantenimiento. Durante la presentación distinguiremos lo que ya funciona en el software de lo que todavía requiere servicios o equipos reales.
+**Santiago Cabezas:** Buenos días. Somos Santiago Cabezas y Elías y vamos a presentar EcoMovilidad. Es una plataforma que reúne la venta y el alquiler de vehículos, la entrega de pedidos y el trabajo de operación. El objetivo no es mostrar solamente una tienda: queremos explicar cómo se conectan las decisiones del cliente con el inventario, los pagos, los domicilios y el mantenimiento. Durante la presentación distinguiremos lo que ya funciona en el software de lo que todavía requiere servicios o equipos reales.
 
 **Acción:** Saludar y presentar a los dos expositores. Mantener el guion oculto durante la exposición si se comparte esta pantalla.
 
 **Transición:** Primero explicamos la necesidad que resuelve.
 
 ## 2. ¿Qué problema organiza?
-Expositor: Santiago · 40 s
+Expositor: Santiago Cabezas · 40 s
 
-**Santiago:** Pensemos en tres situaciones: un cliente compra el último vehículo disponible, otro reserva una unidad para alquilar y un administrador debe saber si un pedido fue entregado. Si cada parte se maneja por separado, es fácil ofrecer algo que ya no está disponible o perder el estado de una entrega. EcoMovilidad organiza esos flujos en un mismo sistema. La idea es que la información que consulta el cliente corresponda con lo que el administrador registra y controla.
+**Santiago Cabezas:** Pensemos en tres situaciones: un cliente compra el último vehículo disponible, otro reserva una unidad para alquilar y un administrador debe saber si un pedido fue entregado. Si cada parte se maneja por separado, es fácil ofrecer algo que ya no está disponible o perder el estado de una entrega. EcoMovilidad organiza esos flujos en un mismo sistema. La idea es que la información que consulta el cliente corresponda con lo que el administrador registra y controla.
 
 **Transición:** Ahora veremos quién participa y qué puede hacer cada uno.
 
 ## 3. Quién usa el sistema
-Expositor: Santiago · 40 s
+Expositor: Santiago Cabezas · 40 s
 
-**Santiago:** El sistema tiene una parte pública y una cuenta para el cliente. Desde allí se consultan productos y se hacen solicitudes de compra o alquiler. Por otro lado, el administrador entra al panel para operar el negocio. Es importante aclarar que el domiciliario todavía no cuenta con una aplicación ni un rol de acceso propio: el panel registra su avance. Además, el alcance del proyecto se concentra en Bucaramanga y los tres municipios del área metropolitana que aparecen aquí.
+**Santiago Cabezas:** El sistema tiene una parte pública y una cuenta para el cliente. Desde allí se consultan productos y se hacen solicitudes de compra o alquiler. Por otro lado, el administrador entra al panel para operar el negocio. Es importante aclarar que el domiciliario todavía no cuenta con una aplicación ni un rol de acceso propio: el panel registra su avance. Además, el alcance del proyecto se concentra en Bucaramanga y los tres municipios del área metropolitana que aparecen aquí.
 
 **Transición:** Empecemos por la parte que ve el cliente.
 
 ## 4. La experiencia del cliente
-Expositor: Santiago · 40 s
+Expositor: Santiago Cabezas · 40 s
 
-**Santiago:** Esta es una captura real de la tienda. Desde la portada se puede entrar al catálogo o a los alquileres y consultar los puntos de servicio. La oferta está organizada en bicicletas, patinetas, patines y drones. El cliente puede revisar el detalle de cada producto y su disponibilidad. Las marcas, direcciones, sucursales y existencias que estamos mostrando son datos de demostración; por eso no deben confundirse con una operación comercial ya abierta al público.
+**Santiago Cabezas:** Esta es una captura real de la tienda. Desde la portada se puede entrar al catálogo o a los alquileres y consultar los puntos de servicio. La oferta está organizada en bicicletas, patinetas, patines y drones. El cliente puede revisar el detalle de cada producto y su disponibilidad. Las marcas, direcciones, sucursales y existencias que estamos mostrando son datos de demostración; por eso no deben confundirse con una operación comercial ya abierta al público.
 
 **Acción:** Si se quiere mostrar la web, abrir la portada y una ficha de producto. No depender de una compra real.
 
 **Transición:** Después de elegir un producto viene la compra.
 
 ## 5. Compra y pago
-Expositor: Santiago · 50 s
+Expositor: Santiago Cabezas · 50 s
 
-**Santiago:** En una compra, agregar al carrito con una sesión activa genera una reserva temporal de inventario. Esa reserva dura quince minutos. Al crear el pedido se revisan las existencias y la franja elegida, y la reserva se transfiere sin contar el mismo stock dos veces. Después se inicia el pago. El servidor valida el resultado antes de registrar la venta y emitir la factura. Para la exposición utilizamos una pasarela simulada: no se cobra dinero real y la factura generada no es una factura electrónica validada por la DIAN.
+**Santiago Cabezas:** En una compra, agregar al carrito con una sesión activa genera una reserva temporal de inventario. Esa reserva dura quince minutos. Al crear el pedido se revisan las existencias y la franja elegida, y la reserva se transfiere sin contar el mismo stock dos veces. Después se inicia el pago. El servidor valida el resultado antes de registrar la venta y emitir la factura. Para la exposición utilizamos una pasarela simulada: no se cobra dinero real y la factura generada no es una factura electrónica validada por la DIAN.
 
 **Acción:** En la demo usar una cuenta de prueba y la pasarela simulada.
 
 **Transición:** El alquiler comparte el pago, pero añade reglas sobre una unidad y un periodo.
 
 ## 6. Alquiler y devolución
-Expositor: Santiago · 45 s
+Expositor: Santiago Cabezas · 45 s
 
-**Santiago:** En el alquiler no basta con saber cuántos productos existen: necesitamos identificar una unidad concreta de la flota y el periodo que va a ocupar. La base de datos impide que dos reservas vigentes se superpongan sobre esa unidad. Una vez pagado, el administrador registra la salida en sucursal. Mientras el vehículo está afuera no se ofrece como disponible. Al devolverlo, el administrador registra la entrada y el uso en kilómetros o en horas, según el tipo de equipo.
+**Santiago Cabezas:** En el alquiler no basta con saber cuántos productos existen: necesitamos identificar una unidad concreta de la flota y el periodo que va a ocupar. La base de datos impide que dos reservas vigentes se superpongan sobre esa unidad. Una vez pagado, el administrador registra la salida en sucursal. Mientras el vehículo está afuera no se ofrece como disponible. Al devolverlo, el administrador registra la entrada y el uso en kilómetros o en horas, según el tipo de equipo.
 
 **Transición:** La otra parte del recorrido es hacer llegar un pedido al cliente.
 
 ## 7. Entrega y evidencia
-Expositor: Santiago · 45 s
+Expositor: Santiago Cabezas · 45 s
 
-**Santiago:** Cuando se paga un pedido con domicilio, se crea la entrega y el administrador asigna quién la llevará. El pedido pasa por los estados de recogida y tránsito hasta su validación. El cliente puede consultar un enlace de seguimiento que se actualiza cada quince segundos. En la entrega por domiciliario se pide el código del cliente o su firma. Si ocurre un fallo, se registra el motivo y se puede gestionar una reprogramación. El historial permite revisar lo ocurrido, aunque el domiciliario todavía dependa del panel para registrar su avance.
+**Santiago Cabezas:** Cuando se paga un pedido con domicilio, se crea la entrega y el administrador asigna quién la llevará. El pedido pasa por los estados de recogida y tránsito hasta su validación. El cliente puede consultar un enlace de seguimiento que se actualiza cada quince segundos. En la entrega por domiciliario se pide el código del cliente o su firma. Si ocurre un fallo, se registra el motivo y se puede gestionar una reprogramación. El historial permite revisar lo ocurrido, aunque el domiciliario todavía dependa del panel para registrar su avance.
 
 **Transición:** El domicilio con dron usa una evidencia diferente.
 
 ## 8. ¿Cómo se valida un dron?
-Expositor: Santiago · 50 s
+Expositor: Santiago Cabezas · 50 s
 
-**Santiago:** El dron tiene un dispositivo GPS asociado y un punto de entrega. Cuando reporta la liberación, el servidor valida que la posición esté a cincuenta metros o menos del destino. Esa evidencia no marca por sí sola el pedido como entregado: el cliente puede confirmar que recibió el paquete. Después de treinta minutos se permite al administrador cerrar con la evidencia registrada, si la entrega sigue siendo válida. No existe un cierre automático por reloj. Lo que hemos probado es el flujo de software con un simulador, no la entrega de un aparato físico.
+**Santiago Cabezas:** El dron tiene un dispositivo GPS asociado y un punto de entrega. Cuando reporta la liberación, el servidor valida que la posición esté a cincuenta metros o menos del destino. Esa evidencia no marca por sí sola el pedido como entregado: el cliente puede confirmar que recibió el paquete. Después de treinta minutos se permite al administrador cerrar con la evidencia registrada, si la entrega sigue siendo válida. No existe un cierre automático por reloj. Lo que hemos probado es el flujo de software con un simulador, no la entrega de un aparato físico.
 
 **Transición:** Le doy paso a Elías para explicar la operación interna y la tecnología.
 
@@ -104,9 +104,9 @@ Expositor: Elías · 40 s
 **Transición:** Con esa base, proponemos este recorrido para la demostración.
 
 ## 14. Recorrido de demostración
-Expositor: Santiago y Elías · 90 s
+Expositor: Santiago Cabezas y Elías · 90 s
 
-**Santiago:** Ahora vamos a recorrer una compra con una cuenta de prueba. Primero elegimos un producto y revisamos su disponibilidad. Después creamos el pedido y usamos el pago simulado. Mostraremos el resultado y cómo consulta el cliente el avance. No vamos a introducir datos de tarjeta ni a hacer un cobro real.
+**Santiago Cabezas:** Ahora vamos a recorrer una compra con una cuenta de prueba. Primero elegimos un producto y revisamos su disponibilidad. Después creamos el pedido y usamos el pago simulado. Mostraremos el resultado y cómo consulta el cliente el avance. No vamos a introducir datos de tarjeta ni a hacer un cobro real.
 
 **Elías:** Desde el panel mostraré cómo se relaciona ese pedido con la operación. También podemos abrir un alquiler para señalar los registros de salida y entrada y la revisión de mantenimiento. Por último enseñaré la página de instalación móvil. Si no tenemos el backend o el túnel disponibles, usaremos las capturas y diremos claramente que estamos explicando el flujo, sin presentarlo como una operación en vivo.
 
@@ -122,9 +122,9 @@ Expositor: Elías · 45 s
 **Transición:** Retomamos el objetivo con el que empezamos.
 
 ## 16. Cierre y preguntas
-Expositor: Santiago y Elías · 35 s
+Expositor: Santiago Cabezas y Elías · 35 s
 
-**Santiago:** Como conclusión, EcoMovilidad reúne la experiencia del cliente y los procesos que hacen posible atenderla. La compra, el alquiler y la entrega se relacionan con inventario, pagos y seguimiento.
+**Santiago Cabezas:** Como conclusión, EcoMovilidad reúne la experiencia del cliente y los procesos que hacen posible atenderla. La compra, el alquiler y la entrega se relacionan con inventario, pagos y seguimiento.
 
 **Elías:** La arquitectura permite usar la misma web desde escritorio o celular y mantener las reglas en el servidor. La documentación y las pruebas dejan una base para continuar, con las limitaciones que acabamos de explicar. Muchas gracias. Podemos revisar el flujo o el componente que les interese.
 

@@ -9,14 +9,14 @@ seguimiento, salida y entrada en sucursal, mantenimiento, mejoras de portada,
 instalación móvil y atlas de diagramas. Las ramas de trabajo ya están
 integradas; para clonar o demostrar el proyecto usa `main`.
 
-Colaboradores: [Santiago / santrolop1](https://github.com/santrolop1) y
+Colaboradores: [Santiago Cabezas / santrolop1](https://github.com/santrolop1) y
 [elias2111](https://github.com/elias2111). La autoría de cada aporte se conserva
 en el [historial de commits](https://github.com/santrolop1/ecomovilidad/commits/main/).
 
 ## Presentación para exponer
 
 La [presentación HTML](public/presentacion.html) incluye **16 diapositivas** y
-un guion de repaso para **Santiago y Elías**, con una exposición orientativa de
+un guion de repaso para **Santiago Cabezas y Elías**, con una exposición orientativa de
 10–12 minutos. Explica el objetivo, usuarios, compras, alquiler, domicilios,
 drones, operación, arquitectura, datos, PWA, pruebas, demo y límites actuales.
 
@@ -53,8 +53,8 @@ de la PC. El guion se abre en la misma pantalla que las diapositivas: ocultarlo
 con **N** antes de proyectar si no se quiere que el público lo lea.
 
 También está disponible el [guion completo en texto](docs/GUION_PRESENTACION.md)
-para ensayar por separado. Los nombres y la distribución son una propuesta de
-exposición; no cambian los roles ni los permisos de la aplicación.
+para ensayar por separado. La distribución de las intervenciones es una propuesta de
+exposición; no cambia los roles ni los permisos de la aplicación.
 
 ## Capturas
 
@@ -340,7 +340,7 @@ anterior se conservan como evidencia de las pruebas de ese código.
 
 ## Documentos
 
-- [Presentación HTML](public/presentacion.html) y [guion para exponer](docs/GUION_PRESENTACION.md): 16 diapositivas, notas con N y reparto de intervención entre Santiago y Elías.
+- [Presentación HTML](public/presentacion.html) y [guion para exponer](docs/GUION_PRESENTACION.md): 16 diapositivas, notas con N y reparto de intervención entre Santiago Cabezas y Elías.
 - [Demo móvil en Windows](docs/DEMO_MOVIL_WINDOWS.md): instalar la PWA en iPhone y Android y servirla desde una PC con HTTPS temporal.
 - [Revisión de dron, sucursal y mantenimiento](docs/REVISION_CAMBIOS_COMPANERO.md): cambios ya fusionados, evidencia del CI y riesgo de asignaciones concurrentes pendiente.
 - [Atlas de diagramas](docs/diagramas/README.md): 27 diagramas, cinco ampliaciones del DER, diccionario de datos y visor sin conexión (`docs/diagramas/index.html`).
