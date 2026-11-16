@@ -13,6 +13,49 @@ Colaboradores: [Santiago / santrolop1](https://github.com/santrolop1) y
 [elias2111](https://github.com/elias2111). La autoría de cada aporte se conserva
 en el [historial de commits](https://github.com/santrolop1/ecomovilidad/commits/main/).
 
+## Presentación para exponer
+
+La [presentación HTML](public/presentacion.html) incluye **16 diapositivas** y
+un guion de repaso para **Santiago y Elías**, con una exposición orientativa de
+10–12 minutos. Explica el objetivo, usuarios, compras, alquiler, domicilios,
+drones, operación, arquitectura, datos, PWA, pruebas, demo y límites actuales.
+
+**Para abrirla:**
+
+1. Descarga `public/presentacion.html` desde GitHub y ábrelo con Chrome, Edge,
+   Safari o Firefox. No basta con mirar el código del archivo en GitHub.
+2. Si ya está corriendo la web, abre `/presentacion.html` en su misma dirección;
+   por ejemplo, `http://localhost:3000/presentacion.html`, o usa el puerto 3100
+   de la demo descrita más abajo.
+3. Pulsa **N** para mostrar u ocultar el guion de la diapositiva actual. Las
+   notas indican quién habla, qué decir, qué mostrar y cómo dar paso al compañero.
+
+| Tecla / control | Función |
+|---|---|
+| **N** / botón Guion | Mostrar u ocultar las notas de repaso |
+| **→**, **Av Pág** o **Espacio** | Siguiente diapositiva |
+| **←** o **Re Pág** | Diapositiva anterior |
+| **Inicio** / **Fin** | Primera / última diapositiva |
+| **F** / botón Pantalla completa | Entrar o salir de pantalla completa si el navegador lo permite |
+| **Esc** | Ocultar el guion y los avisos; el navegador también puede salir de pantalla completa |
+| Selector de diapositiva | Saltar a un tema concreto |
+
+<details>
+<summary>Ver cómo aparece el guion al pulsar N</summary>
+
+<img src="docs/capturas/presentacion-guion.jpg" alt="Presentación de EcoMovilidad con la diapositiva de arquitectura y el guion de Elías visible a la derecha" width="960" />
+
+</details>
+
+El HTML contiene sus capturas, estilos y scripts: **se puede repasar sin
+Internet ni servidor**. La demostración del software sí necesita los servicios
+de la PC. El guion se abre en la misma pantalla que las diapositivas: ocultarlo
+con **N** antes de proyectar si no se quiere que el público lo lea.
+
+También está disponible el [guion completo en texto](docs/GUION_PRESENTACION.md)
+para ensayar por separado. Los nombres y la distribución son una propuesta de
+exposición; no cambian los roles ni los permisos de la aplicación.
+
 ## Capturas
 
 Portada de escritorio con mapa y datos de demostración:
@@ -297,6 +340,7 @@ anterior se conservan como evidencia de las pruebas de ese código.
 
 ## Documentos
 
+- [Presentación HTML](public/presentacion.html) y [guion para exponer](docs/GUION_PRESENTACION.md): 16 diapositivas, notas con N y reparto de intervención entre Santiago y Elías.
 - [Demo móvil en Windows](docs/DEMO_MOVIL_WINDOWS.md): instalar la PWA en iPhone y Android y servirla desde una PC con HTTPS temporal.
 - [Revisión de dron, sucursal y mantenimiento](docs/REVISION_CAMBIOS_COMPANERO.md): cambios ya fusionados, evidencia del CI y riesgo de asignaciones concurrentes pendiente.
 - [Atlas de diagramas](docs/diagramas/README.md): 27 diagramas, cinco ampliaciones del DER, diccionario de datos y visor sin conexión (`docs/diagramas/index.html`).
