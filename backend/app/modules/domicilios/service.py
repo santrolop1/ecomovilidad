@@ -233,10 +233,12 @@ def delivery_drones(db: Session) -> list[GpsDevice]:
 
 def assign_drone(db: Session, delivery_id: uuid.UUID, data: AssignDroneIn, user_id: uuid.UUID) -> None:
     """El dron vuela al punto exacto de entrega, que debe estar dentro de las zonas permitidas."""
+    # Serializa asignaciones del mismo dron antes de comprobar si está ocupado.
+    # GPS -> domicilio conserva el orden de bloqueo de los reportes del dispositivo.
+    drone = db.scalar(select(GpsDevice).where(GpsDevice.id == data.drone_device_id).with_for_update(of=GpsDevice))
     delivery = lock_delivery(db, delivery_id)
     if DeliveryStatus(delivery.status) not in ASSIGNABLE:
         raise ConflictError("Este domicilio ya salió: no se puede cambiar quién lo lleva.")
-    drone = db.get(GpsDevice, data.drone_device_id)
     if drone is None or drone not in delivery_drones(db):
         raise ConflictError("Ese dispositivo no es un dron de domicilios activo.")
     busy = db.scalar(
